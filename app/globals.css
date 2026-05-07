@@ -18,11 +18,15 @@
   --surface-border: #F0DDD0;
   --surface-hover: #FFE8D6;
 
-  /* Blob shapes */
+  /* Blob shapes — strong (mic button) */
   --blob-1: 60% 40% 55% 45% / 45% 55% 40% 60%;
   --blob-2: 45% 55% 60% 40% / 60% 40% 55% 45%;
   --blob-3: 40% 60% 45% 55% / 55% 45% 60% 40%;
   --blob-4: 55% 45% 40% 60% / 40% 60% 45% 55%;
+  /* Blob shapes — soft (cards: nearly rectangular but uneven) */
+  --blob-soft-1: 32% 28% 30% 26% / 28% 32% 26% 30%;
+  --blob-soft-2: 28% 32% 26% 30% / 32% 28% 30% 26%;
+  --blob-soft-3: 30% 26% 32% 28% / 26% 30% 32% 28%;
 
   /* Easing */
   --ease-organic: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -156,21 +160,26 @@ html, body {
   background: var(--surface-card);
   border: 1.5px solid var(--surface-border);
   padding: 20px 24px;
-  border-radius: var(--blob-1);
+  border-radius: var(--blob-soft-1);
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  transition: border-radius 0.4s var(--ease-soft),
-              transform 0.2s var(--ease-soft),
+  transition: transform 0.2s var(--ease-soft),
               box-shadow 0.2s var(--ease-soft);
+  animation: card-wobble 12s var(--ease-soft) infinite;
 }
 .post-card:hover {
-  border-radius: var(--blob-2);
   transform: translateY(-2px);
   box-shadow: 0 6px 22px rgba(255, 140, 90, 0.10);
 }
 .post-card.new {
-  animation: post-appear 0.5s var(--ease-organic) both;
+  animation: post-appear 0.5s var(--ease-organic) both,
+             card-wobble 12s var(--ease-soft) 0.5s infinite;
+}
+@keyframes card-wobble {
+  0%, 100% { border-radius: var(--blob-soft-1); }
+  33%      { border-radius: var(--blob-soft-2); }
+  66%      { border-radius: var(--blob-soft-3); }
 }
 @keyframes post-appear {
   0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
@@ -186,7 +195,7 @@ html, body {
   align-items: center;
   justify-content: center;
   background: var(--peach-light);
-  border-radius: var(--blob-2);
+  border-radius: 42% 38% 40% 36% / 38% 42% 36% 40%;
 }
 
 .post-body { flex: 1 1 auto; min-width: 0; }
