@@ -5,8 +5,7 @@ import { isStamp } from "@/lib/stamps";
 
 export const runtime = "nodejs";
 
-const KV_MISSING =
-  !process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN;
+const KV_MISSING = !process.env.KV_REDIS_URL && !process.env.REDIS_URL;
 
 export async function POST(
   req: NextRequest,

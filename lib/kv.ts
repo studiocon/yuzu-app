@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { createClient, type RedisClientType } from "redis";
 import { STAMPS, type Stamp, isStamp } from "./stamps";
 
 export type Post = {
@@ -26,38 +26,54 @@ const emptyCounts = (): Record<Stamp, number> => {
   return out;
 };
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __peachRedis: RedisClientType | undefined;
+}
+
+async function getClient(): Promise<RedisClientType> {
+  if (global.__peachRedis && global.__peachRedis.isOpen) return global.__peachRedis;
+  const url = process.env.KV_REDIS_URL || process.env.REDIS_URL;
+  if (!url) throw new Error("KV_REDIS_URL not set");
+  const client: RedisClientType = createClient({ url });
+  client.on("error", (e) => console.error("redis error", e));
+  await client.connect();
+  global.__peachRedis = client;
+  return client;
+}
+
 export async function createPost(p: Post): Promise<void> {
-  await kv.hset(itemKey(p.id), {
+  const r = await getClient();
+  await r.hSet(itemKey(p.id), {
     id: p.id,
     text: p.text,
-    createdAt: p.createdAt,
+    createdAt: String(p.createdAt),
     emoji: p.emoji,
     blob: JSON.stringify(p.blob),
     sessionId: p.sessionId,
   });
-  await kv.zadd(LIST_KEY, { score: p.createdAt, member: p.id });
+  await r.zAdd(LIST_KEY, { score: p.createdAt, value: p.id });
 }
 
 export async function listPosts(sessionId: string, limit = 50): Promise<PostWithReactions[]> {
-  const ids = (await kv.zrange<string[]>(LIST_KEY, 0, limit - 1, { rev: true })) ?? [];
+  const r = await getClient();
+  const ids = await r.zRange(LIST_KEY, 0, limit - 1, { REV: true });
   if (ids.length === 0) return [];
 
   const results = await Promise.all(
     ids.map(async (id) => {
       const [raw, reactions, mySet] = await Promise.all([
-        kv.hgetall<Record<string, unknown>>(itemKey(id)),
-        kv.hgetall<Record<string, number>>(reactionsKey(id)),
-        kv.smembers<string[]>(reactedByKey(id, sessionId)),
+        r.hGetAll(itemKey(id)),
+        r.hGetAll(reactionsKey(id)),
+        r.sMembers(reactedByKey(id, sessionId)),
       ]);
-      if (!raw) return null;
+      if (!raw || Object.keys(raw).length === 0) return null;
 
       const counts = emptyCounts();
-      if (reactions) {
-        for (const [k, v] of Object.entries(reactions)) {
-          if (isStamp(k)) counts[k] = Number(v) || 0;
-        }
+      for (const [k, v] of Object.entries(reactions)) {
+        if (isStamp(k)) counts[k] = Number(v) || 0;
       }
-      const reacted: Stamp[] = (mySet ?? []).filter(isStamp);
+      const reacted: Stamp[] = mySet.filter(isStamp);
 
       const blob = parseBlob(raw.blob);
 
@@ -84,7 +100,6 @@ function parseBlob(v: unknown): [string, string, string] {
       if (Array.isArray(arr) && arr.length === 3) return arr as [string, string, string];
     } catch {}
   }
-  if (Array.isArray(v) && v.length === 3) return v as [string, string, string];
   return [
     "48% 52% 42% 58% / 49% 64% 36% 51%",
     "52% 48% 58% 42% / 56% 44% 62% 38%",
@@ -93,7 +108,8 @@ function parseBlob(v: unknown): [string, string, string] {
 }
 
 export async function postExists(id: string): Promise<boolean> {
-  return (await kv.exists(itemKey(id))) === 1;
+  const r = await getClient();
+  return (await r.exists(itemKey(id))) === 1;
 }
 
 export type ToggleResult = {
@@ -106,17 +122,18 @@ export async function toggleReaction(
   sessionId: string,
   stamp: Stamp,
 ): Promise<ToggleResult> {
+  const r = await getClient();
   const setKey = reactedByKey(postId, sessionId);
   const hKey = reactionsKey(postId);
-  const added = await kv.sadd(setKey, stamp);
+  const added = await r.sAdd(setKey, stamp);
   if (added === 1) {
-    const count = await kv.hincrby(hKey, stamp, 1);
+    const count = await r.hIncrBy(hKey, stamp, 1);
     return { reacted: true, count };
   }
-  await kv.srem(setKey, stamp);
-  const count = await kv.hincrby(hKey, stamp, -1);
+  await r.sRem(setKey, stamp);
+  const count = await r.hIncrBy(hKey, stamp, -1);
   if (count < 0) {
-    await kv.hset(hKey, { [stamp]: 0 });
+    await r.hSet(hKey, stamp, "0");
     return { reacted: false, count: 0 };
   }
   return { reacted: false, count };

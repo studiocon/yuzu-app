@@ -4,8 +4,7 @@ import { getOrCreateSessionId, setSessionCookie } from "@/lib/session";
 
 export const runtime = "nodejs";
 
-const KV_MISSING =
-  !process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN;
+const KV_MISSING = !process.env.KV_REDIS_URL && !process.env.REDIS_URL;
 
 export async function GET() {
   if (KV_MISSING) {
