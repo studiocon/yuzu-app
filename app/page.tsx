@@ -2,13 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Post = { id: string; text: string; createdAt: number };
+type Post = { id: string; text: string; createdAt: number; emoji: string };
 type Phase = "idle" | "holding" | "recording" | "busy";
 
-const STORAGE_KEY = "voice-blog-posts";
-const HOLD_MS = 2000; // 2秒未満はキャンセル
+const STORAGE_KEY = "peach-posts";
+const EMOJI_KEY = "peach-emoji";
+const HOLD_MS = 2000;
 const RING_R = 68;
 const RING_CIRC = 2 * Math.PI * RING_R; // ≈ 427
+
+const FRUITS = ["🍑","🍋","🍇","🥝","🍓","🫐","🍈","🍊","🍍","🥭","🍌","🍒","🍎","🍐","🫒"];
+
+const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -16,8 +21,9 @@ export default function Home() {
   const [shortTap, setShortTap] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [myEmoji, setMyEmoji] = useState<string>("🍑");
+  const [newPostId, setNewPostId] = useState<string | null>(null);
 
-  // refs — press end ハンドラが最新値を参照できるよう phase も ref で持つ
   const phaseRef = useRef<Phase>("idle");
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressStartRef = useRef<number>(0);
@@ -34,6 +40,12 @@ export default function Home() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setPosts(JSON.parse(raw));
+      let e = localStorage.getItem(EMOJI_KEY);
+      if (!e) {
+        e = pickFruit();
+        localStorage.setItem(EMOJI_KEY, e);
+      }
+      setMyEmoji(e);
     } catch {}
   }, []);
 
@@ -42,7 +54,6 @@ export default function Home() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
 
-  // ---- MediaRecorder ----
   const startMediaRecorder = async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -81,7 +92,6 @@ export default function Home() {
     recorderRef.current = null;
   };
 
-  // ---- Press handlers ----
   const handlePressStart = async (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     if (phaseRef.current !== "idle") return;
@@ -94,7 +104,6 @@ export default function Home() {
     const ok = await startMediaRecorder();
     if (!ok) return;
 
-    // 2秒後に録音フェーズへ昇格
     pressTimerRef.current = setTimeout(() => {
       if (phaseRef.current === "holding") setPhaseSync("recording");
     }, HOLD_MS);
@@ -109,7 +118,6 @@ export default function Home() {
     const held = Date.now() - pressStartRef.current;
 
     if (held < HOLD_MS) {
-      // 短すぎる → キャンセル
       cancelRecorder();
       setPhaseSync("idle");
       setShortTap(true);
@@ -117,7 +125,6 @@ export default function Home() {
       return;
     }
 
-    // 2秒以上 → 文字起こしへ
     setPhaseSync("busy");
     const blob = await stopAndGetBlob();
     if (blob.size === 0) { setPhaseSync("idle"); return; }
@@ -130,9 +137,8 @@ export default function Home() {
     setPhaseSync("idle");
   };
 
-  // ---- Transcription ----
   const transcribeAndSave = async (blob: Blob) => {
-    setStatusMsg("文字起こし中...");
+    setStatusMsg("言葉にしてるよ…");
     try {
       const fd = new FormData();
       fd.append("audio", blob, "recording.webm");
@@ -141,9 +147,11 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "文字起こし失敗");
 
       const text: string = data.text ?? "";
-      if (!text.trim()) { setError("文字起こしの結果が空でした"); return; }
+      if (!text.trim()) { setError("声を聴き取れなかった"); return; }
 
-      persist([{ id: crypto.randomUUID(), text, createdAt: Date.now() }, ...posts]);
+      const id = crypto.randomUUID();
+      persist([{ id, text, createdAt: Date.now(), emoji: myEmoji }, ...posts]);
+      setNewPostId(id);
       setStatusMsg(null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "エラーが発生しました");
@@ -153,35 +161,36 @@ export default function Home() {
     }
   };
 
-  // ---- Render ----
   const isHolding = phase === "holding";
   const isRecording = phase === "recording";
   const isBusy = phase === "busy";
 
-  const buttonBg = isRecording ? "#e53935" : isBusy ? "#bbb" : "#1a1a1a";
+  const micClass =
+    "mic-button" +
+    (isHolding ? " holding" : "") +
+    (isRecording ? " recording" : "");
 
   const hint =
-    isBusy ? (statusMsg ?? "処理中...") :
-    isRecording ? "録音中（指を離すと送信）" :
-    isHolding ? "そのまま押し続けてください..." :
-    "長押しして話す";
+    isBusy ? (statusMsg ?? "処理中…") :
+    isRecording ? "聴いてるよ…" :
+    isHolding ? "そのまま、押し続けて…" :
+    "長押しして、話す";
 
   return (
     <main style={styles.main}>
-      <h1 style={styles.title}>Voice Blog</h1>
+      <header style={styles.header}>
+        <span className="font-display" style={styles.logo}>🍑 PEACH</span>
+        <span style={styles.tagline}>声は、種。つぶやきは、実る。</span>
+      </header>
 
-      <div style={styles.buttonWrap}>
-        {/* ボタン + プログレスリング */}
-        <div style={{ position: "relative", width: 148, height: 148 }}>
+      <section style={styles.heroSection}>
+        <div className="mic-wrap">
           {isHolding && (
-            <svg
-              width={148} height={148}
-              style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)", pointerEvents: "none" }}
-            >
+            <svg width={148} height={148} className="ring-svg">
               <circle
                 cx={74} cy={74} r={RING_R}
                 fill="none"
-                stroke="#e53935"
+                stroke="var(--peach-deep)"
                 strokeWidth={5}
                 strokeLinecap="round"
                 strokeDasharray={RING_CIRC}
@@ -192,7 +201,9 @@ export default function Home() {
           )}
           <button
             aria-label="長押しで録音"
+            aria-pressed={isRecording}
             disabled={isBusy}
+            className={micClass}
             onMouseDown={handlePressStart}
             onMouseUp={handlePressEnd}
             onMouseLeave={() => { if (isHolding || isRecording) handlePressEnd(); }}
@@ -200,32 +211,31 @@ export default function Home() {
             onTouchEnd={handlePressEnd}
             onTouchCancel={handlePressCancel}
             onContextMenu={(e) => e.preventDefault()}
-            style={{
-              ...styles.micButton,
-              background: buttonBg,
-              transform: isRecording ? "scale(1.06)" : "scale(1)",
-              cursor: isBusy ? "not-allowed" : "pointer",
-            }}
           >
-            {isBusy ? "⏳" : "🎤"}
+            {isBusy ? "🌱" : "🎤"}
           </button>
         </div>
 
         <p style={styles.hint}>{hint}</p>
 
-        {shortTap && (
-          <p style={styles.shortTapMsg}>
-            📌 2秒以上長押しして話してください
-          </p>
-        )}
+        {shortTap && <p style={styles.shortTapMsg}>もう少し長く押してね</p>}
         {error && <p style={styles.error}>{error}</p>}
-      </div>
+      </section>
 
       <section style={styles.list}>
+        {posts.length === 0 && !error && (
+          <p style={styles.empty}>まだ誰も話していない。<br />最初の声を植えよう。</p>
+        )}
         {posts.map((p) => (
-          <article key={p.id} style={styles.post}>
-            <time style={styles.time}>{formatDate(p.createdAt)}</time>
-            <p style={styles.text}>{p.text}</p>
+          <article
+            key={p.id}
+            className={`post-card${p.id === newPostId ? " new" : ""}`}
+          >
+            <div className="post-emoji" aria-hidden>{p.emoji ?? "🍑"}</div>
+            <div className="post-body">
+              <time className="post-time">{formatDate(p.createdAt)}</time>
+              <p className="post-text">{p.text}</p>
+            </div>
           </article>
         ))}
       </section>
@@ -234,40 +244,26 @@ export default function Home() {
 }
 
 function formatDate(ts: number) {
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "たった今";
+  if (min < 60) return `${min}分前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}時間前`;
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  main: { maxWidth: 640, margin: "0 auto", padding: "48px 20px 80px", minHeight: "100vh" },
-  title: { textAlign: "center", fontSize: 22, fontWeight: 600, margin: "0 0 32px", letterSpacing: 1 },
-  buttonWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 16, marginBottom: 56 },
-  micButton: {
-    width: 140, height: 140,
-    borderRadius: "50%",
-    border: "none",
-    color: "#fff",
-    fontSize: 56,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-    transition: "transform 150ms ease, background 150ms ease",
-    userSelect: "none",
-    WebkitUserSelect: "none",
-    touchAction: "none",
-    position: "relative",
-  },
-  hint: { color: "#888", fontSize: 14, margin: 0, textAlign: "center" },
-  shortTapMsg: {
-    color: "#e53935",
-    fontSize: 13,
-    margin: 0,
-    textAlign: "center",
-    fontWeight: 500,
-    animation: "fadeIn 200ms ease",
-  },
-  error: { color: "#e53935", fontSize: 13, margin: 0, textAlign: "center", maxWidth: 320 },
-  list: { display: "flex", flexDirection: "column", gap: 12 },
-  post: { background: "#fff", borderRadius: 12, padding: "16px 18px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" },
-  time: { display: "block", fontSize: 12, color: "#888", marginBottom: 6 },
-  text: { margin: 0, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" },
+  main: { maxWidth: 640, margin: "0 auto", padding: "32px 20px 96px", minHeight: "100vh" },
+  header: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, marginBottom: 48 },
+  logo: { fontSize: 26, color: "var(--text-primary)" },
+  tagline: { fontSize: 12, color: "var(--text-secondary)", letterSpacing: "0.05em" },
+  heroSection: { display: "flex", flexDirection: "column", alignItems: "center", gap: 18, marginBottom: 64 },
+  hint: { color: "var(--text-secondary)", fontSize: 14, margin: 0, textAlign: "center", letterSpacing: "0.02em" },
+  shortTapMsg: { color: "var(--peach-deep)", fontSize: 13, margin: 0, textAlign: "center", fontWeight: 500, animation: "fadeIn 200ms ease" },
+  error: { color: "var(--peach-deep)", fontSize: 13, margin: 0, textAlign: "center", maxWidth: 320 },
+  list: { display: "flex", flexDirection: "column", gap: 14 },
+  empty: { color: "var(--text-muted)", fontSize: 14, textAlign: "center", lineHeight: 1.8, margin: "32px 0" },
 };
