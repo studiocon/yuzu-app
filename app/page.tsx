@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Post = { id: string; text: string; createdAt: number; emoji: string };
+type Post = { id: string; text: string; createdAt: number; emoji: string; blob?: [string, string, string] };
 type Phase = "idle" | "holding" | "recording" | "busy";
 
 const STORAGE_KEY = "peach-posts";
@@ -14,6 +14,12 @@ const RING_CIRC = 2 * Math.PI * RING_R; // ≈ 427
 const FRUITS = ["🍑","🍋","🍇","🥝","🍓","🫐","🍈","🍊","🍍","🥭","🍌","🍒","🍎","🍐","🫒"];
 
 const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];
+
+function randomEllipse(): string {
+  const r = () => 38 + Math.round(Math.random() * 26);
+  return `${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%`;
+}
+const randomBlob = (): [string, string, string] => [randomEllipse(), randomEllipse(), randomEllipse()];
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -39,7 +45,10 @@ export default function Home() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setPosts(JSON.parse(raw));
+      if (raw) {
+        const loaded: Post[] = JSON.parse(raw);
+        setPosts(loaded.map(p => p.blob ? p : { ...p, blob: randomBlob() }));
+      }
       let e = localStorage.getItem(EMOJI_KEY);
       if (!e) {
         e = pickFruit();
@@ -150,7 +159,7 @@ export default function Home() {
       if (!text.trim()) { setError("声を聴き取れなかった"); return; }
 
       const id = crypto.randomUUID();
-      persist([{ id, text, createdAt: Date.now(), emoji: myEmoji }, ...posts]);
+      persist([{ id, text, createdAt: Date.now(), emoji: myEmoji, blob: randomBlob() }, ...posts]);
       setNewPostId(id);
       setStatusMsg(null);
     } catch (e: unknown) {
@@ -230,6 +239,7 @@ export default function Home() {
           <article
             key={p.id}
             className={`post-card${p.id === newPostId ? " new" : ""}`}
+            style={p.blob ? ({ '--blob-soft-1': p.blob[0], '--blob-soft-2': p.blob[1], '--blob-soft-3': p.blob[2] } as React.CSSProperties) : undefined}
           >
             <div className="post-emoji" aria-hidden>{p.emoji ?? "🍑"}</div>
             <div className="post-body">

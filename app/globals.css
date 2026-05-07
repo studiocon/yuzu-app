@@ -23,10 +23,10 @@
   --blob-2: 45% 55% 60% 40% / 60% 40% 55% 45%;
   --blob-3: 40% 60% 45% 55% / 55% 45% 60% 40%;
   --blob-4: 55% 45% 40% 60% / 40% 60% 45% 55%;
-  /* Blob shapes — soft (cards: nearly rectangular but uneven) */
-  --blob-soft-1: 32% 28% 30% 26% / 28% 32% 26% 30%;
-  --blob-soft-2: 28% 32% 26% 30% / 32% 28% 30% 26%;
-  --blob-soft-3: 30% 26% 32% 28% / 26% 30% 32% 28%;
+  /* Blob shapes — soft (cards: natural ellipse, used as fallback) */
+  --blob-soft-1: 48% 52% 42% 58% / 49% 64% 36% 51%;
+  --blob-soft-2: 52% 48% 58% 42% / 56% 44% 62% 38%;
+  --blob-soft-3: 44% 56% 46% 54% / 42% 58% 44% 56%;
 
   /* Easing */
   --ease-organic: cubic-bezier(0.34, 1.56, 0.64, 1);
