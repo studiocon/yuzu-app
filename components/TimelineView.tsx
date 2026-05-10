@@ -11,6 +11,7 @@ export type Post = {
   blob: [string, string, string];
   reactions: Record<Stamp, number>;
   reacted: Stamp[];
+  sessionId?: string;
 };
 
 type Props = {

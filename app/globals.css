@@ -568,49 +568,138 @@ body {
 .mypage-view {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 32px 24px;
-  gap: 22px;
-  text-align: center;
-  max-width: 480px;
+  padding: 24px 20px 32px;
+  gap: 24px;
+  max-width: 640px;
   margin: 0 auto;
 }
 .mypage-title {
   font-size: var(--text-xl);
   color: var(--ink);
+  text-align: center;
+  margin: 0;
 }
-.mypage-stat {
-  font-size: var(--text-base);
+
+.mypage-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.mypage-avatar {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  background: var(--yuzu-cream);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--blob-soft-1);
+}
+.mypage-nickname-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mypage-nickname {
+  font-size: var(--text-xl);
+  color: var(--ink);
+  margin: 0;
+}
+.mypage-nickname-input {
+  font-family: var(--font-body), sans-serif;
+  font-size: 16px; /* iOS Safari ズーム抑制 */
+  border: 1.5px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 4px 10px;
+  background: var(--surface-card);
+  color: var(--ink);
+  outline: none;
+  min-width: 120px;
+}
+.mypage-nickname-input:focus { border-color: var(--yuzu-zest); }
+.mypage-edit-btn {
+  background: transparent;
+  border: 1px solid var(--surface-border);
   color: var(--ink-secondary);
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-soft);
 }
-.mypage-pitch {
+.mypage-edit-btn:hover { background: var(--surface-hover); }
+
+.mypage-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+@media (max-width: 520px) {
+  .mypage-stats { grid-template-columns: repeat(2, 1fr); }
+}
+.mypage-stat-card {
   background: var(--surface-card);
   border: 1.5px solid var(--surface-border);
-  border-radius: 32px 28px 36px 24px / 28px 36px 24px 32px;
-  padding: 22px 24px;
-  font-size: var(--text-sm);
-  color: var(--ink-secondary);
-  line-height: 1.8;
+  padding: 14px 8px;
+  border-radius: var(--blob-soft-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
 }
-.mypage-cta {
-  font-family: 'Unbounded', var(--font-display), sans-serif;
+.mypage-stat-icon { font-size: 22px; }
+.mypage-stat-value {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
   font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--ink);
+  line-height: 1.1;
+}
+.mypage-stat-label {
+  font-size: 10px;
+  color: var(--ink-muted);
   letter-spacing: 0.04em;
+}
+
+.mypage-section { display: flex; flex-direction: column; gap: 10px; }
+.mypage-section-title {
+  font-size: var(--text-base);
+  color: var(--ink-secondary);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+.mypage-chart-card {
+  background: var(--surface-card);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--blob-soft-1);
+  padding: 16px 12px 12px;
+}
+.sentiment-chart-wrap { width: 100%; height: 220px; }
+.sentiment-empty {
+  color: var(--ink-muted);
   font-size: var(--text-sm);
-  padding: 12px 28px;
-  border-radius: 999px;
-  background: var(--yuzu-zest);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(232, 160, 32, 0.4);
-  transition: transform 0.15s var(--ease-soft), opacity 0.15s var(--ease-soft);
+  text-align: center;
+  margin: 24px 0;
+  line-height: 1.7;
 }
-.mypage-cta[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: not-allowed;
+.mypage-loading-hint {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  text-align: center;
+  margin: 8px 0 0;
 }
-.mypage-cta:not([aria-disabled="true"]):hover { transform: scale(1.04); }
+
+.mypage-post-list { display: flex; flex-direction: column; gap: 14px; }
+.mypage-empty {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  line-height: 1.8;
+  margin: 24px 0;
+}
 
 /* ===== Misc ===== */
 @keyframes fadeIn {

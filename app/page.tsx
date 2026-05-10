@@ -27,6 +27,7 @@ export default function Home() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [myEmoji, setMyEmoji] = useState<string>("🍑");
+  const [mySessionId, setMySessionId] = useState<string | null>(null);
   const [newPostId, setNewPostId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
@@ -54,7 +55,10 @@ export default function Home() {
 
     fetch("/api/posts")
       .then(safeJson)
-      .then((data) => setPosts(data?.posts ?? []))
+      .then((data) => {
+        setPosts(data?.posts ?? []);
+        if (data?.sessionId) setMySessionId(data.sessionId);
+      })
       .catch(() => {});
   }, []);
 
@@ -198,6 +202,7 @@ export default function Home() {
 
       const newPost: Post | undefined = saveData?.post;
       if (!newPost) throw new Error("保存に失敗しました");
+      if (saveData?.sessionId) setMySessionId(saveData.sessionId);
       setPosts((prev) => [newPost, ...prev]);
       setNewPostId(newPost.id);
       setStatusMsg(null);
@@ -241,7 +246,7 @@ export default function Home() {
       )}
 
       {tab === "mypage" && (
-        <MyPageView myEmoji={myEmoji} postCount={posts.length} />
+        <MyPageView myEmoji={myEmoji} posts={posts} mySessionId={mySessionId} />
       )}
 
       <TabBar active={tab} onChange={setTab} compact={scrolled} />
