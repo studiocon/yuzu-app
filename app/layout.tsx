@@ -17,8 +17,8 @@ const notoSansJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "PEACH",
-  description: "声は、種。つぶやきは、実る。",
+  title: "YUZU",
+  description: "生の声が、香る。",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

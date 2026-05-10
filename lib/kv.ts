@@ -28,17 +28,17 @@ const emptyCounts = (): Record<Stamp, number> => {
 
 declare global {
   // eslint-disable-next-line no-var
-  var __peachRedis: RedisClientType | undefined;
+  var __yuzuRedis: RedisClientType | undefined;
 }
 
 async function getClient(): Promise<RedisClientType> {
-  if (global.__peachRedis && global.__peachRedis.isOpen) return global.__peachRedis;
+  if (global.__yuzuRedis && global.__yuzuRedis.isOpen) return global.__yuzuRedis;
   const url = process.env.KV_REDIS_URL || process.env.REDIS_URL;
   if (!url) throw new Error("KV_REDIS_URL not set");
   const client: RedisClientType = createClient({ url });
   client.on("error", (e) => console.error("redis error", e));
   await client.connect();
-  global.__peachRedis = client;
+  global.__yuzuRedis = client;
   return client;
 }
 

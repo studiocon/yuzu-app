@@ -8,7 +8,7 @@ import MyPageView from "@/components/MyPageView";
 
 type Phase = "idle" | "recording" | "busy";
 
-const EMOJI_KEY = "peach-emoji";
+const EMOJI_KEY = "yuzu-emoji";
 const MIN_RECORD_MS = 300;
 const FRUITS = ["🍑","🍋","🍇","🥝","🍓","🫐","🍈","🍊","🍍","🥭","🍌","🍒","🍎","🍐","🫒"];
 const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];

@@ -1,24 +1,32 @@
 :root {
-  /* Primary palette */
-  --brand-pink:  #FF2B64;
-  --brand-purple: #E0AAFF;
-  --tangerine:   #FF2B64;  /* alias → brand-pink */
-  --bubblegum:   #FFCAFD;
-  --peach-mist:  #FFF5F0;
-  --candy-pink:  #FF6EB4;
-  --sky-pop:     #74D7FF;
-  --lemon-pop:   #FFE566;
-  --mint-fresh:  #5DEBB8;
+  /* YUZU Primary */
+  --yuzu-yellow:      #F5D84A;  /* ゆず黄：メインカラー */
+  --yuzu-zest:        #E8A020;  /* 完熟オレンジ黄：CTA・録音中 */
+  --yuzu-white:       #FAFAF5;  /* 果肉の白：背景 */
 
-  /* Neutral */
-  --text-primary:   #611126;
-  --text-secondary: rgba(97,17,38,0.7);
-  --text-muted:     rgba(97,17,38,0.4);
+  /* YUZU Accent */
+  --yuzu-green:       #2D5016;  /* 深緑：葉・アクセント */
+  --yuzu-green-light: #8DBF8D;  /* ライトグリーン */
+  --yuzu-cream:       #FFF8E7;  /* クリーム：カード背景 */
+
+  /* Text */
+  --ink:              #1A1A2E;  /* 墨：メインテキスト */
+  --ink-secondary:    #4A4A6A;  /* サブテキスト */
+  --ink-muted:        #9A9ABA;  /* ミュート：タイムスタンプ */
 
   /* Surface */
-  --surface-card:   #ffffff;
-  --surface-border: #F6F1EE;
-  --surface-hover:  #FFE8D6;
+  --surface-card:     #FFFEF5;  /* カード背景 */
+  --surface-border:   #E8E0C8;  /* ボーダー */
+  --surface-hover:    #FFF5CC;  /* ホバー */
+
+  /* Legacy aliases (旧コンポーネントが参照するため残す) */
+  --tangerine:      var(--yuzu-zest);
+  --candy-pink:     var(--yuzu-zest);
+  --bubblegum:      var(--yuzu-yellow);
+  --peach-mist:     var(--yuzu-cream);
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-secondary);
+  --text-muted:     var(--ink-muted);
 
   /* Blob shapes — strong (mic button) */
   --blob-1: 60% 40% 55% 45% / 45% 55% 40% 60%;
@@ -51,11 +59,17 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: var(--font-body), "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-  color: var(--text-primary);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 body {
-  background: #fff6f1;
+  background: linear-gradient(
+    160deg,
+    #FAFAF0 0%,
+    #FFFFF0 40%,
+    #F5FAF0 70%,
+    #FAFFF5 100%
+  );
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -80,7 +94,7 @@ body {
   position: relative;
   width: 140px;
   height: 140px;
-  background: var(--tangerine);
+  background: var(--yuzu-yellow);
   color: #fff;
   border: none;
   font-size: 56px;
@@ -89,7 +103,7 @@ body {
   -webkit-user-select: none;
   touch-action: none;
   border-radius: var(--blob-1);
-  box-shadow: 0 4px 24px rgba(255, 43, 100, 0.4);
+  box-shadow: 0 4px 24px rgba(245, 216, 74, 0.5);
   transition: transform 0.2s var(--ease-soft),
               box-shadow 0.2s var(--ease-soft),
               background 0.25s var(--ease-soft),
@@ -99,18 +113,19 @@ body {
 .mic-button:hover:not(:disabled) {
   transform: scale(1.04);
   border-radius: var(--blob-2);
-  box-shadow: 0 12px 36px rgba(255, 43, 100, 0.5);
+  box-shadow: 0 12px 36px rgba(245, 216, 74, 0.6);
 }
 
 .mic-button:disabled {
   cursor: not-allowed;
-  background: var(--peach-mist);
-  color: var(--text-muted);
-  box-shadow: 0 4px 16px rgba(196, 160, 196, 0.25);
+  background: var(--yuzu-cream);
+  color: var(--ink-muted);
+  box-shadow: 0 4px 16px rgba(196, 196, 160, 0.25);
 }
 
 .mic-button.recording {
-  background: var(--candy-pink);
+  background: var(--yuzu-zest);
+  box-shadow: 0 4px 32px rgba(232, 160, 32, 0.6);
   animation: blob-pulse 1.2s var(--ease-soft) infinite;
 }
 
@@ -120,7 +135,7 @@ body {
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  background: var(--candy-pink);
+  background: var(--yuzu-zest);
   opacity: 0.32;
   animation: ripple 1.6s ease-out infinite;
   pointer-events: none;
@@ -141,19 +156,21 @@ body {
 
 /* ===== Post card ===== */
 .post-card {
-  background: white;
+  background: var(--surface-card);
+  border: 1.5px solid var(--surface-border);
   border-radius: 24px;
-  box-shadow: 0px 0px 36px -16px rgba(97,17,38,0.18);
+  box-shadow: 0px 0px 36px -16px rgba(26, 26, 46, 0.12);
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  color: var(--ink);
   transition: transform 0.2s var(--ease-soft),
               box-shadow 0.2s var(--ease-soft);
 }
 .post-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 4px 36px -8px rgba(97,17,38,0.22);
+  box-shadow: 0px 4px 36px -8px rgba(26, 26, 46, 0.16);
 }
 .post-card.new {
   animation: post-appear 0.5s var(--ease-organic) both;
@@ -177,7 +194,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--peach-mist);
+  background: var(--yuzu-cream);
   border-radius: 50%;
 }
 
@@ -185,12 +202,12 @@ body {
   flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
 .post-time {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--ink-muted);
   white-space: nowrap;
 }
 
@@ -199,7 +216,7 @@ body {
   margin: 0;
   font-size: var(--text-base);
   line-height: 1.75;
-  color: var(--text-primary);
+  color: var(--ink);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -218,9 +235,9 @@ body {
   font-size: 16px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(255, 202, 253, 0.3);
+  background: rgba(245, 216, 74, 0.2);
   border: 1.5px solid var(--surface-border);
-  color: var(--text-primary);
+  color: var(--ink);
   cursor: pointer;
   line-height: 1;
   transition: transform 0.15s var(--ease-soft),
@@ -229,21 +246,21 @@ body {
 }
 .stamp-btn:hover {
   transform: scale(1.12);
-  background: rgba(255, 202, 253, 0.55);
+  background: rgba(245, 216, 74, 0.4);
 }
 .stamp-btn:active { transform: scale(0.96); }
 .stamp-btn.reacted {
-  background: var(--bubblegum);
-  border-color: var(--tangerine);
+  background: var(--yuzu-yellow);
+  border-color: var(--yuzu-zest);
 }
 .stamp-emoji { font-size: 16px; line-height: 1; }
 .stamp-count {
   font-size: var(--text-xs);
-  color: var(--text-muted);
+  color: var(--ink-muted);
   margin-left: 2px;
   font-variant-numeric: tabular-nums;
 }
-.stamp-btn.reacted .stamp-count { color: var(--text-primary); }
+.stamp-btn.reacted .stamp-count { color: var(--ink); }
 
 /* ===== Stamp add button + picker ===== */
 .stamp-add-wrap { position: relative; display: inline-flex; }
@@ -257,7 +274,7 @@ body {
   border-radius: 999px;
   background: transparent;
   border: 1.5px dashed var(--surface-border);
-  color: var(--text-muted);
+  color: var(--ink-muted);
   cursor: pointer;
   transition: transform 0.15s var(--ease-soft),
               background 0.15s var(--ease-soft),
@@ -266,15 +283,15 @@ body {
 }
 .stamp-add-btn:hover {
   transform: scale(1.06);
-  background: rgba(255, 202, 253, 0.25);
-  border-color: var(--bubblegum);
-  color: var(--text-secondary);
+  background: rgba(245, 216, 74, 0.25);
+  border-color: var(--yuzu-yellow);
+  color: var(--ink-secondary);
 }
 .stamp-add-btn[aria-expanded="true"] {
-  background: rgba(255, 202, 253, 0.35);
+  background: rgba(245, 216, 74, 0.35);
   border-style: solid;
-  border-color: var(--candy-pink);
-  color: var(--text-primary);
+  border-color: var(--yuzu-zest);
+  color: var(--ink);
 }
 .stamp-add-plus {
   font-size: 11px;
@@ -295,7 +312,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--surface-border);
   border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(45, 31, 61, 0.12);
+  box-shadow: 0 8px 24px rgba(26, 26, 46, 0.12);
   z-index: 10;
   animation: fadeIn 160ms var(--ease-soft);
 }
@@ -315,12 +332,12 @@ body {
 }
 .stamp-picker-item:hover {
   transform: scale(1.18);
-  background: rgba(255, 202, 253, 0.35);
+  background: rgba(245, 216, 74, 0.35);
 }
 .stamp-picker-item:active { transform: scale(0.94); }
 .stamp-picker-item.reacted {
-  background: var(--bubblegum);
-  border-color: var(--tangerine);
+  background: var(--yuzu-yellow);
+  border-color: var(--yuzu-zest);
 }
 
 /* ===== App shell / header fade ===== */
@@ -353,15 +370,15 @@ body {
   max-width: 380px;
   height: 68px;
   padding: 0 14px;
-  background: rgba(255, 202, 253, 0.35);
+  background: rgba(245, 216, 74, 0.2);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 202, 253, 0.5);
+  border: 1px solid rgba(245, 216, 74, 0.4);
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 8px 32px rgba(255, 43, 100, 0.18);
+  box-shadow: 0 8px 32px rgba(232, 160, 32, 0.1);
   z-index: 100;
   transition: height 0.25s var(--ease-soft);
 }
@@ -376,7 +393,7 @@ body {
   padding: 6px 14px;
   border-radius: 999px;
   font-size: var(--text-xs);
-  color: var(--text-secondary);
+  color: var(--ink-secondary);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -399,22 +416,22 @@ body {
   opacity: 0;
 }
 .tab-item.active {
-  background: rgba(255, 43, 100, 0.16);
-  color: var(--tangerine);
+  background: rgba(232, 160, 32, 0.12);
+  color: var(--yuzu-zest);
 }
 .tab-item.center {
   flex: 0 0 auto;
   width: 56px;
   height: 56px;
   padding: 0;
-  background: var(--tangerine);
+  background: var(--yuzu-zest);
   border-radius: 50%;
   color: #fff;
-  box-shadow: 0 6px 18px rgba(255, 43, 100, 0.5);
+  box-shadow: 0 4px 20px rgba(232, 160, 32, 0.5);
 }
 .tab-item.center .tab-icon { font-size: 24px; }
 .tab-item.center .tab-label { display: none; }
-.tab-item.center.active { background: var(--tangerine); color: #fff; }
+.tab-item.center.active { background: var(--yuzu-zest); color: #fff; }
 
 /* ===== Speak view ===== */
 .speak-view {
@@ -428,7 +445,7 @@ body {
 .speak-guide {
   margin-top: 8%;
   font-size: var(--text-lg);
-  color: var(--text-primary);
+  color: var(--ink);
   letter-spacing: 0.04em;
   text-align: center;
   font-weight: 500;
@@ -449,12 +466,12 @@ body {
   margin-top: 8px;
   margin-bottom: 24px;
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: var(--ink-secondary);
   text-align: center;
   min-height: 1.4em;
   letter-spacing: 0.02em;
 }
-.speak-status.error { color: var(--tangerine); }
+.speak-status.error { color: var(--yuzu-zest); }
 
 /* ===== Floating dots ===== */
 .dots-layer {
@@ -508,7 +525,7 @@ body {
   position: absolute;
   width: 140px;
   height: 140px;
-  border: 1.5px solid var(--candy-pink);
+  border: 1.5px solid var(--yuzu-zest);
   border-radius: 50%;
   opacity: 0;
   animation: recording-ring 1.8s var(--ease-soft) infinite;
@@ -531,7 +548,7 @@ body {
   margin: 0 auto;
 }
 .timeline-empty {
-  color: var(--text-muted);
+  color: var(--ink-muted);
   font-size: var(--text-sm);
   text-align: center;
   line-height: 1.8;
@@ -541,7 +558,7 @@ body {
 /* ===== Post card emphasis (more distorted ellipse) ===== */
 .post-card { padding: 18px 22px; }
 .post-time {
-  color: var(--text-secondary);
+  color: var(--ink-muted);
   font-size: var(--text-sm);
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -560,11 +577,11 @@ body {
 }
 .mypage-title {
   font-size: var(--text-xl);
-  color: var(--text-primary);
+  color: var(--ink);
 }
 .mypage-stat {
   font-size: var(--text-base);
-  color: var(--text-secondary);
+  color: var(--ink-secondary);
 }
 .mypage-pitch {
   background: var(--surface-card);
@@ -572,7 +589,7 @@ body {
   border-radius: 32px 28px 36px 24px / 28px 36px 24px 32px;
   padding: 22px 24px;
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: var(--ink-secondary);
   line-height: 1.8;
 }
 .mypage-cta {
@@ -582,11 +599,11 @@ body {
   font-size: var(--text-sm);
   padding: 12px 28px;
   border-radius: 999px;
-  background: var(--tangerine);
+  background: var(--yuzu-zest);
   color: #fff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 43, 100, 0.4);
+  box-shadow: 0 4px 16px rgba(232, 160, 32, 0.4);
   transition: transform 0.15s var(--ease-soft), opacity 0.15s var(--ease-soft);
 }
 .mypage-cta[aria-disabled="true"] {

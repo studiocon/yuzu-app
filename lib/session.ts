@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-const COOKIE_NAME = "peach_sid";
+const COOKIE_NAME = "yuzu_sid";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 export function getOrCreateSessionId(): { id: string; isNew: boolean } {
