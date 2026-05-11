@@ -17,6 +17,7 @@ const notoSansJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://yuzu-journal.vercel.app"),
   title: "YUZU",
   description: "生の声が、香る。",
 };
