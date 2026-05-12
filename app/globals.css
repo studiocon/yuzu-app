@@ -384,10 +384,6 @@ body {
 }
 
 /* ===== Record modal ===== */
-/*
- * FAB center: right=24+36=60px from right, bottom=32+36=68px from bottom (+ safe-area).
- * clip-path origin tracks the FAB so the circle appears to expand from / collapse into it.
- */
 .record-modal {
   position: fixed;
   inset: 0;
@@ -398,51 +394,132 @@ body {
   padding-top: calc(env(safe-area-inset-top) + 16px);
 }
 
-/* expand from FAB */
-.record-modal[data-anim="opening"] {
-  animation: modal-expand 0.42s var(--ease-organic) forwards;
-}
-/* content fades in slightly after the circle opens */
-.record-modal[data-anim="opening"] > * {
-  animation: content-appear 0.22s ease 0.22s both;
-}
-
-/* fully open — no animation, just sits there */
-.record-modal[data-anim="open"] > * {
-  opacity: 1;
+/* ── Orange flash layer ── */
+.rm-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--yuzu-zest);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
-/* collapse back into FAB */
-.record-modal[data-anim="closing"] {
-  animation: modal-collapse 0.3s var(--ease-soft) forwards;
-}
-.record-modal[data-anim="closing"] > * {
-  animation: content-disappear 0.14s ease forwards;
+/* ── Flying mic button ──
+ * Centered at (50vw, 50vh) via top/left + transform.
+ * JS sets --fly-dx/--fly-dy (offset from center to FAB center in px)
+ * and --fly-scale (FAB size / FLY_SIZE).
+ */
+.rm-fly-mic {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  background: var(--yuzu-zest);
+  border-radius: var(--blob-1);
+  box-shadow: 0 4px 24px rgba(232, 160, 32, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 202;
 }
 
-@keyframes modal-expand {
+/* ── Opening ── */
+.record-modal[data-anim="opening"] .rm-flash {
+  animation: rm-flash-in 0.48s ease forwards;
+}
+.record-modal[data-anim="opening"] .rm-fly-mic {
+  animation: rm-fly-to-center 0.48s var(--ease-organic) forwards;
+}
+.record-modal[data-anim="opening"] .record-modal-close,
+.record-modal[data-anim="opening"] .speak-view {
+  visibility: hidden;
+}
+
+/* ── Fully open ── */
+.record-modal[data-anim="open"] .rm-flash,
+.record-modal[data-anim="open"] .rm-fly-mic {
+  opacity: 0;
+  pointer-events: none;
+}
+.record-modal[data-anim="open"] .record-modal-close,
+.record-modal[data-anim="open"] .speak-view {
+  animation: content-appear 0.2s ease forwards;
+}
+
+/* ── Closing ── */
+.record-modal[data-anim="closing"] .record-modal-close,
+.record-modal[data-anim="closing"] .speak-view {
+  visibility: hidden;
+}
+.record-modal[data-anim="closing"] .rm-flash {
+  animation: rm-flash-out 0.42s ease forwards;
+}
+.record-modal[data-anim="closing"] .rm-fly-mic {
+  animation: rm-fly-to-fab 0.42s var(--ease-soft) forwards;
+}
+
+/* ── Keyframes ── */
+@keyframes rm-flash-in {
+  /* Instant orange flood, then fades as mic flies */
+  0%   { opacity: 1; }
+  35%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes rm-flash-out {
+  /* Fades in as mic flies back */
+  0%   { opacity: 0; }
+  55%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes rm-fly-to-center {
   from {
-    clip-path: circle(36px at calc(100% - 60px) calc(100% - 68px - env(safe-area-inset-bottom, 0px)));
+    opacity: 1;
+    background: var(--yuzu-zest);
+    transform: translate(
+      calc(-50% + var(--fly-dx, 0px)),
+      calc(-50% + var(--fly-dy, 0px))
+    ) scale(var(--fly-scale, 0.51));
   }
-  to {
-    clip-path: circle(150vmax at calc(100% - 60px) calc(100% - 68px - env(safe-area-inset-bottom, 0px)));
+  75% {
+    opacity: 1;
+    background: var(--yuzu-yellow);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    background: var(--yuzu-yellow);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
-@keyframes modal-collapse {
+@keyframes rm-fly-to-fab {
   from {
-    clip-path: circle(150vmax at calc(100% - 60px) calc(100% - 68px - env(safe-area-inset-bottom, 0px)));
+    opacity: 0;
+    background: var(--yuzu-yellow);
+    transform: translate(-50%, -50%) scale(1);
   }
-  to {
-    clip-path: circle(36px at calc(100% - 60px) calc(100% - 68px - env(safe-area-inset-bottom, 0px)));
+  20% {
+    opacity: 1;
+    background: var(--yuzu-yellow);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 1;
+    background: var(--yuzu-zest);
+    transform: translate(
+      calc(-50% + var(--fly-dx, 0px)),
+      calc(-50% + var(--fly-dy, 0px))
+    ) scale(var(--fly-scale, 0.51));
   }
 }
+
 @keyframes content-appear {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes content-disappear {
-  from { opacity: 1; }
-  to   { opacity: 0; }
 }
 
 .record-modal-close {

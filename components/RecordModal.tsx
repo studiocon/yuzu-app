@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Microphone } from "@phosphor-icons/react";
 import SpeakView from "./SpeakView";
 
 type Phase = "idle" | "recording" | "busy";
 type AnimState = "opening" | "open" | "closing";
+
+// Must match .rm-fly-mic width/height in CSS
+const FLY_SIZE = 140;
+const OPEN_MS = 480;
+const CLOSE_MS = 420;
 
 type Props = {
   open: boolean;
@@ -31,9 +37,22 @@ export default function RecordModal({
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("opening");
+  const [flyVars, setFlyVars] = useState<React.CSSProperties>({});
 
   useEffect(() => {
     if (open) {
+      // Measure FAB before mounting so the flying element starts at the right spot
+      const fab = document.querySelector<HTMLElement>(".mic-fab");
+      if (fab) {
+        const r = fab.getBoundingClientRect();
+        const fabCx = r.left + r.width / 2;
+        const fabCy = r.top + r.height / 2;
+        setFlyVars({
+          "--fly-dx": `${fabCx - window.innerWidth / 2}px`,
+          "--fly-dy": `${fabCy - window.innerHeight / 2}px`,
+          "--fly-scale": `${r.width / FLY_SIZE}`,
+        } as React.CSSProperties);
+      }
       setMounted(true);
       setAnimState("opening");
     } else if (mounted) {
@@ -42,15 +61,17 @@ export default function RecordModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
-    // only react to the modal's own animation, not children
-    if (e.target !== e.currentTarget) return;
+  // Timer-based state transitions (avoids fighting with child animationend events)
+  useEffect(() => {
     if (animState === "opening") {
-      setAnimState("open");
-    } else if (animState === "closing") {
-      setMounted(false);
+      const t = setTimeout(() => setAnimState("open"), OPEN_MS);
+      return () => clearTimeout(t);
     }
-  };
+    if (animState === "closing") {
+      const t = setTimeout(() => setMounted(false), CLOSE_MS);
+      return () => clearTimeout(t);
+    }
+  }, [animState]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -64,14 +85,15 @@ export default function RecordModal({
   const canClose = phase === "idle";
 
   return (
-    <div
-      className="record-modal"
-      data-anim={animState}
-      onAnimationEnd={handleAnimationEnd}
-      role="dialog"
-      aria-modal="true"
-      aria-label="録音"
-    >
+    <div className="record-modal" data-anim={animState} style={flyVars}>
+      {/* Orange flash that instantly covers the screen, then fades */}
+      <div className="rm-flash" aria-hidden />
+
+      {/* Flying mic: travels from FAB position to center */}
+      <div className="rm-fly-mic" aria-hidden>
+        <Microphone size={52} weight="fill" />
+      </div>
+
       <button
         type="button"
         className="record-modal-close"
