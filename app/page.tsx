@@ -298,6 +298,7 @@ export default function Home() {
         hint={hint}
         analyser={analyser}
         lastPost={lastPost}
+        posts={posts}
         myEmoji={myEmoji}
         onPressStart={handlePressStart}
         onPressEnd={handlePressEnd}

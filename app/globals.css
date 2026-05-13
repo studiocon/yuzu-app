@@ -744,14 +744,6 @@ body {
   gap: 28px;
   z-index: 1;
 }
-.complete-title {
-  margin: 0;
-  font-size: 40px;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 0.02em;
-  animation: complete-appear 0.5s var(--ease-organic) both;
-}
 .complete-card {
   width: 100%;
   max-width: 420px;
@@ -761,7 +753,7 @@ body {
   padding: 22px 22px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   opacity: 0;
-  animation: card-slide-up 0.4s ease 0.3s forwards;
+  animation: card-slide-up 0.4s ease 0.1s forwards;
 }
 .complete-text {
   margin: 0;
@@ -770,6 +762,78 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Streak block (Duolingo-style) */
+.streak-block {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.streak-week {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 4px;
+}
+.streak-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  animation: streak-day-pop 0.45s var(--ease-organic) forwards;
+}
+.streak-day-label {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.04em;
+}
+.streak-day-check {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+}
+.streak-day-check.done {
+  background: #fff;
+  color: var(--yuzu-zest);
+  border-color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.35);
+}
+.streak-day-check.today {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+.streak-headline {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  animation: streak-headline-pop 0.5s var(--ease-organic) 1.2s forwards;
+}
+.streak-count {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-size: 44px;
+  font-weight: 900;
+  margin-right: 6px;
+  display: inline-block;
+}
+.streak-unit { font-size: 22px; font-weight: 600; }
+
 .complete-back-btn {
   background: #fff;
   color: var(--yuzu-zest);
@@ -781,18 +845,24 @@ body {
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   opacity: 0;
-  animation: card-slide-up 0.4s ease 0.5s forwards;
+  animation: card-slide-up 0.4s ease 1.5s forwards;
   transition: transform 0.15s var(--ease-soft);
 }
 .complete-back-btn:active { transform: scale(0.96); }
-@keyframes complete-appear {
-  0%   { opacity: 0; transform: scale(0.8) translateY(10px); }
-  60%  { transform: scale(1.05) translateY(-2px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
+
 @keyframes card-slide-up {
   0%   { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes streak-day-pop {
+  0%   { opacity: 0; transform: scale(0.5) translateY(8px); }
+  60%  { transform: scale(1.15) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes streak-headline-pop {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* ===== Post card emphasis (more distorted ellipse) ===== */
