@@ -156,35 +156,32 @@ export default function MyPageView({ myEmoji, posts, mySessionId }: Props) {
 
       <div className="mypage-stats">
         <div className="mypage-stat-card">
-          <span className="mypage-stat-icon">🌱</span>
-          <span className="mypage-stat-value">{days}</span>
-          <span className="mypage-stat-label">日目</span>
+          <span className="mypage-stat-label font-display">DAY</span>
+          <span className="mypage-stat-value font-display">{days}</span>
         </div>
         <div className="mypage-stat-card">
-          <span className="mypage-stat-icon">🎤</span>
-          <span className="mypage-stat-value">{myPosts.length}</span>
-          <span className="mypage-stat-label">個</span>
+          <span className="mypage-stat-label font-display">RECORDS</span>
+          <span className="mypage-stat-value font-display">{myPosts.length}</span>
         </div>
         <div className="mypage-stat-card">
-          <span className="mypage-stat-icon">🔥</span>
-          <span className="mypage-stat-value">{streak}</span>
-          <span className="mypage-stat-label">日連続</span>
+          <span className="mypage-stat-label font-display">STREAK</span>
+          <span className="mypage-stat-value font-display">{streak}</span>
         </div>
       </div>
 
       <section className="mypage-section">
-        <h4 className="mypage-section-title">こころの揺らぎ</h4>
+        <h4 className="mypage-section-title font-display">SENTIMENT</h4>
         <div className="mypage-chart-card">
           <SentimentChart data={sentimentData} />
-          {analyzing && <p className="mypage-loading-hint">声の色を読みとってる…</p>}
+          {analyzing && <p className="mypage-loading-hint">DECODING…</p>}
         </div>
       </section>
 
       <section className="mypage-section">
-        <h4 className="mypage-section-title">投稿一覧</h4>
+        <h4 className="mypage-section-title font-display">RECORDS</h4>
         <div className="mypage-post-list">
           {myPosts.length === 0 && (
-            <p className="mypage-empty">まだ声がありません。<br />最初の声を植えよう。</p>
+            <p className="mypage-empty">何も無い。話せ。</p>
           )}
           {myPosts.map((p) => (
             <article key={p.id} className="post-card mypage-post-card">

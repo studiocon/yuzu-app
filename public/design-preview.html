@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>YUZU — Design System Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=LINE+Seed+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* YUZU Primary */
+    --yuzu-yellow: #F5D84A;
+    --yuzu-zest:   #E8A020;
+    --yuzu-white:  #FAFAF5;
+    /* Text */
+    --ink:           #1A1A2E;
+    --ink-secondary: #4A4A6A;
+    --ink-muted:     #9A9ABA;
+    /* Surface */
+    --surface-card:   #FFFEF5;
+    --surface-border: #E8E0C8;
+    --surface-hover:  #FFF5CC;
+    /* Divider — リスト・カードを区切る最弱の罫線 */
+    --divider:       #EDEAE0;
+    /* Easing */
+    --ease-organic: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-soft:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-snap:    cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    /* Type scale */
+    --text-xs: 11px; --text-sm: 13px; --text-base: 15px;
+    --text-lg: 18px; --text-xl: 24px; --text-2xl: 32px; --text-3xl: 48px;
+    /* Radius */
+    --radius-0: 0px; --radius-sharp: 2px; --radius-pill: 9999px;
+    /* Fonts */
+    --font-display: 'Unbounded', sans-serif;
+    --font-body: 'LINE Seed JP', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--yuzu-white); color: var(--ink); font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6; }
+  a { color: var(--ink); }
+
+  /* layout */
+  .page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  nav.toc { position: sticky; top: 0; align-self: start; height: 100vh; padding: 32px 20px; border-right: 1px solid var(--divider); overflow: auto; }
+  nav.toc .brand { font-family: var(--font-display); font-weight: 900; font-size: var(--text-xl); letter-spacing: -0.02em; }
+  nav.toc .sub { font-size: var(--text-xs); color: var(--ink-muted); font-family: var(--font-display); letter-spacing: 0.08em; margin-top: 4px; }
+  nav.toc ul { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  nav.toc a { text-decoration: none; display: block; padding: 6px 0; font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--ink-secondary); }
+  nav.toc a:hover { color: var(--ink); }
+  nav.toc .meta { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--divider); font-size: var(--text-xs); color: var(--ink-muted); }
+
+  main { padding: 56px 64px 120px; max-width: 1080px; }
+  section { padding: 64px 0; border-top: 1px solid var(--divider); }
+  section:first-of-type { border-top: 0; padding-top: 0; }
+  h1.cover { font-family: var(--font-display); font-weight: 900; font-size: 96px; letter-spacing: -0.04em; line-height: 0.95; margin: 0; }
+  .cover-tag { font-family: var(--font-body); font-weight: 700; font-size: var(--text-xl); margin: 16px 0 0; }
+  .cover-slogan { font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.16em; color: var(--ink-muted); margin: 24px 0 0; }
+  .cover-quote { font-family: var(--font-body); font-weight: 400; font-size: var(--text-lg); margin-top: 40px; max-width: 60ch; color: var(--ink-secondary); }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--text-2xl); letter-spacing: -0.01em; margin: 0 0 8px; }
+  .section-title { font-family: var(--font-display); font-weight: 700; font-size: 40px; letter-spacing: 0.04em; line-height: 1; color: var(--ink); text-transform: uppercase; padding-top: 44px; border-top: 1px solid var(--divider); margin: 0; }
+  h2 .num { color: var(--ink-muted); margin-right: 12px; }
+  h3 { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.16em; color: var(--ink-muted); margin: 32px 0 16px; }
+  .lead { font-size: var(--text-base); color: var(--ink-secondary); max-width: 70ch; margin: 0 0 24px; }
+
+  /* color */
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px; }
+  .swatch { border: 1px solid var(--divider); border-radius: var(--radius-sharp); overflow: hidden; background: #fff; }
+  .swatch .chip { height: 120px; position: relative; }
+  .swatch .meta { padding: 12px 14px; border-top: 1px solid var(--divider); }
+  .swatch .name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--ink); }
+  .swatch .var { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: var(--text-xs); color: var(--ink-secondary); margin-top: 6px; }
+  .swatch .hex { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: var(--text-xs); color: var(--ink-muted); margin-top: 2px; }
+  /* typography */
+  .type-row { display: grid; grid-template-columns: 90px 1fr; gap: 24px; padding: 18px 0; border-bottom: 1px dashed var(--divider); align-items: baseline; }
+  .type-row:last-child { border-bottom: 0; }
+  .type-row .label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.08em; }
+  .type-sample-display { font-family: var(--font-display); font-weight: 700; color: var(--ink); }
+  .type-sample-body { font-family: var(--font-body); font-weight: 400; color: var(--ink); }
+  .ts-3xl { font-size: 48px; line-height: 1; letter-spacing: -0.02em; }
+  .ts-2xl { font-size: 32px; line-height: 1.1; }
+  .ts-xl  { font-size: 24px; line-height: 1.2; }
+  .ts-lg  { font-size: 18px; line-height: 1.3; }
+  .ts-base{ font-size: 15px; line-height: 1.6; }
+  .ts-sm  { font-size: 13px; line-height: 1.5; }
+  .ts-xs  { font-size: 11px; letter-spacing: 0.08em; }
+
+  .font-block { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .font-card { padding: 24px; border: 1px solid var(--divider); border-radius: var(--radius-sharp); }
+  .font-card .name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink-muted); }
+  .font-card .preview-en { font-family: var(--font-display); font-weight: 900; font-size: 64px; letter-spacing: -0.04em; line-height: 1; margin-top: 16px; color: var(--ink); }
+  .font-card .preview-ja { font-family: var(--font-body); font-weight: 700; font-size: 32px; line-height: 1.2; margin-top: 16px; color: var(--ink); }
+  .font-card .glyphs { font-family: inherit; margin-top: 16px; font-size: 18px; color: var(--ink-secondary); }
+
+  /* components */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 20px; }
+  .comp { border: 1px solid var(--divider); border-radius: var(--radius-sharp); padding: 24px; background: #fff; }
+  .comp h4 { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink-muted); margin: 0 0 16px; }
+  .comp .stage { min-height: 180px; display: flex; align-items: center; justify-content: center; background: var(--yuzu-white); border-radius: var(--radius-sharp); padding: 24px; }
+  .comp .note { margin-top: 12px; font-size: var(--text-xs); color: var(--ink-secondary); }
+
+  /* mic button */
+  .mic-fab { width: 96px; height: 96px; border-radius: var(--radius-pill); border: none; background: var(--ink); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 12px 32px rgba(26,26,46,0.18); transition: transform .25s var(--ease-organic); }
+  .mic-fab:hover { transform: scale(1.04); }
+  .mic-fab svg { width: 32px; height: 32px; }
+  .mic-fab.recording { background: var(--yuzu-zest); position: relative; }
+  .mic-fab.recording::before, .mic-fab.recording::after { content: ""; position: absolute; inset: -12px; border-radius: var(--radius-pill); border: 2px solid var(--yuzu-zest); opacity: 0.4; animation: recording-ring 1.6s var(--ease-soft) infinite; }
+  .mic-fab.recording::after { inset: -24px; animation-delay: .4s; }
+  @keyframes recording-ring { 0% { transform: scale(0.85); opacity:.6 } 100% { transform: scale(1.15); opacity: 0 } }
+
+  /* stats */
+  .stat-card { padding: 20px 0; border-top: 1px solid var(--divider); text-align: center; min-width: 200px; }
+  .stat-label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink-muted); display: block; }
+  .stat-value { font-family: var(--font-display); font-weight: 700; font-size: var(--text-3xl); color: var(--ink); line-height: 1; display: block; margin-top: 10px; }
+
+  /* post card */
+  .post-card { border: 1px solid var(--divider); border-radius: 4px; padding: 16px 14px; max-width: 360px; width: 100%; box-shadow: none; }
+  .post-card .row { display: flex; align-items: baseline; gap: 12px; }
+  .post-card .emoji { font-size: 20px; }
+  .post-card .name { font-family: var(--font-body); font-weight: 700; font-size: var(--text-sm); }
+  .post-card .time { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: var(--text-xs); color: var(--ink-muted); }
+  .post-card .text { margin: 10px 0 0; font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); color: var(--ink); }
+  .post-card .index { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.08em; }
+
+  /* tab bar */
+  .tabbar { display: flex; gap: 12px; padding: 12px 16px; background: rgba(250,250,245,0.72); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--surface-border); border-radius: var(--radius-pill); }
+  .tabbar button { width: 44px; height: 44px; border-radius: var(--radius-pill); border: none; background: transparent; display: grid; place-items: center; cursor: pointer; }
+  .tabbar .active { background: var(--ink); color: var(--yuzu-white); }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 4px; border: 1px solid transparent; font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.08em; cursor: pointer; transition: transform .12s var(--ease-soft), background .15s var(--ease-soft), color .15s var(--ease-soft), border-color .15s var(--ease-soft), opacity .15s var(--ease-soft); -webkit-tap-highlight-color: transparent; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: scale(0.97); transition-duration: 60ms; }
+  .btn[disabled], .btn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .btn .icon { width: 16px; height: 16px; }
+
+  .btn--primary { background: var(--ink); color: var(--yuzu-white); border-color: var(--ink); }
+  .btn--primary:hover { background: #000; border-color: #000; }
+  .btn--secondary { background: transparent; color: var(--ink); border-color: var(--ink); }
+  .btn--secondary:hover { background: var(--ink); color: var(--yuzu-white); }
+  .btn--accent { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
+  .btn--accent:hover { background: var(--yuzu-zest); border-color: var(--yuzu-zest); color: var(--ink); }
+  .btn--ghost { background: transparent; color: var(--ink); border-color: transparent; padding: 12px 12px; }
+  .btn--ghost:hover { background: var(--surface-hover); }
+  .btn--danger { background: transparent; color: #b94343; border-color: #b94343; }
+  .btn--danger:hover { background: #b94343; color: #fff; }
+
+  .btn--sm { padding: 8px 14px; font-size: var(--text-xs); }
+  .btn--lg { padding: 16px 28px; font-size: var(--text-base); }
+
+  /* icon button */
+  .iconbtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 4px; border: 1px solid transparent; background: transparent; cursor: pointer; transition: transform .12s var(--ease-soft), background .15s var(--ease-soft), color .15s var(--ease-soft), border-color .15s var(--ease-soft); -webkit-tap-highlight-color: transparent; color: var(--ink); }
+  .iconbtn svg { width: 20px; height: 20px; }
+  .iconbtn:hover { transform: translateY(-1px); }
+  .iconbtn:active { transform: scale(0.94); transition-duration: 60ms; }
+  .iconbtn[disabled], .iconbtn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .iconbtn--primary { background: var(--ink); color: var(--yuzu-white); border-color: var(--ink); }
+  .iconbtn--primary:hover { background: #000; }
+  .iconbtn--secondary { color: var(--ink); border-color: var(--ink); }
+  .iconbtn--secondary:hover { background: var(--ink); color: var(--yuzu-white); }
+  .iconbtn--accent { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
+  .iconbtn--accent:hover { background: var(--yuzu-zest); border-color: var(--yuzu-zest); }
+  .iconbtn--ghost { color: var(--ink-secondary); }
+  .iconbtn--ghost:hover { background: var(--surface-hover); color: var(--ink); }
+  .iconbtn--round { border-radius: var(--radius-pill); }
+  .iconbtn--lg { width: 56px; height: 56px; }
+  .iconbtn--lg svg { width: 24px; height: 24px; }
+
+  /* button playground */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn-row + .btn-row { margin-top: 14px; }
+  .btn-group-label { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.16em; color: var(--ink-muted); width: 96px; flex-shrink: 0; }
+
+  /* status pills */
+  .status { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-sharp); font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; }
+  .status.recording { background: var(--yuzu-zest); color: #fff; border-color: var(--yuzu-zest); }
+  .status.decoding { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
+  .status.done { background: var(--ink); color: var(--yuzu-white); }
+
+  /* radius row */
+  .radius-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+  .radius-row .demo { width: 96px; height: 96px; background: var(--ink); display: grid; place-items: end; padding: 8px; color: var(--yuzu-white); font-family: var(--font-display); font-size: var(--text-xs); letter-spacing: 0.08em; }
+
+  /* easing */
+  .ease-row { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 16px; }
+  .ease { border: 1px solid var(--divider); padding: 16px; border-radius: var(--radius-sharp); }
+  .ease .name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink); }
+  .ease .track { height: 4px; background: var(--surface-border); margin: 20px 0 8px; position: relative; }
+  .ease .ball { width: 16px; height: 16px; background: var(--yuzu-zest); border-radius: 50%; position: absolute; top: -6px; left: 0; animation: travel 2.4s infinite alternate; }
+  .ease.organic .ball { animation-timing-function: var(--ease-organic); }
+  .ease.soft .ball { animation-timing-function: var(--ease-soft); }
+  .ease.snap .ball { animation-timing-function: var(--ease-snap); }
+  @keyframes travel { from { left: 0 } to { left: calc(100% - 16px) } }
+  .ease code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: var(--text-xs); color: var(--ink-muted); }
+
+  /* copy table */
+  table.copy { width: 100%; border-collapse: collapse; }
+  table.copy th, table.copy td { text-align: left; padding: 12px 0; border-bottom: 1px solid var(--divider); font-size: var(--text-sm); }
+  table.copy th { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink-muted); }
+  table.copy .where { width: 40%; color: var(--ink-secondary); }
+  table.copy .what { font-family: var(--font-body); font-weight: 700; color: var(--ink); }
+  table.copy .what.en { font-family: var(--font-display); font-weight: 700; letter-spacing: 0.04em; }
+
+  /* sentiment mock */
+  .sent-card { border: 1px solid var(--divider); padding: 16px; border-radius: var(--radius-sharp); background: #fff; }
+  .sent-svg { width: 100%; height: 180px; display: block; }
+
+  /* prompts */
+  .prompts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .prompt-chip { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-sharp); font-family: var(--font-body); font-weight: 700; font-size: var(--text-sm); background: #fff; }
+
+  /* NG */
+  .ng-list { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .ng { padding: 16px; border: 1px solid var(--divider); border-radius: var(--radius-sharp); }
+  .ng .head { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; margin-bottom: 8px; }
+  .ng.bad .head { color: #b94343; }
+  .ng.good .head { color: #2d7a3e; }
+  .ng ul { margin: 0; padding-left: 18px; font-size: var(--text-sm); }
+
+  /* deprecated mark */
+  .pill-dep { display: inline-block; font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 0.16em; padding: 4px 8px; background: var(--ink); color: var(--yuzu-white); border-radius: var(--radius-sharp); vertical-align: middle; margin-left: 12px; }
+
+  @media (max-width: 880px) {
+    .page { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--divider); }
+    main { padding: 32px 20px 80px; }
+    h1.cover { font-size: 56px; }
+    .font-block { grid-template-columns: 1fr; }
+    .ng-list { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav class="toc">
+    <div class="brand">YUZU</div>
+    <div class="sub">DESIGN SYSTEM</div>
+    <ul>
+      <li><a href="#concept">01 — CONCEPT</a></li>
+      <li><a href="#color">02 — COLOR</a></li>
+      <li><a href="#typography">03 — TYPOGRAPHY</a></li>
+      <li><a href="#shape">04 — SHAPE & RADIUS</a></li>
+      <li><a href="#components">05 — COMPONENTS</a></li>
+      <li><a href="#motion">06 — MOTION</a></li>
+      <li><a href="#voice">07 — VOICE & TONE</a></li>
+      <li><a href="#layout">08 — LAYOUT</a></li>
+    </ul>
+    <div class="meta">本物でいろ。<br>TALK. RAW.</div>
+  </nav>
+
+  <main>
+    <section id="concept">
+      <h1 class="cover">YUZU</h1>
+      <p class="cover-tag">本物でいろ。</p>
+      <p class="cover-slogan">TALK. RAW. — DESIGN SYSTEM v1</p>
+      <p class="cover-quote">整っていない。それが本物だ。加工しない。整えない。ナマのまま。装飾を削ぎ落とすこと自体が <em>Raw</em> の表現になる。YUZU の世界観は <strong>THE RECORD</strong>。声が信号として記録される装置そのものをデザインする。</p>
+      <h3>KEYWORDS</h3>
+      <div class="prompts">
+        <span class="prompt-chip">Raw</span>
+        <span class="prompt-chip">Cool</span>
+        <span class="prompt-chip">Swiss Grid</span>
+        <span class="prompt-chip">Provocative</span>
+      </div>
+    </section>
+
+    <section id="color">
+      <h2><span class="num">02</span>COLOR</h2>
+      <p class="lead">ゆず黄を <strong>信号色</strong> として極端に絞って配置し、それ以外は無彩色で構成する。背景はオフホワイト単色。</p>
+
+      <h3>PRIMARY</h3>
+      <div class="color-grid">
+        <div class="swatch"><div class="chip" style="background:#F5D84A"></div><div class="meta"><div class="name">YUZU YELLOW</div><div class="var">--yuzu-yellow</div><div class="hex">#F5D84A</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#E8A020"></div><div class="meta"><div class="name">YUZU ZEST</div><div class="var">--yuzu-zest</div><div class="hex">#E8A020</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FAFAF5;border-bottom:1px solid var(--divider)"></div><div class="meta"><div class="name">YUZU WHITE</div><div class="var">--yuzu-white</div><div class="hex">#FAFAF5</div></div></div>
+      </div>
+
+      <h3>TEXT</h3>
+      <div class="color-grid">
+        <div class="swatch"><div class="chip" style="background:#1A1A2E"></div><div class="meta"><div class="name">INK</div><div class="var">--ink</div><div class="hex">#1A1A2E</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#4A4A6A"></div><div class="meta"><div class="name">INK SECONDARY</div><div class="var">--ink-secondary</div><div class="hex">#4A4A6A</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#9A9ABA"></div><div class="meta"><div class="name">INK MUTED</div><div class="var">--ink-muted</div><div class="hex">#9A9ABA</div></div></div>
+      </div>
+
+      <h3>SURFACE</h3>
+      <div class="color-grid">
+        <div class="swatch"><div class="chip" style="background:#FFFEF5;border-bottom:1px solid var(--divider)"></div><div class="meta"><div class="name">SURFACE CARD</div><div class="var">--surface-card</div><div class="hex">#FFFEF5</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#E8E0C8"></div><div class="meta"><div class="name">SURFACE BORDER</div><div class="var">--surface-border</div><div class="hex">#E8E0C8</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FFF5CC"></div><div class="meta"><div class="name">SURFACE HOVER</div><div class="var">--surface-hover</div><div class="hex">#FFF5CC</div></div></div>
+      </div>
+
+    </section>
+
+    <section id="typography">
+      <h2><span class="num">03</span>TYPOGRAPHY</h2>
+      <p class="lead">英字・状態・数値は <strong>Unbounded</strong>。日本語本文は <strong>LINE Seed JP</strong>。Swiss グリッドの骨格に LINE Seed JP のジオメトリックな角丸を組み合わせ、装飾を排して無装飾を支える。</p>
+
+      <div class="font-block">
+        <div class="font-card">
+          <div class="name">DISPLAY — Unbounded 700 / 900</div>
+          <div class="preview-en">YUZU</div>
+          <div class="glyphs">ABCDEFG abcdefg 0123456789</div>
+          <div class="glyphs">RECORDING. DECODING. RECORDED.</div>
+        </div>
+        <div class="font-card">
+          <div class="name">BODY — LINE Seed JP 400 / 700</div>
+          <div class="preview-ja">本物でいろ。</div>
+          <div class="glyphs">あいうえお かきくけこ さしすせそ</div>
+          <div class="glyphs">声を、加工せずに残す。整えない。</div>
+        </div>
+      </div>
+
+      <h3>TYPE SCALE</h3>
+      <div class="type-row"><div class="label">3XL · 48</div><div class="type-sample-display ts-3xl">42</div></div>
+      <div class="type-row"><div class="label">2XL · 32</div><div class="type-sample-display ts-2xl">SENTIMENT</div></div>
+      <div class="type-row"><div class="label">XL · 24</div><div class="type-sample-body ts-xl" style="font-weight:700">本物でいろ。</div></div>
+      <div class="type-row"><div class="label">LG · 18</div><div class="type-sample-body ts-lg">声を、加工せずに残す。</div></div>
+      <div class="type-row"><div class="label">BASE · 15</div><div class="type-sample-body ts-base">投稿本文。LINE Seed JP の角丸ジオメトリックで日本語の表情を保つ。</div></div>
+      <div class="type-row"><div class="label">SM · 13</div><div class="type-sample-body ts-sm">タイムスタンプ補助・サブテキスト。</div></div>
+      <div class="type-row"><div class="label">XS · 11</div><div class="type-sample-display ts-xs">DAYS. NO SKIP.</div></div>
+
+      <h3>適用ルール</h3>
+      <table class="copy">
+        <thead><tr><th>対象</th><th>フォント</th><th>ウェイト</th></tr></thead>
+        <tbody>
+          <tr><td>ロゴ「YUZU」</td><td>Unbounded</td><td>900</td></tr>
+          <tr><td>タグライン「本物でいろ。」</td><td>LINE Seed JP</td><td>700</td></tr>
+          <tr><td>スローガン「TALK. RAW.」</td><td>Unbounded</td><td>700</td></tr>
+          <tr><td>状態ラベル（英語）</td><td>Unbounded</td><td>700</td></tr>
+          <tr><td>スタッツ数値</td><td>Unbounded</td><td>700</td></tr>
+          <tr><td>日本語UI・投稿テキスト</td><td>LINE Seed JP</td><td>400 / 700</td></tr>
+          <tr><td>タイムスタンプ</td><td>Unbounded</td><td>400</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="shape">
+      <h2><span class="num">04</span>SHAPE &amp; RADIUS</h2>
+      <p class="lead">直線・矩形・グリッド。角丸は最小限。シグネチャー「歪んだ楕円（blob）」は新世界観では使わない。</p>
+      <div class="radius-row">
+        <div><div class="demo" style="border-radius:0">0px</div><div class="ts-xs" style="margin-top:8px;font-family:var(--font-display)">--radius-0</div></div>
+        <div><div class="demo" style="border-radius:2px">2px</div><div class="ts-xs" style="margin-top:8px;font-family:var(--font-display)">--radius-sharp</div></div>
+        <div><div class="demo" style="border-radius:9999px">PILL</div><div class="ts-xs" style="margin-top:8px;font-family:var(--font-display)">--radius-pill</div></div>
+      </div>
+    </section>
+
+    <section id="components">
+      <h2><span class="num">05</span>COMPONENTS</h2>
+      <p class="lead">マイクボタン・投稿カード・スタッツ・タブバー・状態ピル・感情グラフの6点。</p>
+
+      <div class="comp-grid">
+        <div class="comp">
+          <h4>MIC BUTTON / IDLE</h4>
+          <div class="stage">
+            <button class="mic-fab" aria-label="record">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+            </button>
+          </div>
+          <p class="note">正円・<code>--ink</code>背景。長押しで録音開始。</p>
+        </div>
+        <div class="comp">
+          <h4>MIC BUTTON / RECORDING</h4>
+          <div class="stage">
+            <button class="mic-fab recording" aria-label="recording">
+              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
+            </button>
+          </div>
+          <p class="note"><code>--yuzu-zest</code>＋同心円リング3重。</p>
+        </div>
+
+        <div class="comp" style="grid-column: 1 / -1">
+          <h4>BUTTON / VARIANTS</h4>
+          <div class="stage" style="flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:32px">
+            <div class="btn-row"><div class="btn-group-label">PRIMARY</div>
+              <button class="btn btn--primary">話せ</button>
+              <button class="btn btn--primary"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>新規録音</button>
+              <button class="btn btn--primary" disabled>送信中…</button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">SECONDARY</div>
+              <button class="btn btn--secondary">編集</button>
+              <button class="btn btn--secondary">キャンセル</button>
+              <button class="btn btn--secondary" disabled>保存</button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">ACCENT</div>
+              <button class="btn btn--accent">続ける</button>
+              <button class="btn btn--accent">STREAK を守る</button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">GHOST</div>
+              <button class="btn btn--ghost">あとで</button>
+              <button class="btn btn--ghost">スキップ</button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">DANGER</div>
+              <button class="btn btn--danger">削除</button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">SIZES</div>
+              <button class="btn btn--primary btn--sm">SM</button>
+              <button class="btn btn--primary">DEFAULT</button>
+              <button class="btn btn--primary btn--lg">LG</button>
+            </div>
+          </div>
+          <p class="note">Unbounded 700・角丸 4px・Primary は <code>--ink</code>、Accent のみ <code>--yuzu-yellow</code> で信号化。クリック時はわずかに縮んで押下感。</p>
+        </div>
+
+        <div class="comp" style="grid-column: 1 / -1">
+          <h4>ICON BUTTON / VARIANTS</h4>
+          <div class="stage" style="flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:32px">
+            <div class="btn-row"><div class="btn-group-label">PRIMARY</div>
+              <button class="iconbtn iconbtn--primary" aria-label="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+              <button class="iconbtn iconbtn--primary iconbtn--round" aria-label="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="iconbtn iconbtn--primary iconbtn--lg iconbtn--round" aria-label="mic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg></button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">SECONDARY</div>
+              <button class="iconbtn iconbtn--secondary" aria-label="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg></button>
+              <button class="iconbtn iconbtn--secondary iconbtn--round" aria-label="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h4l10-10-4-4L4 16v4z"/></svg></button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">ACCENT</div>
+              <button class="iconbtn iconbtn--accent" aria-label="star"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></button>
+            </div>
+            <div class="btn-row"><div class="btn-group-label">GHOST</div>
+              <button class="iconbtn iconbtn--ghost" aria-label="close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              <button class="iconbtn iconbtn--ghost" aria-label="more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              <button class="iconbtn iconbtn--ghost" aria-label="trash" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+            </div>
+          </div>
+          <p class="note">44px 角丸 4px が基本・<code>iconbtn--round</code> で正円・<code>iconbtn--lg</code> で 56px。クリック時はわずかに縮んで押下感。タッチターゲット 44px 確保。</p>
+        </div>
+
+        <div class="comp">
+          <h4>STATUS / STATE PILLS</h4>
+          <div class="stage" style="flex-direction:column;gap:10px;align-items:flex-start">
+            <span class="status">LONG PRESS. TALK.</span>
+            <span class="status recording">RECORDING.</span>
+            <span class="status decoding">DECODING.</span>
+            <span class="status done">RECORDED.</span>
+          </div>
+          <p class="note">Unbounded 700・トラッキング広め。</p>
+        </div>
+
+        <div class="comp">
+          <h4>STAT CARD</h4>
+          <div class="stage" style="display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;gap:0;padding:0">
+            <div class="stat-card"><span class="stat-label">DAY</span><span class="stat-value">14</span></div>
+            <div class="stat-card"><span class="stat-label">RECORDS</span><span class="stat-value">42</span></div>
+            <div class="stat-card"><span class="stat-label">STREAK</span><span class="stat-value">7</span></div>
+          </div>
+          <p class="note">ラベル上・数値下・中央揃え。罫線で区切る。</p>
+        </div>
+
+        <div class="comp">
+          <h4>POST CARD</h4>
+          <div class="stage" style="align-items:flex-start">
+            <div class="post-card">
+              <div class="row">
+                <span class="emoji">🍎</span>
+                <span class="name">りんご</span>
+                <span class="time">21:08</span>
+              </div>
+              <p class="text">今日はずっと機嫌が良かった。理由はわからない。</p>
+              <div class="index">#0042</div>
+            </div>
+          </div>
+          <p class="note">罫線で区切る・連番＋タイムスタンプは Unbounded。</p>
+        </div>
+
+        <div class="comp">
+          <h4>TAB BAR / LIQUID GLASS</h4>
+          <div class="stage">
+            <div class="tabbar">
+              <button aria-label="timeline">💬</button>
+              <button class="active" aria-label="record">🎤</button>
+              <button aria-label="me">👤</button>
+            </div>
+          </div>
+          <p class="note">半透明＋<code>backdrop-filter: blur(20px)</code>。</p>
+        </div>
+
+        <div class="comp" style="grid-column: 1 / -1">
+          <h4>SENTIMENT CHART</h4>
+          <div class="sent-card">
+            <svg class="sent-svg" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden>
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"  stop-color="#E8A020" stop-opacity="0.9"/>
+                  <stop offset="50%" stop-color="#E8A020" stop-opacity="0.15"/>
+                  <stop offset="50%" stop-color="#1A1A2E" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#1A1A2E" stop-opacity="0.9"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="90" x2="600" y2="90" stroke="#9A9ABA" stroke-dasharray="4 4"/>
+              <path d="M0,80 C60,40 90,140 150,120 C210,100 240,30 300,50 C360,70 390,150 450,130 C510,110 540,40 600,60 L600,90 L0,90 Z" fill="url(#grad)"/>
+              <path d="M0,80 C60,40 90,140 150,120 C210,100 240,30 300,50 C360,70 390,150 450,130 C510,110 540,40 600,60" fill="none" stroke="#1A1A2E" stroke-opacity="0.4" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <p class="note">ポジ＝<code>--yuzu-zest</code>、ネガ＝<code>--ink</code>。ゼロは点線。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="motion">
+      <h2><span class="num">06</span>MOTION</h2>
+      <p class="lead">3つのイージング。バウンス・なめらか・スナップ。<code>prefers-reduced-motion</code> で全抑制。</p>
+      <div class="ease-row">
+        <div class="ease organic"><div class="name">ORGANIC</div><div class="track"><div class="ball"></div></div><code>cubic-bezier(0.34, 1.56, 0.64, 1)</code></div>
+        <div class="ease soft"><div class="name">SOFT</div><div class="track"><div class="ball"></div></div><code>cubic-bezier(0.25, 0.46, 0.45, 0.94)</code></div>
+        <div class="ease snap"><div class="name">SNAP</div><div class="track"><div class="ball"></div></div><code>cubic-bezier(0.68, -0.55, 0.27, 1.55)</code></div>
+      </div>
+
+      <h3>状態アニメーション</h3>
+      <table class="copy">
+        <thead><tr><th>PHASE</th><th>動き</th></tr></thead>
+        <tbody>
+          <tr><td>idle</td><td>浮遊ドット（float-dot, 3〜7s）</td></tr>
+          <tr><td>recording</td><td>ドット収束＋同心円リング3重＋波形</td></tr>
+          <tr><td>busy</td><td>ドットが中心に集まり消える（dot-collapse）</td></tr>
+          <tr><td>done</td><td>mark-stamp（連番がスタンプ）＋ post-appear</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="voice">
+      <h2><span class="num">07</span>VOICE &amp; TONE</h2>
+      <p class="lead">短く・力強く・断定的。命令形を恐れない（NIKE 寄り）。詩的にならない・スピリチュアルにならない。</p>
+
+      <h3>UI コピー</h3>
+      <table class="copy">
+        <thead><tr><th>場所</th><th>コピー</th></tr></thead>
+        <tbody>
+          <tr><td class="where">待機（マイク下）</td><td class="what">長押し。話せ。</td></tr>
+          <tr><td class="where">録音中</td><td class="what en">RECORDING.</td></tr>
+          <tr><td class="where">変換中</td><td class="what en">DECODING.</td></tr>
+          <tr><td class="where">投稿完了</td><td class="what en">RECORDED.</td></tr>
+          <tr><td class="where">タイムライン空</td><td class="what">何も無い。話せ。</td></tr>
+          <tr><td class="where">ニックネーム未設定</td><td class="what">名前をつけよう</td></tr>
+          <tr><td class="where">投稿数</td><td class="what en">○ RECORDS</td></tr>
+          <tr><td class="where">連続日数</td><td class="what en">○ DAYS. NO SKIP.</td></tr>
+          <tr><td class="where">登録日数</td><td class="what en">DAY ○</td></tr>
+          <tr><td class="where">音声なし</td><td class="what">声が聞こえなかった。もう一度。</td></tr>
+          <tr><td class="where">短すぎ</td><td class="what">短い。もう一度。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>投稿促進プロンプト（B案）</h3>
+      <div class="prompts">
+        <span class="prompt-chip">何が本当だ？</span>
+        <span class="prompt-chip">言ってないことは？</span>
+        <span class="prompt-chip">今日、誰に嘘をついた？</span>
+        <span class="prompt-chip">本当はどう思った？</span>
+        <span class="prompt-chip">逃げてることは？</span>
+        <span class="prompt-chip">怒ってるのは何にだ？</span>
+        <span class="prompt-chip">誰にも言えないことを。</span>
+        <span class="prompt-chip">整えるな。話せ。</span>
+        <span class="prompt-chip">1分でいい。出せ。</span>
+        <span class="prompt-chip">黙ってる場合か？</span>
+      </div>
+
+      <h3>NG / OK</h3>
+      <div class="ng-list">
+        <div class="ng bad">
+          <div class="head">✗ NG ワード</div>
+          <ul>
+            <li>癒し・寄り添う・頑張ろう（muute っぽい）</li>
+            <li>育つ・林・種・香り・果実（旧世界観の残骸）</li>
+            <li>やさしく・ふんわり・あなたらしく</li>
+            <li>入力・テキスト・記録する（ツールっぽい）</li>
+            <li>気づき・自分を知ろう（意識高い系）</li>
+          </ul>
+        </div>
+        <div class="ng good">
+          <div class="head">✓ OK 方向</div>
+          <ul>
+            <li>話せ・出せ・黙るな（命令形）</li>
+            <li>本物・ナマ・加工なし</li>
+            <li>RAW・RECORD・MARK・INDEX</li>
+            <li>事実だけを置く（日本語）</li>
+            <li>状態を断定する（英語）</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="layout">
+      <h2><span class="num">08</span>LAYOUT</h2>
+      <p class="lead">左揃え・グリッド・大胆な余白の不均衡。センター寄せの和的余白は廃止。</p>
+      <ul style="font-size:var(--text-sm); line-height:1.9; padding-left:18px;">
+        <li>3タブ構成（💬 タイムライン／🎤 はなす／👤 マイページ）。デフォルトは「はなす」。</li>
+        <li>タブバーは画面下の Liquid Glass 風（半透明＋blur 20px）。</li>
+        <li>背景は <code>--yuzu-white</code> 単色。ゆず黄が信号として浮く構造。</li>
+        <li>タッチターゲット最小 44×44。マイクボタンは 140px。</li>
+        <li>テキストコントラスト比 4.5:1 以上。<code>prefers-reduced-motion</code> 対応。</li>
+        <li><code>safe-area-inset-bottom</code> 必須・iOS Safari の <code>-webkit-backdrop-filter</code> 必須。</li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>

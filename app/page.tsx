@@ -5,6 +5,8 @@ import { Microphone } from "@phosphor-icons/react";
 import MyPageView from "@/components/MyPageView";
 import RecordModal from "@/components/RecordModal";
 import type { Post } from "@/lib/types";
+import { buildMockPosts } from "@/lib/mockPosts";
+import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
 
 type Phase = "idle" | "recording" | "busy" | "complete";
 
@@ -63,6 +65,17 @@ export default function Home() {
       }
     } catch {}
     if (e) setMyEmoji(e);
+
+    const isMock = typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("mock") === "1";
+    if (isMock) {
+      const { posts: mockPosts, sentiments } = buildMockPosts(e ?? "🍑", "mock-session");
+      setPosts(mockPosts);
+      setMySessionId("mock-session");
+      const prev = loadSentimentCache();
+      saveSentimentCache({ ...prev, ...sentiments });
+      return;
+    }
 
     fetch("/api/posts")
       .then(safeJson)
@@ -204,7 +217,7 @@ export default function Home() {
   };
 
   const transcribeAndSave = async (blob: Blob) => {
-    setStatusMsg("言葉にしてるよ…");
+    setStatusMsg("DECODING.");
     try {
       const ext = blob.type.includes("mp4") ? "mp4"
         : blob.type.includes("ogg") ? "ogg"
@@ -217,13 +230,13 @@ export default function Home() {
 
       const text: string = data?.text ?? "";
       if (text === "") {
-        showHint("声が聞こえなかったよ。もう一度話してみて。");
+        showHint("声が聞こえなかった。もう一度。");
         setStatusMsg(null);
         setPhaseSync("idle");
         return;
       }
       if (text.length < 5) {
-        showHint("もう少し話してみて。");
+        showHint("短い。もう一度。");
         setStatusMsg(null);
         setPhaseSync("idle");
         return;
@@ -275,6 +288,7 @@ export default function Home() {
           <path d="M390.42 92.9217C390.42 98.6336 391.455 103.495 393.525 107.505C395.594 111.516 398.699 114.675 402.838 116.984C406.978 119.172 412.152 120.266 418.361 120.266C424.813 120.266 430.109 119.172 434.248 116.984C438.388 114.797 441.431 111.698 443.379 107.687C445.449 103.555 446.484 98.6336 446.484 92.9217V18.1821H489.034V95.2915C489.034 107.809 486.112 118.807 480.268 128.286C474.424 137.644 466.206 144.936 455.615 150.161C445.023 155.387 432.605 158 418.361 158C404.36 158 392.064 155.387 381.472 150.161C370.88 144.936 362.602 137.644 356.636 128.286C350.792 118.807 347.87 107.809 347.87 95.2915V18.1821H390.42V92.9217Z" fill="#F5D84A"/>
           <path d="M237.099 154.901V87.8178H279.648V154.901H237.099ZM173 18.1824H219.75L267.413 79.0678H249.151L296.632 18.1824H343.382L271.979 109.146L244.586 109.693L173 18.1824Z" fill="#F5D84A"/>
         </svg>
+        <p className="app-tagline">本物でいろ。</p>
       </header>
 
       <MyPageView myEmoji={myEmoji} posts={posts} mySessionId={mySessionId} />

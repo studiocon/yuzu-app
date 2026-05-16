@@ -2,22 +2,23 @@
   YAML frontmatter: design tokens のソースオブトゥルース。
   CI が `scripts/check-design-drift.mjs` で `app/globals.css` の :root と突合する。
   値を変えるときは CSS と frontmatter の両方を更新すること。
+
+  NOTE: デザインシステムの実体プレビューは public/design-preview.html。
+        プレビューを編集したら DESIGN.md / app/globals.css / components の3点に同期する。
+        旧 blob トークン（--blob-* / --blob-soft-*）はコード側追従完了まで残置。
 -->
 ---
 name: YUZU
-tagline: 生の声が、香る。
+tagline: 本物でいろ。
+slogan: TALK. RAW.
 typography:
   display: Unbounded
-  body: Noto Sans JP
+  body: LINE Seed JP
 cssVars:
   # YUZU Primary
   --yuzu-yellow:      "#F5D84A"
   --yuzu-zest:        "#E8A020"
   --yuzu-white:       "#FAFAF5"
-  # YUZU Accent
-  --yuzu-green:       "#2D5016"
-  --yuzu-green-light: "#8DBF8D"
-  --yuzu-cream:       "#FFF8E7"
   # Text
   --ink:              "#1A1A2E"
   --ink-secondary:    "#4A4A6A"
@@ -26,20 +27,19 @@ cssVars:
   --surface-card:     "#FFFEF5"
   --surface-border:   "#E8E0C8"
   --surface-hover:    "#FFF5CC"
+  --divider:          "#EDEAE0"
   # Legacy aliases
   --tangerine:      "var(--yuzu-zest)"
   --candy-pink:     "var(--yuzu-zest)"
   --bubblegum:      "var(--yuzu-yellow)"
-  --peach-mist:     "var(--yuzu-cream)"
   --text-primary:   "var(--ink)"
   --text-secondary: "var(--ink-secondary)"
   --text-muted:     "var(--ink-muted)"
-  # Blob shapes — strong (mic button)
+  # Blob shapes（旧世界観の残滓・段階削除予定。新世界観では直線・矩形）
   --blob-1: "60% 40% 55% 45% / 45% 55% 40% 60%"
   --blob-2: "45% 55% 60% 40% / 60% 40% 55% 45%"
   --blob-3: "40% 60% 45% 55% / 55% 45% 60% 40%"
   --blob-4: "55% 45% 40% 60% / 40% 60% 45% 55%"
-  # Blob shapes — soft (cards: natural ellipse)
   --blob-soft-1: "48% 52% 42% 58% / 49% 64% 36% 51%"
   --blob-soft-2: "52% 48% 58% 42% / 56% 44% 62% 38%"
   --blob-soft-3: "44% 56% 46% 54% / 42% 58% 44% 56%"
@@ -59,7 +59,7 @@ cssVars:
 
 # YUZU - Design Document
 
-> 生の声が、香る。
+> 本物でいろ。/ TALK. RAW.
 
 ---
 
@@ -67,117 +67,306 @@ cssVars:
 
 ### 世界観
 
-**「香りのような声」**
+**「整っていない。それが本物だ。」**
 
-整理されていない、もやもやした思考こそが価値。YUZU はその「ナマのまま」を受け取る。きれいじゃなくていい。整っていないことが正しい。あなたの声は香りになって、誰かに届く。
+加工しない。整えない。ナマのまま。
+装飾を削ぎ落とすこと自体が `Raw` の表現になる。
+YUZU の世界観は **THE RECORD**。
+比喩を持たず、声が信号として記録される装置そのものをデザインする。
 
 ### キーワード
 
-- **生っぽさ** → 加工しない、整えない
-- **やわらかさ** → 角を立てない、ゆるく存在する
-- **つながり** → 点ではなく、線と面で繋がる
-- **香り** → 声が香りのように広がる有機的なグロース
+```
+Raw          → 加工なし・生っぽさ・ナマ
+Cool         → かっこいい習慣・ライフスタイル
+Swiss Grid   → グリッド・余白・タイポ駆動
+Provocative  → 挑発的・断定的・命令形（NIKE 寄り）
+```
+
+旧キーワード「やわらかさ」「香り」「育つ」「畑」「和モダン」「Y2K」は廃止。
 
 ---
 
 ## 2. カラーパレット
 
-CSS変数として [app/globals.css](app/globals.css) の `:root` に定義。世界観は「ゆず黄・深緑」のナチュラルパレット。
+CSS変数として [app/globals.css](app/globals.css) の `:root` に定義。
+新世界観では **ゆず黄を信号色** として極端に絞って配置し、それ以外は無彩色で構成する。
 
 ```css
 /* YUZU Primary */
---yuzu-yellow: #F5D84A;   /* ゆず黄：メインカラー・マイクボタン通常時 */
---yuzu-zest:   #E8A020;   /* 完熟オレンジ黄：CTA・録音中・タブ中央 */
---yuzu-white:  #FAFAF5;   /* 果肉の白：背景 */
-
-/* YUZU Accent */
---yuzu-green:       #2D5016;  /* 深緑：葉・アクセント */
---yuzu-green-light: #8DBF8D;  /* ライトグリーン */
---yuzu-cream:       #FFF8E7;  /* クリーム：カード背景・絵文字バッジ */
+--yuzu-yellow: #F5D84A;   /* ゆず黄：信号色・アクセント */
+--yuzu-zest:   #E8A020;   /* 完熟オレンジ：録音中・強調 */
+--yuzu-white:  #FAFAF5;   /* オフホワイト：背景単色 */
 
 /* Text */
---ink:           #1A1A2E;  /* 墨：メインテキスト */
---ink-secondary: #4A4A6A;  /* サブテキスト */
---ink-muted:     #9A9ABA;  /* ミュート：タイムスタンプ */
+--ink:           #1A1A2E;
+--ink-secondary: #4A4A6A;
+--ink-muted:     #9A9ABA;
 
-/* Surface */
---surface-card:   #FFFEF5;  /* カード背景 */
---surface-border: #E8E0C8;  /* ボーダー */
---surface-hover:  #FFF5CC;  /* ホバー */
+/* Surface / Divider */
+--surface-card:   #FFFEF5;
+--surface-border: #E8E0C8;
+--surface-hover:  #FFF5CC;
+--divider:        #EDEAE0;  /* リスト・カード区切りの最弱罫線。--ink-muted より十分薄い */
 ```
 
-背景は `body` に固定の斜めグラデーション（クリームイエロー → ホワイト → ライムホワイト → ミントホワイト）を敷いて、ゆず畑の空気感を持たせる。
+### 罫線の使い分け
+
+リスト要素や軽い区切りは `--divider` を使う。`--ink-muted` をボーダーに使うとリストが並んだとき視覚的にうるさくなるため、テキスト用に留める。
+
+### 背景
+
+旧：4色グラデーション（クリームイエロー → ホワイト → ライムホワイト → ミントホワイト）
+新：**オフホワイト単色 `#FAFAF5`** のみ。ゆず黄が信号として浮く構造。
+
+```css
+body { background: var(--yuzu-white); }
+```
 
 ---
 
 ## 3. タイポグラフィ
 
-- 英字・ロゴ・タブラベル・ボタン: **Unbounded** (`--font-display`、`font-weight: 700` 基本、ロゴは `900`)
-- 日本語本文・コピー・タイムスタンプ: **Noto Sans JP** (`--font-body`)
+- 英字・ロゴ・タブラベル・スタッツ数値・状態ラベル: **Unbounded**（`--font-display`、`font-weight: 700` 基本、ロゴは `900`、極端に大きく画面端まで攻める）
+- 日本語本文・コピー・タイムスタンプ: **LINE Seed JP**（`--font-body`、`font-weight: 400 / 700`）
 
-`next/font/google` 経由で [app/layout.tsx](app/layout.tsx) で読み込み、CSS変数として配信。`.font-display` クラスで Unbounded を強制適用できる。
+旧 Noto Sans JP は廃止。LINE Seed JP のジオメトリックで角丸な骨格はミニマル・スイス美学と親和性が高く、日本語の表情を保ちつつ無装飾を支える。
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=LINE+Seed+JP:wght@400;700&display=swap');
+--font-display: 'Unbounded', sans-serif;
+--font-body:    'LINE Seed JP', sans-serif;
+```
+
+[app/layout.tsx](app/layout.tsx) の `next/font/google` 読み込みも `Noto_Sans_JP` → `LINE_Seed_JP` へ移行する（コード側追従タスク）。
+
+### フォント適用ルール
+
+| 対象 | フォント | ウェイト |
+|---|---|---|
+| ロゴ「YUZU」 | Unbounded | 900 |
+| タグライン「本物でいろ。」 | LINE Seed JP | 700 |
+| スローガン「TALK. RAW.」 | Unbounded | 700 |
+| タブラベル・状態ラベル（英語） | Unbounded | 700 |
+| スタッツ数値 | Unbounded | 700 |
+| 日本語UI・投稿テキスト・プロンプト | LINE Seed JP | 400 / 700 |
+| タイムスタンプ | Unbounded | 400 |
+| 投稿連番 `#0042` | Unbounded | 700 |
+
+### 段組ルール
+
+- **左揃え固定**
+- **中央揃え禁止**（タイトル・見出しを含む）
+- 段落間は余白で区切る（罫線・装飾は使わない）
 
 サイズスケール: `--text-xs` (11) / `sm` (13) / `base` (15) / `lg` (18) / `xl` (24) / `2xl` (32) / `3xl` (48)。
 
 ---
 
-## 4. フォームとシェイプ
+## 4. Voice & Tone
 
-### 歪んだ楕円（シグネチャーシェイプ）
+### ブランドトーン
 
-YUZU の最も特徴的なビジュアル要素。「もやもやした思考」を視覚化する。
-
-**強い blob（マイクボタン用）** — 大胆に歪ませる:
-
-```css
---blob-1: 60% 40% 55% 45% / 45% 55% 40% 60%;   /* 静止 */
---blob-2: 45% 55% 60% 40% / 60% 40% 55% 45%;   /* ホバー */
---blob-3: 40% 60% 45% 55% / 55% 45% 60% 40%;   /* 録音中 */
---blob-4: 55% 45% 40% 60% / 40% 60% 45% 55%;   /* アニメ用 */
+```
+短く・力強く・断定的
+命令形を恐れない（NIKE 寄り）
+詩的にならない・スピリチュアルにならない
+フラットでわかりやすい
+英語と日本語を意図的に使い分ける
 ```
 
-**やわらかい blob（投稿カード用）** — ほぼ角丸長方形だが微妙にゆらぐ:
+### 英日使い分け
 
-```css
---blob-soft-1: 48% 52% 42% 58% / 49% 64% 36% 51%;
---blob-soft-2: 52% 48% 58% 42% / 56% 44% 62% 38%;
---blob-soft-3: 44% 56% 46% 54% / 42% 58% 44% 56%;
+- **英語＝Unbounded＝挑発・状態**：`RECORDING.` / `DECODING.` / `RECORDED.` / `DAY` / `RECORDS` / `STREAK`
+- **日本語＝LINE Seed JP＝事実・本文・プロンプト**：プロンプト10種・エラー・タグライン・本文UI
+
+### NGワード
+
+```
+「癒し」「寄り添う」「頑張ろう」     → muute っぽい
+「育つ」「林」「種」「香り」「果実」 → 旧世界観の残骸
+「やさしく」「ふんわり」「あなたらしく」→ ミニマルに反する
+「入力」「テキスト」「記録する」      → ツールっぽい（「話す」に統一）
+「気づき」「自分を知ろう」           → 意識高い系
+```
+
+### UIコピー
+
+| 場所 | コピー |
+|---|---|
+| 待機（マイクボタン下） | 長押し。話せ。 |
+| 録音中 | RECORDING. |
+| 変換中 | DECODING. |
+| 投稿完了 | RECORDED. |
+| タイムライン空 | 何も無い。話せ。 |
+| ニックネーム未設定 | 名前をつけよう |
+| 投稿数 | ○ RECORDS |
+| 連続日数 | STREAK ＋ 数値（旧「○ DAYS. NO SKIP.」は廃止） |
+| 登録日数 | DAY ○ |
+| 音声なし | 声が聞こえなかった。もう一度。 |
+| 短すぎ | 短い。もう一度。 |
+
+### 投稿促進プロンプト（B案）
+
+マイクボタン上にランダム表示。毎セッションで変わる。
+
+```javascript
+const prompts = [
+  '何が本当だ？',
+  '言ってないことは？',
+  '今日、誰に嘘をついた？',
+  '本当はどう思った？',
+  '逃げてることは？',
+  '怒ってるのは何にだ？',
+  '誰にも言えないことを。',
+  '整えるな。話せ。',
+  '1分でいい。出せ。',
+  '黙ってる場合か？',
+];
 ```
 
 ---
 
-## 5. コンポーネント
+## 5. フォームとシェイプ
+
+新世界観では **直線・矩形・グリッド**。角丸は最小限。
+
+```css
+--radius-0:     0px;   /* グリッド要素・カード */
+--radius-sharp: 2px;   /* ボタン・入力等 */
+--radius-pill:  9999px; /* マイクボタン（正円） */
+```
+
+### 廃止予定
+
+旧シグネチャーシェイプ「歪んだ楕円（blob）」は新世界観では使わない。
+`--blob-1〜4` / `--blob-soft-1〜3` は **コード側追従が完了するまで frontmatter に残置**し、本文・コンポーネントでは参照しない。
+
+```
+--blob-1〜4       廃止予定（旧マイクボタン用）
+--blob-soft-1〜3  廃止予定（旧投稿カード用）
+```
+
+---
+
+## 6. コンポーネント
 
 ### マイクボタン (`.mic-button` in [globals.css](app/globals.css))
 
 | 状態 | 外観 |
 |---|---|
-| デフォルト | `--yuzu-yellow` 背景 + 🎤 + ゆず黄のグロー |
-| ホバー | わずかに拡大 + blob-2 へモーフ + 影が広がる |
-| 録音中 (recording) | `--yuzu-zest` + blob-pulse + オレンジ黄の波紋 |
-| 変換中 (busy) | `--yuzu-cream` + 🌱 |
+| デフォルト | **正円** + `--yuzu-yellow` 背景 + 🎤 |
+| ホバー | わずかに拡大（scale 1.04） |
+| 録音中 (recording) | `--yuzu-zest` + 同心円リング |
+| 変換中 (busy) | スピナー |
+
+旧「blob モーフィング」「blob-pulse」は廃止。形状は固定の正円。
 
 ### 投稿カード (`.post-card`)
 
-- `background: var(--surface-card)` + `border: 1.5px solid var(--surface-border)`
-- 中身（絵文字バッジ・テキスト）がはみ出さない控えめな歪み
-- 左に絵文字バッジ（投稿者の果物・クリーム背景）
-- 新規投稿は `post-appear` でふわっと出現
+- `background: var(--yuzu-white)`（または白）+ `border-top: 1px solid var(--ink-muted)`（罫線で区切るスイス的手法）
+- 左肩に **連番 `#0042`**（Unbounded 700）
+- 右上にタイムスタンプ（Unbounded 400 / `--ink-muted`）
+- 本文は LINE Seed JP（`--ink`）
+- 角丸は `--radius-sharp`（2px）
+- 旧 blob 形状・ホバー時モーフィングは廃止
 
 ### ユーザー絵文字（果物アバター）
 
-果物プール:
+MVP では現行の果物プールを維持（既存資産の互換）：
 
 ```
 🍑 🍋 🍇 🥝 🍓 🫐 🍈 🍊 🍍 🥭 🍌 🍒 🍎 🍐 🫒
 ```
 
-- ゲスト: 初回アクセス時にランダム割り当てを localStorage (`yuzu-emoji`) に保存
-- 登録ユーザー (V2): 登録時に選択・変更可能
+ただし新世界観における正の表現は **MARK / INDEX（連番）** であり、果物絵文字は将来段階的にフェードアウトする可能性がある。
+
+### スタッツカード
+
+縦に積み、**ラベルを上・数値を下**にして中央揃え。罫線は `--divider`。
+
+```css
+.stat-card {
+  background: transparent;
+  border: none;
+  text-align: center;
+  padding: 20px 6px;
+  border-top: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.stat-label {                          /* ラベルが先 */
+  font-family: var(--font-display);    /* Unbounded */
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+.stat-value {                          /* 数値は下に大きく */
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  color: var(--ink);
+}
+```
+
+表示例（横3列）：
+
+```
+   DAY      |   RECORDS   |   STREAK
+    14       |     42      |     7
+```
+
+ラベルは `DAY` / `RECORDS` / `STREAK` の3つ。「DAYS. NO SKIP.」は冗長なため `STREAK` に統一した。
+
+### ボタン (`.btn`)
+
+すべてのインタラクションは `.btn` をベースに variant で切り分ける。**角丸 4px**、Unbounded 700、`:active` でわずかに縮んで押下感を出す。
+
+| Variant | 用途 | 配色 |
+|---|---|---|
+| `.btn--primary` | 主要 CTA | `--ink` bg / 白文字 |
+| `.btn--secondary` | 副次・キャンセル等 | 透明 bg / `--ink` 枠線・文字、hover で反転 |
+| `.btn--accent` | 信号色を使うときだけ（STREAK / 続行系） | `--yuzu-yellow` bg / `--ink` 文字 |
+| `.btn--ghost` | パディングのみのテキストボタン | 透明・hover で `--surface-hover` |
+| `.btn--danger` | 削除等 | 透明 bg / `#b94343` 枠線 |
+
+サイズ修飾子 `.btn--sm` / `.btn--lg`。
+
+```css
+.btn {
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: transform 0.12s var(--ease-soft);
+}
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: scale(0.97); transition-duration: 60ms; }  /* 押下感 */
+```
+
+Primary は必ず `--ink`（墨）。Accent のみ `--yuzu-yellow` を信号として点灯させる原則を守る。
+
+### アイコンボタン (`.iconbtn`)
+
+44×44px・角丸 4px がデフォルト。`.iconbtn--round` で正円、`.iconbtn--lg` で 56px。タッチターゲット 44px を必ず確保。`:active` は `scale(0.94)` で少し強めの押下感。Variant は `.btn` と同じ命名（`--primary` / `--secondary` / `--accent` / `--ghost`）。
+
+### 感情分析チャート
+
+```
+ポジティブライン: var(--yuzu-zest)   #E8A020
+ネガティブライン: var(--ink)         #1A1A2E（旧 深緑 → 墨に変更）
+ゼロライン:      点線・var(--ink-muted)
+背景:           transparent
+```
 
 ---
 
-## 6. アニメーション原則
+## 7. アニメーション原則
 
 | 用途 | 関数 |
 |---|---|
@@ -185,37 +374,66 @@ YUZU の最も特徴的なビジュアル要素。「もやもやした思考」
 | なめらかに | `--ease-soft` |
 | パッと反応 | `--ease-snap` |
 
-主な keyframes: `blob-pulse`, `ripple`, `recording-ring`, `post-appear`, `float-dot`, `dot-converge`, `dot-collapse`, `fadeIn`。
+### 維持するアニメーション
+
+- **`float-dot`**（浮遊ドット・待機中）→ 主役モーションとして活かす
+- **波形アニメーション**（録音中・音量に反応）→ 主役モーションとして活かす
+- **`recording-ring`**（録音中の同心円リング）→ 維持
+- **`dot-converge` / `dot-collapse`**（録音／変換時の収束）→ 維持
+- **`post-appear`**（投稿出現）→ 維持
+- **`fadeIn`** → 維持
+
+### 廃止するアニメーション
+
+- **`blob-pulse`** → 旧世界観の脈動。新世界観では使わない
+- **`ripple`** → 当面維持。将来再評価
+
+### 新規追加
+
+- **`mark-stamp`** — 投稿完了時、大きな番号 `#0042` が画面中央にスタンプされる演出
+  ```css
+  @keyframes mark-stamp {
+    0%   { opacity: 0; transform: scale(1.8); }
+    40%  { opacity: 1; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  ```
 
 ### はなす画面の状態アニメーション
 
 | Phase | アニメーション |
 |---|---|
 | idle | 浮遊ドット（`float-dot`、3〜7s ランダム） |
-| recording | ドットがマイクへ収束（`dot-converge`）+ 同心円リング3重（`recording-ring`） |
+| recording | ドットがマイクへ収束（`dot-converge`）+ 同心円リング3重（`recording-ring`）+ 波形 |
 | busy | ドットが中心に集まり消える（`dot-collapse`） |
+| done | `mark-stamp`（連番がスタンプ）+ `post-appear` |
 
 `@media (prefers-reduced-motion: reduce)` で全アニメーションを抑制。
 
 ---
 
-## 7. レイアウト
+### セクション見出し (`.mypage-section-title`)
 
-3タブ構成。デフォルトは「はなす」。タブバーは画面下に浮かぶ Liquid Glass 風（半透明 + `backdrop-filter: blur(20px)`）で、スクロール中はラベルが消えてアイコンのみに縮小する。ヘッダーは `scrollY > 50` でフェードアウトし、コンテンツへの圧迫感を減らす。
+マイページの SENTIMENT / RECORDS 等のセクション見出し。Unbounded 700・40px・letter-spacing 0.04em・上余白 44px（`padding-top`）。上罫線 `--divider` で区切る。色は `--ink`（墨）でダイナミックに。スタッツラベル（DAY / RECORDS / STREAK）は別クラス `.mypage-stat-label` で小さく保つ。
+
+## 8. レイアウト
+
+3タブ構成。デフォルトは「はなす」。タブバーは画面下の Liquid Glass 風（半透明 + `backdrop-filter: blur(20px)`）。
+レイアウトは **左揃え・グリッド・大胆な余白の不均衡** を基本とし、センター寄せの和的余白は廃止する。
 
 ### はなす画面（デフォルト）
 
 ```
 ┌─────────────────────────────┐
-│  🍋 YUZU                     │  ← ヘッダー（スクロールで隠れる）
-│  生の声が、香る。             │
+│ YUZU                         │  ← ヘッダー（左揃え・Unbounded 900）
+│ 本物でいろ。                  │  ← タグライン（LINE Seed JP）
 ├─────────────────────────────┤
-│  長押しして、話す             │  ← idle のみ（画面上 1/3）
+│ 長押し。話せ。                │  ← idle（左揃え）
 │                              │
-│   • • 浮遊するドット • •      │  ← FloatingDots（待機/録音/変換で挙動が変わる）
-│         🎤 ⤺ 同心円リング      │  ← 録音中
+│   • • 浮遊するドット • •      │  ← FloatingDots（idle/recording/busy で挙動変化）
+│         🎤 ⤺ 同心円リング      │  ← recording
 │                              │
-│  聴いてるよ… / 言葉にしてるよ…│  ← 録音中・変換中のみ
+│ RECORDING. / DECODING.       │  ← 録音中・変換中（Unbounded 700）
 ├─────────────────────────────┤
 │      [💬]   ( 🎤 )   [👤]      │  ← Liquid Glass タブバー
 └─────────────────────────────┘
@@ -223,60 +441,48 @@ YUZU の最も特徴的なビジュアル要素。「もやもやした思考」
 
 ### タイムライン画面
 
-歪んだ楕円のカードが縦に並ぶ。新規投稿はマイクボタンから飛ばされて先頭にふわっと出現する。
+矩形カードが縦に並ぶ（旧 歪んだ楕円カードは廃止）。各カードの左肩に連番 `#0042`、本文、右上にタイムスタンプ。新規投稿はマイクボタンから飛ばされて先頭に出現する（`post-appear`）。
 
 ### マイページ画面
 
-現状はプレースホルダー。
-
-```
-🌱 わたしの畑
-🌱 みんなのつぶやき N個
-[アカウント登録するとAIがあなたの思考を分析します]
-[アカウント登録（準備中）]
-```
+- ヘッダー：ニックネーム（LINE Seed JP 700）＋ `DAY ○`（Unbounded 700）
+- スタッツ：左揃え・罫線で区切り・数値は巨大・ラベルは小さく
+- 感情分析チャート：transparent 背景・墨とゆずオレンジの2線
+- 投稿一覧（マイ）：タイムラインと同レイアウト
 
 ---
 
-## 8. コピーライティング原則
+## 9. コピーライティング原則
 
-- キーボードっぽい言葉を使わない（「入力」→「話す」、「テキスト」→「声」）
-- 果物・自然のメタファーを使う（「種を植える」「香る」「育つ」「畑」）
-- 圧力をかけない（「投稿する」→「こぼす」「つぶやく」）
-
-### UIコピー（現行）
-
-| 場所 | コピー |
-|---|---|
-| マイクボタン下（待機） | 長押しして、話す |
-| 長押し中 | そのまま、押し続けて… |
-| 録音中 | 聴いてるよ… |
-| 変換中 | 言葉にしてるよ… |
-| 短すぎ | もう少し長く押してね |
-| タイムライン空 | まだ誰も話していない。最初の声を植えよう。 |
-| マイページ (V2) | わたしの畑 |
+- **キーボードっぽい言葉を使わない**（「入力」→「話す」、「テキスト」→「声」）
+- **自然・果物・育つメタファーは禁止**（旧世界観の残滓）
+- **圧力をかける**（NIKE 寄り。「投稿する」→「話せ」「出せ」）
+- **詩的にならない**
+- **英日混在を許容**（英＝挑発・状態、日＝事実・本文）
 
 ---
 
-## 9. アクセシビリティ
+## 10. アクセシビリティ
 
 - タッチターゲット最小 44px × 44px（マイクボタンは 140px）
 - テキストコントラスト比 4.5:1 以上
 - マイクボタンに `aria-label` / `aria-pressed`
 - `prefers-reduced-motion` で全アニメ抑制（[globals.css](app/globals.css)）
+- iOS Safari 対応（`-webkit-backdrop-filter` 必須）
+- `safe-area-inset-bottom` 対応必須
 
 ---
 
-## 10. 参照・インスピレーション
+## 11. 参照・インスピレーション
 
-- **形状**: Notion AI の blob シェイプ、Arc Browser のやわらかさ
-- **配色**: ゆず・柑橘系のナチュラルパレット
-- **タイポ**: 有機的なセリフ体 × 日本語ゴシック
-- **UX**: Twitter の投稿気軽さ × Notion の蓄積感
+- **タイポ**：Swiss International Typographic Style、Helvetica の余白設計
+- **トーン**：NIKE のキャンペーン広告、Patta、A-COLD-WALL\*
+- **配色**：Off-White の信号色使い、Acne Studios の極端な無彩色＋1色
+- **UX**：Twitter の投稿気軽さ × 番号体系のグラフィック（Supreme の連番、Off-White の引用符）
 
 ---
 
-## 11. メンテナンス（自動チェック）
+## 12. メンテナンス（自動チェック）
 
 このドキュメントは **デザインに変更があれば必ず追従更新する**。色・シェイプ・コンポーネント・コピー・アニメーションのいずれかを変えたら、コードと同じコミット（または直後）で該当セクションを更新すること。
 
@@ -293,3 +499,15 @@ YUZU の最も特徴的なビジュアル要素。「もやもやした思考」
 2. このファイル冒頭 `cssVars:` の同名キーも同じ値に更新
 3. 必要なら本文セクション（カラーパレット・シェイプなど）の説明・サンプルも更新
 4. `npm run design:check` がパスすることを確認
+
+### デザインプレビュー（実体）
+
+実物プレビューは [public/design-preview.html](public/design-preview.html)。`http://localhost:3000/design-preview.html` で確認できる。**プレビュー HTML を編集したら、この DESIGN.md と `app/globals.css` / `components/*.tsx` を必ず同期する** こと（プレビューが source-of-truth）。
+
+### 残置中の旧トークン
+
+以下は新世界観では未参照だが、コード側削除まで残置：
+
+```
+--blob-1〜4 / --blob-soft-1〜3   (旧マイクボタン・カード形状)
+```

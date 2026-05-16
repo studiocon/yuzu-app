@@ -4,11 +4,6 @@
   --yuzu-zest:        #E8A020;  /* 完熟オレンジ黄：CTA・録音中 */
   --yuzu-white:       #FAFAF5;  /* 果肉の白：背景 */
 
-  /* YUZU Accent */
-  --yuzu-green:       #2D5016;  /* 深緑：葉・アクセント */
-  --yuzu-green-light: #8DBF8D;  /* ライトグリーン */
-  --yuzu-cream:       #FFF8E7;  /* クリーム：カード背景 */
-
   /* Text */
   --ink:              #1A1A2E;  /* 墨：メインテキスト */
   --ink-secondary:    #4A4A6A;  /* サブテキスト */
@@ -18,12 +13,12 @@
   --surface-card:     #FFFEF5;  /* カード背景 */
   --surface-border:   #E8E0C8;  /* ボーダー */
   --surface-hover:    #FFF5CC;  /* ホバー */
+  --divider:          #EDEAE0;  /* リスト・カード区切りの最弱罫線 */
 
   /* Legacy aliases (旧コンポーネントが参照するため残す) */
   --tangerine:      var(--yuzu-zest);
   --candy-pink:     var(--yuzu-zest);
   --bubblegum:      var(--yuzu-yellow);
-  --peach-mist:     var(--yuzu-cream);
   --text-primary:   var(--ink);
   --text-secondary: var(--ink-secondary);
   --text-muted:     var(--ink-muted);
@@ -58,19 +53,12 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-body), "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  font-family: 'LINE Seed JP', "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 body {
-  background: linear-gradient(
-    160deg,
-    #FAFAF0 0%,
-    #FFFFF0 40%,
-    #F5FAF0 70%,
-    #FAFFF5 100%
-  );
-  background-attachment: fixed;
+  background: var(--yuzu-white);
   min-height: 100vh;
 }
 
@@ -118,7 +106,7 @@ body {
 
 .mic-button:disabled {
   cursor: not-allowed;
-  background: var(--yuzu-cream);
+  background: var(--surface-card);
   color: var(--ink-muted);
   box-shadow: 0 4px 16px rgba(196, 196, 160, 0.25);
 }
@@ -194,7 +182,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--yuzu-cream);
+  background: var(--surface-card);
   border-radius: 50%;
 }
 
@@ -228,7 +216,7 @@ body {
   transition: background 0.15s var(--ease-soft), color 0.15s var(--ease-soft), transform 0.15s var(--ease-soft);
 }
 .post-copy-btn:hover {
-  background: var(--yuzu-cream);
+  background: var(--surface-hover);
   color: var(--ink);
 }
 .post-copy-btn:active { transform: scale(0.9); }
@@ -928,7 +916,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 56px;
-  background: var(--yuzu-cream);
+  background: var(--surface-card);
   border: 1.5px solid var(--surface-border);
   border-radius: var(--blob-soft-1);
 }
@@ -1060,3 +1048,186 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =====================================================================
+   THE RECORD — 世界観刷新オーバーライド（Swiss × NIKE）
+   旧 blob / グラデ / クリームを上から潰す。
+   ===================================================================== */
+
+/* マイクボタンは正円に */
+.mic-fab,
+.mic-button,
+.mic-button-large {
+  border-radius: 9999px !important;
+  animation: none !important;
+}
+.mic-fab { background: var(--ink) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.18) !important; }
+.mic-fab:active { transform: scale(0.95) !important; }
+
+/* 投稿カード：矩形・上罫線で区切る Swiss スタイル */
+.post-card,
+.mypage-post-card {
+  background: transparent !important;
+  border: 1px solid var(--divider) !important;
+  border-radius: 4px !important;
+  padding: 16px 14px !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.post-card:hover { transform: none !important; }
+
+/* スタッツカード：左揃え・無装飾・数値巨大 */
+.mypage-stats { gap: 0 !important; grid-template-columns: repeat(3, 1fr) !important; }
+.mypage-stat-card {
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--divider) !important;
+  border-radius: 0 !important;
+  padding: 20px 6px !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 10px !important;
+  flex-direction: column !important;
+}
+.mypage-stat-icon { display: none !important; }
+.mypage-stat-label {
+  order: 0 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  color: var(--ink-muted) !important;
+  text-transform: uppercase !important;
+}
+.mypage-stat-value {
+  order: 1 !important;
+  font-size: var(--text-3xl) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1 !important;
+}
+
+/* セクションタイトル：英語・全大文字・ダイナミック大文字 */
+.mypage-section-title {
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  font-size: 40px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  border-top: 1px solid var(--divider);
+  padding-top: 44px;
+  margin: 0 !important;
+}
+
+/* チャートカード：矩形 */
+.mypage-chart-card {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 8px 0 !important;
+}
+
+/* 完了画面の RECORDED. スタンプ */
+.complete-stamp {
+  font-weight: 900;
+  font-size: 56px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 16px;
+  text-align: left;
+  animation: mark-stamp 0.6s var(--ease-snap) both;
+}
+@keyframes mark-stamp {
+  0%   { opacity: 0; transform: scale(1.8); }
+  40%  { opacity: 1; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 完了画面のストリーク表示も Unbounded で */
+.streak-count { font-size: var(--text-3xl); letter-spacing: -0.02em; }
+.streak-unit {
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+}
+
+/* マイページのコピーボタン等の角丸も矩形寄りに */
+.mypage-edit-btn,
+.mypage-nickname-input { border-radius: 2px !important; }
+
+/* タグライン用ユーティリティ */
+.app-tagline {
+  font-family: 'LINE Seed JP', sans-serif;
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--ink);
+  margin: 4px 0 0;
+}
+
+/* =====================================================================
+   Button / Icon Button — design system primitives
+   ===================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease-soft), background 0.15s var(--ease-soft), color 0.15s var(--ease-soft), border-color 0.15s var(--ease-soft), opacity 0.15s var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: scale(0.97); transition-duration: 60ms; }
+.btn[disabled], .btn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn .icon { width: 16px; height: 16px; }
+
+.btn--primary { background: var(--ink); color: var(--yuzu-white); border-color: var(--ink); }
+.btn--primary:hover { background: #000; border-color: #000; }
+.btn--secondary { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn--secondary:hover { background: var(--ink); color: var(--yuzu-white); }
+.btn--accent { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
+.btn--accent:hover { background: var(--yuzu-zest); border-color: var(--yuzu-zest); color: var(--ink); }
+.btn--ghost { background: transparent; color: var(--ink); border-color: transparent; padding: 12px 12px; }
+.btn--ghost:hover { background: var(--surface-hover); }
+.btn--danger { background: transparent; color: #b94343; border-color: #b94343; }
+.btn--danger:hover { background: #b94343; color: #fff; }
+
+.btn--sm { padding: 8px 14px; font-size: var(--text-xs); }
+.btn--lg { padding: 16px 28px; font-size: var(--text-base); }
+
+.iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease-soft), background 0.15s var(--ease-soft), color 0.15s var(--ease-soft), border-color 0.15s var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+  color: var(--ink);
+}
+.iconbtn svg { width: 20px; height: 20px; }
+.iconbtn:hover { transform: translateY(-1px); }
+.iconbtn:active { transform: scale(0.94); transition-duration: 60ms; }
+.iconbtn[disabled], .iconbtn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.iconbtn--primary { background: var(--ink); color: var(--yuzu-white); border-color: var(--ink); }
+.iconbtn--primary:hover { background: #000; }
+.iconbtn--secondary { color: var(--ink); border-color: var(--ink); }
+.iconbtn--secondary:hover { background: var(--ink); color: var(--yuzu-white); }
+.iconbtn--accent { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
+.iconbtn--accent:hover { background: var(--yuzu-zest); border-color: var(--yuzu-zest); }
+.iconbtn--ghost { color: var(--ink-secondary); }
+.iconbtn--ghost:hover { background: var(--surface-hover); color: var(--ink); }
+.iconbtn--round { border-radius: 9999px; }
+.iconbtn--lg { width: 56px; height: 56px; }
+.iconbtn--lg svg { width: 24px; height: 24px; }
+

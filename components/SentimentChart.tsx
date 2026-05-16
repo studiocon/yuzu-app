@@ -18,6 +18,7 @@ type Props = { data: SentimentPoint[] };
 
 const POS_COLOR = "#F5A623";
 const NEG_COLOR = "#5B9BD5";
+const DOW = ["日", "月", "火", "水", "木", "金", "土"];
 
 function scoreLabel(score: number): string {
   if (score >= 0.5) return "ポジティブ";
@@ -27,14 +28,31 @@ function scoreLabel(score: number): string {
   return "ネガティブ";
 }
 
+function makeDateTick(dates: string[]) {
+  return function DateTick({ x, y, payload, index }: { x?: number; y?: number; payload?: { value: string }; index?: number }) {
+    const dateStr = payload?.value ?? "";
+    const [, m, d] = dateStr.split("-");
+    const prevMonth = (index ?? 0) > 0 ? dates[(index ?? 0) - 1].split("-")[1] : null;
+    const showMonth = (index ?? 0) === 0 || m !== prevMonth;
+    const label = showMonth ? `${Number(m)}/${Number(d)}` : `${Number(d)}`;
+    const dow = DOW[new Date(dateStr).getDay()];
+    return (
+      <g transform={`translate(${x ?? 0},${y ?? 0})`}>
+        <text x={0} y={0} dy={12} textAnchor="middle" fill="var(--ink-muted)" fontSize={11}>{label}</text>
+        <text x={0} y={0} dy={25} textAnchor="middle" fill="var(--ink-muted)" fontSize={10}>{dow}</text>
+      </g>
+    );
+  };
+}
+
 export default function SentimentChart({ data }: Props) {
   if (data.length === 0) {
     return (
-      <p className="sentiment-empty">
-        まだ感情の揺らぎを描けない。<br />もう少し声を残してね。
-      </p>
+      <p className="sentiment-empty">データ無し。話せ。</p>
     );
   }
+
+  const DateTick = makeDateTick(data.map((d) => d.date));
 
   return (
     <div className="sentiment-chart-wrap">
@@ -53,19 +71,14 @@ export default function SentimentChart({ data }: Props) {
           </linearGradient>
         </defs>
       </svg>
-      <div className="sentiment-legend" aria-hidden>
-        <span className="sentiment-legend-pos">↑ ポジ</span>
-        <span className="sentiment-legend-sep">／</span>
-        <span className="sentiment-legend-neg">↓ ネガ</span>
-      </div>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 12, right: 12, bottom: 16, left: 0 }}>
           <CartesianGrid stroke="var(--surface-border)" strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fill: "var(--ink-muted)", fontSize: 11 }}
+            tick={DateTick}
             stroke="var(--surface-border)"
-            tickFormatter={(v: string) => v.slice(5)}
+            height={44}
           />
           <YAxis domain={[-1, 1]} hide />
           <Tooltip
