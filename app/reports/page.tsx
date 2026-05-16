@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react";
 import ReportCard from "@/components/ReportCard";
+import PageHeader from "@/components/PageHeader";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
 
@@ -40,12 +39,7 @@ export default function ReportsIndexPage() {
 
   return (
     <main className="reports-index-page">
-      <header className="reports-index-header">
-        <Link href="/" className="report-back font-display">
-          <ArrowLeft size={14} weight="bold" /> BACK
-        </Link>
-        <h1 className="reports-index-title font-display">REPORTS</h1>
-      </header>
+      <PageHeader title="REPORTS" backHref="/" />
 
       {loading && <p className="reports-empty">DECODING…</p>}
       {!loading && reports.length === 0 && !error && (

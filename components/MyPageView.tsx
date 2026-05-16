@@ -10,7 +10,6 @@ import {
   getNickname,
   loadSentimentCache,
   saveSentimentCache,
-  setNickname as persistNickname,
 } from "@/lib/userClient";
 
 type Props = {
@@ -53,8 +52,6 @@ export default function MyPageView({ myEmoji, posts, mySessionId }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNicknameState] = useState("ゲスト");
   const [days, setDays] = useState(1);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
   const [cache, setCache] = useState<Record<string, number>>({});
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -119,39 +116,12 @@ export default function MyPageView({ myEmoji, posts, mySessionId }: Props) {
 
   const streak = useMemo(() => calcStreak(myPosts), [myPosts]);
 
-  const startEdit = () => { setDraft(nickname); setEditing(true); };
-  const commitEdit = () => {
-    const trimmed = draft.trim();
-    if (trimmed) {
-      persistNickname(trimmed);
-      setNicknameState(trimmed);
-    }
-    setEditing(false);
-  };
-
   return (
     <section className="mypage-view">
       <div className="mypage-profile">
         <div className="mypage-avatar" aria-hidden>{myEmoji}</div>
         <div className="mypage-nickname-row">
-          {editing ? (
-            <>
-              <input
-                className="mypage-nickname-input"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditing(false); }}
-                autoFocus
-                maxLength={20}
-              />
-              <button type="button" className="mypage-edit-btn" onClick={commitEdit}>保存</button>
-            </>
-          ) : (
-            <>
-              <h3 className="mypage-nickname font-display">{nickname}</h3>
-              <button type="button" className="mypage-edit-btn" onClick={startEdit}>編集</button>
-            </>
-          )}
+          <h3 className="mypage-nickname font-display">{nickname}</h3>
         </div>
       </div>
 

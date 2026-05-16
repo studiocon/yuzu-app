@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react";
+import PageHeader from "./PageHeader";
 import SentimentChart from "./SentimentChart";
 import { loadSentimentCache } from "@/lib/userClient";
 import { buildMockReport, isMockMode } from "@/lib/mockReports";
@@ -52,11 +51,7 @@ export default function ReportDetail({ periodKey }: Props) {
 
   return (
     <main className="report-detail-page">
-      <header className="report-detail-header">
-        <Link href="/reports" className="report-back font-display">
-          <ArrowLeft size={14} weight="bold" /> REPORTS
-        </Link>
-      </header>
+      <PageHeader title={labelFromKey(periodKey)} backHref="/reports" backLabel="REPORTS" />
 
       {status === "loading" && (
         <p className="report-detail-status font-display">DECODING…</p>
@@ -82,9 +77,6 @@ export default function ReportDetail({ periodKey }: Props) {
 
       {status === "ok" && report && (
         <article className="report-detail">
-          <h1 className="report-detail-title font-display">
-            {labelFromKey(report.periodKey)}
-          </h1>
           <p className="report-detail-headline">{report.payload.headline}</p>
 
           <section className="report-detail-block">

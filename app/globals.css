@@ -360,6 +360,7 @@ body {
   padding-bottom: calc(108px + env(safe-area-inset-bottom));
 }
 .app-header {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -373,6 +374,115 @@ body {
   pointer-events: none;
 }
 .app-logo { height: 28px; width: auto; display: block; }
+.settings-fab {
+  position: absolute;
+  top: 28px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  border-radius: 50%;
+  transition: opacity 0.15s ease;
+}
+.settings-fab:hover { opacity: 0.6; }
+
+/* ===== Settings page ===== */
+.settings-page {
+  min-height: 100dvh;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px 16px;
+  padding-top: calc(env(safe-area-inset-top) + 20px);
+}
+.settings-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.settings-back:hover { opacity: 0.6; }
+.settings-body {
+  flex: 1;
+  padding: 8px 0;
+}
+.settings-section {
+  margin-bottom: 32px;
+}
+.settings-section-title {
+  padding: 0 16px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid var(--surface-border);
+  gap: 12px;
+  min-height: 52px;
+}
+.settings-row:last-child { border-bottom: 1px solid var(--surface-border); }
+.settings-row-label {
+  flex: 1;
+  font-size: var(--text-base);
+  color: var(--ink);
+}
+.settings-row-value {
+  font-size: var(--text-base);
+  color: var(--ink-muted);
+}
+.settings-row-chevron {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+.settings-row--disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.settings-nickname-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-base);
+  color: var(--ink);
+  outline: none;
+  min-width: 0;
+  text-align: right;
+}
+.settings-nickname-input::placeholder { color: var(--ink-muted); }
+.settings-save-btn {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--yuzu-zest);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.settings-version {
+  text-align: center;
+  padding: 24px 16px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+}
 
 /* ===== Mic FAB ===== */
 .mic-fab {
@@ -1351,6 +1461,39 @@ body {
   margin: 0 auto;
   padding: 32px 20px 80px;
 }
+/* ===== Shared page header (Settings / Reports / etc.) ===== */
+.page-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 20px) 16px 16px;
+  margin-bottom: 16px;
+}
+.page-header-back {
+  position: absolute;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--ink-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  padding: 8px 4px;
+}
+.page-header-back:hover { color: var(--ink); }
+.page-header-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+
 .reports-index-header {
   display: flex;
   align-items: baseline;

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Microphone } from "@phosphor-icons/react";
+import { Gear, Microphone } from "@phosphor-icons/react";
+import Link from "next/link";
 import MyPageView from "@/components/MyPageView";
 import RecordModal from "@/components/RecordModal";
 import type { Post } from "@/lib/types";
@@ -294,6 +295,9 @@ export default function Home() {
           <path d="M237.099 154.901V87.8178H279.648V154.901H237.099ZM173 18.1824H219.75L267.413 79.0678H249.151L296.632 18.1824H343.382L271.979 109.146L244.586 109.693L173 18.1824Z" fill="#F5D84A"/>
         </svg>
         <p className="app-tagline">本物でいろ。</p>
+        <Link href="/settings" className="settings-fab" aria-label="設定">
+          <Gear size={22} weight="bold" />
+        </Link>
       </header>
 
       <MyPageView myEmoji={myEmoji} posts={posts} mySessionId={mySessionId} />
