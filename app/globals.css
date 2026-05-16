@@ -395,7 +395,7 @@ body {
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  padding: 0 20px calc(40px + env(safe-area-inset-bottom));
 }
 .settings-header {
   display: flex;
@@ -422,7 +422,7 @@ body {
   margin-bottom: 32px;
 }
 .settings-section-title {
-  padding: 0 16px 8px;
+  padding: 0 0 8px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -431,7 +431,7 @@ body {
 .settings-row {
   display: flex;
   align-items: center;
-  padding: 14px 16px;
+  padding: 14px 0;
   border-top: 1px solid var(--surface-border);
   gap: 12px;
   min-height: 52px;
@@ -478,7 +478,7 @@ body {
 }
 .settings-version {
   text-align: center;
-  padding: 24px 16px;
+  padding: 24px 0;
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--ink-muted);
