@@ -33,6 +33,7 @@ export default function Home() {
   const [mySessionId, setMySessionId] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
   const [lastPost, setLastPost] = useState<Post | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const phaseRef = useRef<Phase>("idle");
@@ -149,7 +150,11 @@ export default function Home() {
       return true;
     } catch (err) {
       console.error("startMediaRecorder failed", err);
-      setError("マイクへのアクセスに失敗しました");
+      if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
+        setPermissionDenied(true);
+      } else {
+        setError("マイクへのアクセスに失敗しました");
+      }
       setPhaseSync("idle");
       return false;
     }
@@ -183,6 +188,7 @@ export default function Home() {
     if (phaseRef.current !== "idle") return;
 
     setError(null);
+    setPermissionDenied(false);
     setShortTap(false);
     pressStartRef.current = Date.now();
     setPhaseSync("recording");
@@ -296,6 +302,7 @@ export default function Home() {
         type="button"
         className="mic-fab"
         aria-label="録音を開く"
+        data-modal-open={recordOpen ? "" : undefined}
         onClick={() => setRecordOpen(true)}
       >
         <Microphone size={28} weight="fill" color="#fff" />
@@ -309,6 +316,7 @@ export default function Home() {
         statusMsg={statusMsg}
         error={error}
         hint={hint}
+        permissionDenied={permissionDenied}
         analyser={analyser}
         lastPost={lastPost}
         posts={posts}

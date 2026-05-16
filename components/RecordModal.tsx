@@ -20,6 +20,7 @@ type Props = {
   statusMsg: string | null;
   error: string | null;
   hint: string | null;
+  permissionDenied: boolean;
   analyser: AnalyserNode | null;
   lastPost: Post | null;
   posts: Post[];
@@ -37,6 +38,7 @@ export default function RecordModal({
   statusMsg,
   error,
   hint,
+  permissionDenied,
   analyser,
   lastPost,
   posts,
@@ -136,6 +138,7 @@ export default function RecordModal({
           statusMsg={statusMsg}
           error={error}
           hint={hint}
+          permissionDenied={permissionDenied}
           analyser={analyser}
           onPressStart={onPressStart}
           onPressEnd={onPressEnd}
@@ -150,6 +153,7 @@ function CompleteView({ post, posts, onBack }: { post: Post; posts: Post[]; onBa
   const { streak, week } = computeStreak(posts);
   return (
     <section className="complete-view">
+      <p className="complete-stamp font-display">RECORDED.</p>
       <div className="complete-card">
         <p className="complete-text">{post.text}</p>
       </div>
@@ -166,8 +170,8 @@ function CompleteView({ post, posts, onBack }: { post: Post; posts: Post[]; onBa
           ))}
         </div>
         <p className="streak-headline">
-          <span className="streak-count">{streak}</span>
-          <span className="streak-unit">日連続です！</span>
+          <span className="streak-count font-display">{streak}</span>
+          <span className="streak-unit font-display">DAYS. NO SKIP.</span>
         </p>
       </div>
 

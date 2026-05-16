@@ -1,6 +1,6 @@
 "use client";
 
-import { Microphone } from "@phosphor-icons/react";
+import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import FloatingDots from "./FloatingDots";
 import Waveform from "./Waveform";
 
@@ -12,6 +12,7 @@ type Props = {
   statusMsg: string | null;
   error: string | null;
   hint: string | null;
+  permissionDenied: boolean;
   analyser: AnalyserNode | null;
   onPressStart: (e: React.MouseEvent | React.TouchEvent) => void;
   onPressEnd: () => void;
@@ -24,6 +25,7 @@ export default function SpeakView({
   statusMsg,
   error,
   hint,
+  permissionDenied,
   analyser,
   onPressStart,
   onPressEnd,
@@ -33,10 +35,11 @@ export default function SpeakView({
   const isBusy = phase === "busy";
 
   const status =
+    permissionDenied ? "マイクを許可して。" :
     error ? error :
-    isBusy ? (statusMsg ?? "言葉にしてるよ…") :
-    isRecording ? "聴いてるよ…" :
-    shortTap ? "もう少し長く押してね" : "長押しして、話す";
+    isBusy ? (statusMsg ?? "DECODING.") :
+    isRecording ? "RECORDING." :
+    shortTap ? "短い。もう一度。" : "長押し。話せ。";
 
   return (
     <section className="speak-view">
@@ -60,7 +63,7 @@ export default function SpeakView({
           aria-label="長押しで録音"
           aria-pressed={isRecording}
           disabled={isBusy}
-          className={"mic-button-large" + (isRecording ? " recording" : "")}
+          className={"mic-button-large" + (isRecording ? " recording" : "") + (permissionDenied ? " denied" : "")}
           onMouseDown={onPressStart}
           onMouseUp={onPressEnd}
           onMouseLeave={() => { if (isRecording) onPressEnd(); }}
@@ -69,7 +72,9 @@ export default function SpeakView({
           onTouchCancel={onPressCancel}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <Microphone size={40} weight="fill" />
+          {permissionDenied
+            ? <MicrophoneSlash size={40} weight="fill" />
+            : <Microphone size={40} weight="fill" />}
         </button>
       </div>
     </section>
