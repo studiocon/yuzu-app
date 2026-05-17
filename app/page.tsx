@@ -296,7 +296,6 @@ export default function Home() {
             <Gear size={22} weight="bold" />
           </Link>
         </div>
-        <p className="app-tagline">本物でいろ。</p>
       </header>
 
       {isOnboarding ? (
