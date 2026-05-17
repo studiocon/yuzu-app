@@ -1216,6 +1216,16 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Tablet (768px+) ===== */
+@media (min-width: 768px) {
+  .mypage-view { max-width: 720px; }
+  .app-header {
+    padding-left: clamp(20px, 5vw, 48px);
+    padding-right: clamp(20px, 5vw, 48px);
+  }
+  .report-card { max-width: 320px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
