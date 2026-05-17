@@ -5,6 +5,24 @@
 export const NICKNAME_KEY = "yuzu-nickname";
 export const SENTIMENT_CACHE_KEY = "yuzu-sentiment-cache";
 
+export const FRUIT_CODES: Record<string, string> = {
+  "🍑": "MO",
+  "🍋": "LE",
+  "🍇": "BU",
+  "🥝": "KI",
+  "🍓": "IC",
+  "🫐": "BL",
+  "🍈": "ME",
+  "🍊": "OR",
+  "🍍": "PA",
+  "🥭": "MA",
+  "🍌": "BA",
+  "🍒": "SA",
+  "🍎": "AP",
+  "🍐": "NA",
+  "🫒": "OL",
+};
+
 export const FRUIT_NAMES: Record<string, string> = {
   "🍑": "もも",
   "🍋": "レモン",

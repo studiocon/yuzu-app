@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "@phosphor-icons/react";
 import SentimentChart, { SentimentPoint } from "./SentimentChart";
 import ReportsSection from "./ReportsSection";
+import AvatarMark from "./AvatarMark";
 import type { Post } from "@/lib/types";
 import {
   getNickname,
@@ -117,7 +118,7 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
   return (
     <section className="mypage-view">
       <div className="mypage-profile">
-        <div className="mypage-avatar" aria-hidden>{myEmoji}</div>
+        <AvatarMark emoji={myEmoji} size="lg" />
         <div className="mypage-nickname-row">
           <h3 className="mypage-nickname font-display">{nickname}</h3>
         </div>
@@ -159,7 +160,7 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
           {myPosts.map((p) => (
             <article key={p.id} className="post-card mypage-post-card">
               <div className="post-header">
-                <div className="post-emoji" aria-hidden>{p.emoji ?? myEmoji}</div>
+                <AvatarMark emoji={p.emoji ?? myEmoji} size="sm" />
                 <span className="post-name">{nickname}</span>
                 <time className="post-time">{formatTimeLabel(p.createdAt)}</time>
                 <CopyButton text={p.text} />
