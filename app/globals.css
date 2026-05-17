@@ -10,7 +10,7 @@
   --ink-muted:        #9A9ABA;  /* ミュート：タイムスタンプ */
 
   /* Surface */
-  --surface-card:     #FFFEF5;  /* カード背景 */
+  --surface-card:     #fff;     /* カード背景 */
   --surface-border:   #E8E0C8;  /* ボーダー */
   --surface-hover:    #FFF5CC;  /* ホバー */
   --divider:          #EDEAE0;  /* リスト・カード区切りの最弱罫線 */
@@ -1240,10 +1240,10 @@ body {
 .post-card,
 .mypage-post-card {
   background: var(--surface-card) !important;
-  border: 1px solid var(--divider) !important;
+  border: none !important;
   border-radius: 4px !important;
   padding: 16px 14px !important;
-  box-shadow: none !important;
+  box-shadow: 0px 0 8px 0 rgb(0 0 0 / 4%) !important;
   transform: none !important;
 }
 .post-card:hover { transform: none !important; }
@@ -1476,12 +1476,13 @@ body {
   flex-direction: column;
   gap: 10px;
   padding: 16px 14px;
-  border: 1px solid var(--divider);
+  border: none;
   border-radius: 4px;
   background: var(--surface-card);
+  box-shadow: 0px 0 8px 0 rgb(0 0 0 / 4%);
   text-decoration: none;
   color: var(--ink);
-  transition: background 0.15s var(--ease-soft), border-color 0.15s var(--ease-soft);
+  transition: background 0.15s var(--ease-soft);
 }
 .report-card:hover { background: var(--surface-hover); border-color: var(--ink); }
 .report-card-kind {

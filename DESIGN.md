@@ -23,7 +23,7 @@ cssVars:
   --ink-secondary:    "#4A4A6A"
   --ink-muted:        "#9A9ABA"
   # Surface
-  --surface-card:     "#FFFEF5"
+  --surface-card:     "#fff"
   --surface-border:   "#E8E0C8"
   --surface-hover:    "#FFF5CC"
   --divider:          "#EDEAE0"
@@ -87,7 +87,7 @@ CSS変数として [app/globals.css](app/globals.css) の `:root` に定義。
 --ink-muted:     #9A9ABA;
 
 /* Surface / Divider */
---surface-card:   #FFFEF5;
+--surface-card:   #fff;
 --surface-border: #E8E0C8;
 --surface-hover:  #FFF5CC;
 --divider:        #EDEAE0;  /* リスト・カード区切りの最弱罫線。--ink-muted より十分薄い */
