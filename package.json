@@ -8,6 +8,7 @@
     "start": "next start",
     "design:lint": "npx -y @google/design.md lint DESIGN.md",
     "design:drift": "node scripts/check-design-drift.mjs",
+    "design:sync": "node scripts/sync-design-preview.mjs",
     "design:check": "npm run design:drift && npm run design:lint"
   },
   "dependencies": {
