@@ -13,7 +13,7 @@ import {
 
 type Props = {
   myEmoji: string;
-  posts: Post[];
+  myPosts: Post[];
   mySessionId: string | null;
 };
 
@@ -47,7 +47,7 @@ const calcStreak = (posts: Post[]): number => {
   return streak;
 };
 
-export default function MyPageView({ myEmoji, posts, mySessionId }: Props) {
+export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNicknameState] = useState("ゲスト");
   const [cache, setCache] = useState<Record<string, number>>({});
@@ -58,11 +58,6 @@ export default function MyPageView({ myEmoji, posts, mySessionId }: Props) {
     setCache(loadSentimentCache());
     setHydrated(true);
   }, [myEmoji]);
-
-  const myPosts = useMemo<Post[]>(() => {
-    if (!mySessionId) return posts;
-    return posts.filter((p) => p.sessionId === mySessionId);
-  }, [posts, mySessionId]);
 
   useEffect(() => {
     if (!hydrated || myPosts.length === 0) return;
