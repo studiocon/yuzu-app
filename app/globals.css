@@ -1617,6 +1617,12 @@ body {
   align-items: center;
   gap: 12px;
 }
+.report-detail-status-sub {
+  font-size: var(--text-xs);
+  opacity: 0.6;
+  max-width: 260px;
+  line-height: 1.5;
+}
 .report-detail {
   display: flex;
   flex-direction: column;

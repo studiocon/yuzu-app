@@ -27,7 +27,7 @@ export default function CompleteView({ post, posts, onBack }: Props) {
         </div>
         <p className="streak-headline">
           <span className="streak-count font-display">{streak}</span>
-          <span className="streak-unit font-display">DAYS. NO SKIP.</span>
+          <span className="streak-unit font-display">STREAK</span>
         </p>
       </div>
 

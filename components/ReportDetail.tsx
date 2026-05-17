@@ -54,7 +54,10 @@ export default function ReportDetail({ periodKey }: Props) {
       <PageHeader backHref="/reports" backLabel="REPORTS" />
 
       {status === "loading" && (
-        <p className="report-detail-status font-display">DECODING…</p>
+        <div className="report-detail-status">
+          <p className="font-display">DECODING…</p>
+          <p className="report-detail-status-sub">AIが分析中。他の画面に移動したり閉じても生成は続きます。</p>
+        </div>
       )}
       {status === "no_posts" && (
         <p className="report-detail-status">この期間は何も無い。</p>
