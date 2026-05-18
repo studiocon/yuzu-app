@@ -28,6 +28,9 @@
   --text-xl: 24px;
   --text-2xl: 32px;
   --text-3xl: 48px;
+
+  /* Fonts (--font-display は next/font/google の Unbounded を <html> 経由で注入) */
+  --font-body: 'LINE Seed JP', "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -35,7 +38,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: 'LINE Seed JP', "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  font-family: var(--font-body), "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -54,9 +57,8 @@ body {
 .post-card,
 .mypage-post-card {
   background: var(--surface-card);
-  border: none;
+  border: 1px solid var(--divider);
   border-radius: 4px;
-  box-shadow: 0px 0 8px 0 rgb(0 0 0 / 4%);
   padding: 16px 14px;
   display: flex;
   flex-direction: column;
@@ -251,7 +253,6 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--surface-border);
   border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(26, 26, 46, 0.12);
   z-index: 10;
   animation: fadeIn 160ms var(--ease-soft);
 }
@@ -287,7 +288,7 @@ body {
 .app-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 24px 20px 16px;
   transition: opacity 0.3s var(--ease-soft), transform 0.3s var(--ease-soft);
@@ -318,7 +319,7 @@ body {
   justify-content: center;
   flex-shrink: 0;
   color: var(--ink);
-  border-radius: 50%;
+  border-radius: 4px;
   transition: opacity 0.15s ease;
 }
 .settings-fab:hover { opacity: 0.6; }
@@ -327,8 +328,8 @@ body {
 .onboarding-view {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   padding: 56px 24px 0;
   gap: 40px;
 }
@@ -362,7 +363,6 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(26, 26, 46, 0.28);
   transition: transform 0.15s var(--ease-snap);
 }
 .onboarding-mic:active { transform: scale(0.94); }
@@ -464,7 +464,7 @@ body {
   flex-shrink: 0;
 }
 .settings-version {
-  text-align: center;
+  text-align: left;
   padding: 24px 0;
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -485,7 +485,6 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
   cursor: pointer;
   z-index: 100;
   /* delayed fade-in when modal closes (waits for fly-mic to travel back) */
@@ -541,7 +540,6 @@ body {
   height: 96px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -700,17 +698,17 @@ body {
   font-size: var(--text-lg);
   color: #fff;
   letter-spacing: 0.04em;
-  text-align: center;
+  text-align: left;
   font-weight: 500;
   min-height: 1.6em;
 }
 .speak-prompt {
   margin: 0;
-  text-align: center;
+  text-align: left;
   color: #fff;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 .speak-prompt-text {
@@ -780,8 +778,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  transition: box-shadow 0.2s var(--ease-soft), transform 0.2s var(--ease-soft);
+  transition: transform 0.2s var(--ease-soft);
 }
 .mic-button-large:active:not(:disabled) {
   animation: mic-press 0.4s var(--ease-soft);
@@ -790,7 +787,6 @@ body {
   opacity: 0.6;
 }
 .mic-button-large.recording {
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.25), 0 12px 32px rgba(0, 0, 0, 0.25);
   animation: mic-recording-pulse 1.4s var(--ease-soft) infinite;
 }
 .mic-button-large:disabled {
@@ -938,9 +934,8 @@ body {
   -webkit-overflow-scrolling: touch;
   background: #fff;
   color: var(--ink);
-  border-radius: 20px;
+  border-radius: 2px;
   padding: 22px 22px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   opacity: 0;
   animation: card-slide-up 0.4s ease 0.1s forwards;
 }
@@ -998,7 +993,6 @@ body {
   background: #fff;
   color: var(--yuzu-zest);
   border-color: #fff;
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.35);
 }
 .streak-day-check.today {
   outline: 2px solid rgba(255, 255, 255, 0.7);
@@ -1008,7 +1002,7 @@ body {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  text-align: center;
+  text-align: left;
   color: #fff;
   letter-spacing: 0.01em;
   opacity: 0;
@@ -1032,7 +1026,6 @@ body {
   font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   opacity: 0;
   animation: card-slide-up 0.4s ease 1.5s forwards;
   transition: transform 0.15s var(--ease-soft);
@@ -1190,14 +1183,14 @@ body {
 .sentiment-empty {
   color: var(--ink-muted);
   font-size: var(--text-sm);
-  text-align: center;
+  text-align: left;
   margin: 24px 0;
   line-height: 1.7;
 }
 .mypage-loading-hint {
   font-size: var(--text-xs);
   color: var(--ink-muted);
-  text-align: center;
+  text-align: left;
   margin: 8px 0 0;
 }
 
@@ -1205,7 +1198,7 @@ body {
 .mypage-empty {
   color: var(--ink-muted);
   font-size: var(--text-sm);
-  text-align: center;
+  text-align: left;
   line-height: 1.8;
   margin: 24px 0;
 }
@@ -1254,7 +1247,7 @@ body {
 
 /* タグライン用ユーティリティ */
 .app-tagline {
-  font-family: 'LINE Seed JP', sans-serif;
+  font-family: var(--font-body), sans-serif;
   font-weight: 700;
   font-size: var(--text-base);
   color: var(--ink);
@@ -1405,7 +1398,7 @@ body {
   border: none;
   border-radius: 4px;
   background: var(--surface-card);
-  box-shadow: 0px 0 8px 0 rgb(0 0 0 / 4%);
+  border: 1px solid var(--divider);
   text-decoration: none;
   color: var(--ink);
   transition: background 0.15s var(--ease-soft);

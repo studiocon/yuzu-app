@@ -9,10 +9,14 @@
 | レイヤー | 採用 |
 |---|---|
 | フロント | Next.js 14 (App Router) + React 18 |
+| ネイティブ | Expo / React Native（iOS / Android） |
 | 録音 | MediaRecorder API |
 | STT | [ElevenLabs Scribe v2](https://elevenlabs.io/) |
 | ホスティング | Vercel |
-| 保存 | Vercel KV（投稿・リアクション）→ Supabase（V2以降） |
+| DB | Supabase PostgreSQL |
+| 認証 | Supabase Auth（Google / Apple） |
+| メール配信 | Resend |
+| プッシュ通知 | Expo Notifications |
 
 ## デザイン
 
@@ -39,10 +43,10 @@ npm run dev
 
 ```
 ELEVENLABS_API_KEY=your_key_here
-KV_REDIS_URL=redis://...
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
+RESEND_API_KEY=your_key_here
 ```
-
-`KV_REDIS_URL` は Vercel Marketplace の **Redis (Official Redis for Vercel)** を Project に Connect すると自動で生成される。`vercel env pull .env.local` でローカルにも同期可能。
 
 ブラウザで `http://localhost:3000` を開く。マイク権限の許可が必要です。
 

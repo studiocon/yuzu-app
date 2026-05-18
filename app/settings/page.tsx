@@ -62,7 +62,7 @@ export default function SettingsPage() {
                   onKeyDown={handleKeyDown}
                   autoFocus
                   maxLength={20}
-                  placeholder="名前を入力"
+                  placeholder="名前をつけよう"
                 />
                 <button
                   type="button"

@@ -45,7 +45,7 @@ export default function ReportsSection({ mySessionId }: Props) {
         if (cancelled) return;
         setReports(Array.isArray(data.reports) ? data.reports : []);
       } catch {
-        if (!cancelled) setError("失敗。もう一度。");
+        if (!cancelled) setError("失敗。話せ。");
       } finally {
         if (!cancelled) setLoading(false);
       }

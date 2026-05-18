@@ -227,17 +227,17 @@ export default function Home() {
       fd.append("audio", blob, `recording.${ext}`);
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || "文字起こしに失敗しました");
+      if (!res.ok) throw new Error(data?.error || "失敗。話せ。");
 
       const text: string = data?.text ?? "";
       if (text === "") {
-        showHint("声が聞こえなかった。もう一度。");
+        showHint("無音。話せ。");
         setStatusMsg(null);
         setPhaseSync("idle");
         return;
       }
       if (text.length < 5) {
-        showHint("短い。もう一度。");
+        showHint("短い。話せ。");
         setStatusMsg(null);
         setPhaseSync("idle");
         return;
@@ -251,9 +251,9 @@ export default function Home() {
       const saveData = await safeJson(saveRes);
       if (!saveRes.ok) {
         if (saveData?.error === "kv_not_configured") {
-          throw new Error("サーバーの保存先が未設定です（KV未接続）");
+          throw new Error("保存先が未接続。");
         }
-        throw new Error(saveData?.error || "保存に失敗しました");
+        throw new Error(saveData?.error || "保存失敗。");
       }
 
       const newPost: Post | undefined = saveData?.post;

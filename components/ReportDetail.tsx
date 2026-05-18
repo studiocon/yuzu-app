@@ -55,7 +55,7 @@ export default function ReportDetail({ periodKey }: Props) {
 
       {status === "loading" && (
         <div className="report-detail-status">
-          <p className="font-display">DECODING…</p>
+          <p className="font-display">DECODING.</p>
           <p className="report-detail-status-sub">AIが分析中。他の画面に移動したり閉じても生成は続きます。</p>
         </div>
       )}
@@ -67,7 +67,7 @@ export default function ReportDetail({ periodKey }: Props) {
       )}
       {status === "error" && (
         <div className="report-detail-status">
-          <p>失敗。もう一度。</p>
+          <p>失敗。話せ。</p>
           <button
             type="button"
             className="btn btn--secondary btn--sm"

@@ -50,12 +50,12 @@ const calcStreak = (posts: Post[]): number => {
   return streak;
 };
 
-const EMPTY_PHRASES = ["最初の一声を", "はじまりを、語って", "ここから始まる"] as const;
+const EMPTY_PHRASES = ["話せ。", "出せ。", "整えるな。"] as const;
 
 export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
   const emptyPhrase = useRef(EMPTY_PHRASES[Math.floor(Math.random() * EMPTY_PHRASES.length)]).current;
   const [hydrated, setHydrated] = useState(false);
-  const [nickname, setNicknameState] = useState("ゲスト");
+  const [nickname, setNicknameState] = useState("GUEST");
   const [cache, setCache] = useState<Record<string, number>>({});
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -147,7 +147,7 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
           <h4 className="mypage-section-title font-display">SENTIMENT</h4>
           <div className="mypage-chart-card">
             <SentimentChart data={sentimentData} />
-            {analyzing && <p className="mypage-loading-hint">DECODING…</p>}
+            {analyzing && <p className="mypage-loading-hint">DECODING.</p>}
           </div>
         </section>
       )}

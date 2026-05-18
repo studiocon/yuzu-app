@@ -41,11 +41,11 @@ export default function SpeakView({
     phase === "idle" && !permissionDenied && !error && !shortTap;
 
   const status =
-    permissionDenied ? "マイクを許可して。" :
+    permissionDenied ? "マイクを許可しろ。" :
     error ? error :
     isBusy ? (statusMsg ?? "DECODING.") :
     isRecording ? "RECORDING." :
-    shortTap ? "短い。もう一度。" : "";
+    shortTap ? "短い。話せ。" : "";
 
   return (
     <section className="speak-view">

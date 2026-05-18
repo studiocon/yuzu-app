@@ -29,7 +29,7 @@ export default function ReportsIndexPage() {
         if (cancelled) return;
         setReports(Array.isArray(data.reports) ? data.reports : []);
       } catch {
-        if (!cancelled) setError("失敗。もう一度。");
+        if (!cancelled) setError("失敗。話せ。");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -41,7 +41,7 @@ export default function ReportsIndexPage() {
     <main className="reports-index-page">
       <PageHeader title="REPORTS" backHref="/" />
 
-      {loading && <p className="reports-empty">DECODING…</p>}
+      {loading && <p className="reports-empty">DECODING.</p>}
       {!loading && reports.length === 0 && !error && (
         <div className="reports-empty-state">
           <p className="reports-empty-headline font-display">NOTHING TO READ YET.</p>
