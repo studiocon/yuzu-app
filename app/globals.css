@@ -313,19 +313,6 @@ body {
   flex-shrink: 0;
 }
 .app-logo { height: 44px; width: auto; display: block; flex-shrink: 0; }
-.settings-fab {
-  position: static;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--ink);
-  border-radius: 4px;
-  transition: opacity 0.15s ease;
-}
-.settings-fab:hover { opacity: 0.6; }
 
 /* ===== Onboarding view (first-visit empty state) ===== */
 .onboarding-view {
@@ -394,16 +381,7 @@ body {
   padding: 20px 16px 16px;
   padding-top: calc(env(safe-area-inset-top) + 20px);
 }
-.settings-back {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-.settings-back:hover { opacity: 0.6; }
+
 .settings-body {
   flex: 1;
   padding: 8px 0;
@@ -702,20 +680,22 @@ body {
   position: absolute;
   top: calc(env(safe-area-inset-top) + 12px);
   left: 16px;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: #fff;
   color: var(--ink);
-  font-size: 22px;
-  line-height: 1;
   cursor: pointer;
   z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s var(--ease-soft), transform 0.12s var(--ease-snap);
+  -webkit-tap-highlight-color: transparent;
 }
+.record-modal-close:hover { background: rgba(255, 255, 255, 0.80); }
+.record-modal-close:active { transform: scale(0.94); transition-duration: 60ms; }
 .record-modal-close:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -1361,7 +1341,7 @@ body {
   color: var(--ink);
 }
 .iconbtn svg { width: 20px; height: 20px; }
-.iconbtn:hover { transform: translateY(-1px); }
+.iconbtn:hover { background: var(--surface-hover); color: var(--ink); }
 .iconbtn:active { transform: scale(0.94); transition-duration: 60ms; }
 .iconbtn[disabled], .iconbtn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 .iconbtn--primary { background: var(--ink); color: var(--yuzu-white); border-color: var(--ink); }
@@ -1519,14 +1499,8 @@ body {
 .page-header-back {
   position: absolute;
   left: 0;
-  display: inline-flex;
-  align-items: center;
-  color: var(--ink-secondary);
   text-decoration: none;
-  padding: 8px;
-  margin: -8px;
 }
-.page-header-back:hover { color: var(--ink); }
 .page-header-title {
   font-size: 11px;
   font-weight: 700;
