@@ -68,7 +68,7 @@ export default function SpeakView({
         {isIdleHero && (
           <div className="speak-prompt">
             <p className="speak-prompt-text">{prompt}</p>
-            <p className="speak-prompt-hint">長押し。話して</p>
+            <p className="speak-prompt-hint">長押し。話せ</p>
           </div>
         )}
         <div className="mic-wrap">
