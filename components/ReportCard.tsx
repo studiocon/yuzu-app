@@ -3,14 +3,16 @@
 import Link from "next/link";
 import type { ReportMeta } from "@/lib/reportTypes";
 
-type Props = { meta: ReportMeta };
+type Props = { meta: ReportMeta; indexNum?: number };
 
-export default function ReportCard({ meta }: Props) {
+export default function ReportCard({ meta, indexNum }: Props) {
+  const kindLabel = meta.kind === "week"
+    ? indexNum != null ? `WEEK #${indexNum}` : "WEEK"
+    : indexNum != null ? `MONTH #${indexNum}` : "MONTH";
+
   return (
     <Link href={`/reports/${meta.periodKey}`} className="report-card">
-      <div className="report-card-kind font-display">
-        {meta.kind === "week" ? "WEEK" : "MONTH"}
-      </div>
+      <div className="report-card-kind font-display">{kindLabel}</div>
       <div className="report-card-label">{meta.label}</div>
       {meta.headline && (
         <p className="report-card-headline">{meta.headline}</p>

@@ -5,6 +5,7 @@ export type { Post };
 
 const postsKey = (sid: string) => `posts:${sid}`;
 const itemKey = (id: string) => `posts:item:${id}`;
+const indexKey = (sid: string) => `user:${sid}:index`;
 
 declare global {
   // eslint-disable-next-line no-var
@@ -26,16 +27,20 @@ async function getClient(): Promise<RedisClientType> {
   return client;
 }
 
-export async function createPost(p: Post): Promise<void> {
+// Returns the new index number assigned to this post.
+export async function createPost(p: Omit<Post, "index">): Promise<number> {
   const r = await getClient();
+  const idx = await r.incr(indexKey(p.sessionId));
   await r.hSet(itemKey(p.id), {
     id: p.id,
     text: p.text,
     createdAt: String(p.createdAt),
     emoji: p.emoji,
     sessionId: p.sessionId,
+    index: String(idx),
   });
   await r.zAdd(postsKey(p.sessionId), { score: p.createdAt, value: p.id });
+  return idx;
 }
 
 export async function listPosts(sessionId: string, limit = 50): Promise<Post[]> {
@@ -47,12 +52,23 @@ export async function listPosts(sessionId: string, limit = 50): Promise<Post[]> 
     ids.map(async (id) => {
       const raw = await r.hGetAll(itemKey(id));
       if (!raw || Object.keys(raw).length === 0) return null;
+
+      let index: number;
+      if (raw.index) {
+        index = Number(raw.index);
+      } else {
+        // Backward compat: derive index from ascending rank in sorted set.
+        const rank = await r.zRank(postsKey(sessionId), id);
+        index = rank !== null ? rank + 1 : 0;
+      }
+
       return {
         id: String(raw.id ?? id),
         text: String(raw.text ?? ""),
         createdAt: Number(raw.createdAt ?? 0),
         emoji: String(raw.emoji ?? "🍑"),
         sessionId: String(raw.sessionId ?? sessionId),
+        index,
       } satisfies Post;
     }),
   );

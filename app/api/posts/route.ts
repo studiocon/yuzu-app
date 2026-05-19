@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPost, listPosts } from "@/lib/kv";
+import type { Post } from "@/lib/types";
 import { getOrCreateSessionId, setSessionCookie } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (!text) return NextResponse.json({ error: "text required" }, { status: 400 });
 
-  const post = {
+  const postData = {
     id: crypto.randomUUID(),
     text,
     createdAt: Date.now(),
@@ -52,13 +53,15 @@ export async function POST(req: NextRequest) {
     sessionId: sid,
   };
 
+  let idx: number;
   try {
-    await createPost(post);
+    idx = await createPost(postData);
   } catch (e) {
     console.error("createPost failed", e);
     return NextResponse.json({ error: "kv_error" }, { status: 500 });
   }
 
+  const post: Post = { ...postData, index: idx };
   const res = NextResponse.json({ post, sessionId: sid });
   if (isNew) setSessionCookie(res, sid);
   return res;

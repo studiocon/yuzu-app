@@ -52,6 +52,7 @@ export function buildMockPosts(
     createdAt: timestampFor(seed, now),
     emoji,
     sessionId,
+    index: i + 1,
   }));
   posts.sort((a, b) => b.createdAt - a.createdAt);
 

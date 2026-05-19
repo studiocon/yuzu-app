@@ -6,12 +6,28 @@ import { ArrowRight } from "@phosphor-icons/react";
 import ReportCard from "./ReportCard";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
+import { jstSundayStart } from "@/lib/period";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const JST_MS = 9 * 60 * 60 * 1000;
+
+function weekIndexNum(periodStart: number, firstPostAt: number): number {
+  const firstWeekStart = jstSundayStart(firstPostAt);
+  return Math.round((periodStart - firstWeekStart) / (7 * DAY_MS)) + 1;
+}
+
+function monthIndexNum(periodStart: number, firstPostAt: number): number {
+  const d1 = new Date(firstPostAt + JST_MS);
+  const d2 = new Date(periodStart + JST_MS);
+  return (d2.getUTCFullYear() - d1.getUTCFullYear()) * 12 + (d2.getUTCMonth() - d1.getUTCMonth()) + 1;
+}
 
 type Props = {
   mySessionId: string | null;
+  firstPostAt?: number | null;
 };
 
-export default function ReportsSection({ mySessionId }: Props) {
+export default function ReportsSection({ mySessionId, firstPostAt }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [reports, setReports] = useState<ReportMeta[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +53,6 @@ export default function ReportsSection({ mySessionId }: Props) {
       try {
         const res = await fetch("/api/reports", { cache: "no-store" });
         if (!res.ok) {
-          // KV 未設定や初期状態は空表示にとどめる
           if (!cancelled) setReports([]);
           return;
         }
@@ -68,9 +83,14 @@ export default function ReportsSection({ mySessionId }: Props) {
 
       {reports.length > 0 && (
         <div className="reports-list">
-          {reports.map((meta) => (
-            <ReportCard key={meta.periodKey} meta={meta} />
-          ))}
+          {reports.map((meta) => {
+            const n = firstPostAt != null
+              ? meta.kind === "week"
+                ? weekIndexNum(meta.start, firstPostAt)
+                : monthIndexNum(meta.start, firstPostAt)
+              : undefined;
+            return <ReportCard key={meta.periodKey} meta={meta} indexNum={n} />;
+          })}
         </div>
       )}
     </section>

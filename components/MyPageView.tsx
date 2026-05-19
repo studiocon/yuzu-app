@@ -99,6 +99,9 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
     () => new Set(myPosts.map((p) => dateKey(p.createdAt))).size,
     [myPosts],
   );
+  // myPosts is newest-first; [0] = latest post, [last] = oldest (first ever)
+  const latestIndex = myPosts.length > 0 ? myPosts[0].index : null;
+  const firstPostAt = myPosts.length > 0 ? myPosts[myPosts.length - 1].createdAt : null;
 
   return (
     <section className="mypage-view">
@@ -122,6 +125,12 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
           <span className="mypage-stat-label font-display">STREAK</span>
           <span className="mypage-stat-value font-display">{streak}</span>
         </div>
+        <div className="mypage-stat-card">
+          <span className="mypage-stat-label font-display">LATEST</span>
+          <span className="mypage-stat-value mypage-stat-value--index font-display">
+            {latestIndex !== null ? `#${latestIndex}` : "—"}
+          </span>
+        </div>
       </div>
 
       {(sentimentData.length > 0 || analyzing) && (
@@ -134,7 +143,7 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
         </section>
       )}
 
-      <ReportsSection mySessionId={mySessionId} />
+      <ReportsSection mySessionId={mySessionId} firstPostAt={firstPostAt} />
 
     </section>
   );

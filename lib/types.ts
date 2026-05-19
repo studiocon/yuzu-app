@@ -4,4 +4,5 @@ export type Post = {
   createdAt: number;
   emoji: string;
   sessionId: string;
+  index: number;
 };

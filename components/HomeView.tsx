@@ -48,7 +48,11 @@ export default function HomeView({ myEmoji, myPosts }: Props) {
               <div className="post-header">
                 <AvatarMark emoji={p.emoji ?? myEmoji} size="sm" />
                 <span className="post-name">{nickname}</span>
-                <time className="post-time">{formatTimeLabel(p.createdAt)}</time>
+                <span className="post-meta">
+                  <span className="post-index font-display">#{p.index}</span>
+                  <span className="post-meta-sep" aria-hidden>·</span>
+                  <time className="post-time">{formatTimeLabel(p.createdAt)}</time>
+                </span>
                 <CopyButton text={p.text} />
               </div>
               <div className="post-body">
