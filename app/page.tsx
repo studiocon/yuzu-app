@@ -12,6 +12,7 @@ import type { Post } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import { countUnread } from "@/lib/notifications";
 
 type Phase = "idle" | "recording" | "busy" | "complete";
 
@@ -29,6 +30,7 @@ export default function Home() {
   const [hint, setHint] = useState<string | null>(null);
   const [myEmoji, setMyEmoji] = useState<string>("🍑");
   const [mySessionId, setMySessionId] = useState<string | null>(null);
+  const [hasUnreadSignal, setHasUnreadSignal] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
   const [tab, setTab] = useState<MainTab>("home");
   const [lastPost, setLastPost] = useState<Post | null>(null);
@@ -66,6 +68,8 @@ export default function Home() {
       }
     } catch {}
     if (e) setMyEmoji(e);
+
+    setHasUnreadSignal(countUnread() > 0);
 
     if (isMockMode()) {
       const { posts: mockPosts, sentiments } = buildMockPosts(e ?? "🍑", "mock-session");
@@ -262,7 +266,8 @@ export default function Home() {
       const newPost: Post | undefined = saveData?.post;
       if (!newPost) throw new Error("保存に失敗しました");
       if (saveData?.sessionId) setMySessionId(saveData.sessionId);
-      setPosts((prev) => [newPost, ...prev]);
+      setPosts((prev) => [newPost, ...(prev ?? [])]);
+      setHasUnreadSignal(countUnread() > 0);
       setStatusMsg(null);
       setLastPost(newPost);
       setPhaseSync("complete");
@@ -297,9 +302,10 @@ export default function Home() {
       <header className="app-header">
         <div className="app-header-row">
           {!isOnboarding ? (
-            <button type="button" className="iconbtn iconbtn--ghost" aria-label="お知らせ">
+            <Link href="/signal" className="iconbtn iconbtn--ghost signal-trigger" aria-label="SIGNAL">
               <Bell size={22} weight="bold" />
-            </button>
+              {hasUnreadSignal && <span className="notif-dot" aria-hidden />}
+            </Link>
           ) : (
             <span className="app-header-spacer" aria-hidden />
           )}

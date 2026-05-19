@@ -314,6 +314,95 @@ body {
 }
 .app-logo { height: 44px; width: auto; display: block; flex-shrink: 0; }
 
+.signal-trigger { position: relative; }
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--yuzu-zest);
+  pointer-events: none;
+}
+
+/* ===== Signal (SIGNAL) page ===== */
+.signal-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+  min-height: 100dvh;
+}
+.signal-body { padding: 0 4px; }
+.signal-empty {
+  text-align: center;
+  color: var(--ink-muted);
+  padding: 80px 0;
+  font-size: var(--text-base);
+}
+.signal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px;
+}
+.signal-item {
+  border-bottom: 1px solid var(--divider);
+}
+.signal-item:first-child { border-top: 1px solid var(--divider); }
+.signal-item-link {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 16px 4px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.signal-item-link:hover { background: var(--surface-hover); }
+.signal-item-date {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+.signal-item-body {
+  font-size: var(--text-base);
+  color: var(--ink);
+  line-height: 1.5;
+}
+.signal-new-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--yuzu-zest);
+}
+.signal-actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 32px;
+}
+.signal-detail { padding: 24px 4px; }
+.signal-detail-date {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.signal-detail-title {
+  font-size: var(--text-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 20px;
+}
+.signal-detail-body {
+  font-size: var(--text-base);
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 /* ===== Onboarding view (first-visit empty state) ===== */
 .onboarding-view {
   display: flex;
