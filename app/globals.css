@@ -573,21 +573,16 @@ body {
 }
 
 /* ── Opening ── */
-.record-modal[data-anim="opening"] .rm-fly-mic {
-  animation: rm-fly-to-bottom 0.36s var(--ease-soft) forwards;
+.record-modal[data-anim="opening"] {
+  animation: modal-fade-in 0.28s var(--ease-soft) forwards;
 }
 .record-modal[data-anim="opening"] .record-modal-close,
 .record-modal[data-anim="opening"] .speak-view,
 .record-modal[data-anim="opening"] .complete-view {
-  visibility: hidden;
+  opacity: 0;
 }
 
 /* ── Fully open ── */
-.record-modal[data-anim="open"] .rm-flash,
-.record-modal[data-anim="open"] .rm-fly-mic {
-  opacity: 0;
-  pointer-events: none;
-}
 .record-modal[data-anim="open"] .record-modal-close,
 .record-modal[data-anim="open"] .speak-view,
 .record-modal[data-anim="open"] .complete-view {
@@ -595,13 +590,13 @@ body {
 }
 
 /* ── Closing ── */
+.record-modal[data-anim="closing"] {
+  animation: modal-fade-out 0.36s var(--ease-soft) forwards;
+}
 .record-modal[data-anim="closing"] .record-modal-close,
 .record-modal[data-anim="closing"] .speak-view,
 .record-modal[data-anim="closing"] .complete-view {
   visibility: hidden;
-}
-.record-modal[data-anim="closing"] .rm-fly-mic {
-  animation: rm-fly-to-fab 0.42s var(--ease-soft) forwards;
 }
 
 /* ── Keyframes ── */
@@ -665,6 +660,14 @@ body {
   }
 }
 
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
 @keyframes content-appear {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
