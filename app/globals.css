@@ -573,11 +573,8 @@ body {
 }
 
 /* ── Opening ── */
-.record-modal[data-anim="opening"] .rm-flash {
-  animation: rm-flash-in 0.48s ease forwards;
-}
 .record-modal[data-anim="opening"] .rm-fly-mic {
-  animation: rm-fly-to-bottom 0.48s var(--ease-organic) forwards;
+  animation: rm-fly-to-bottom 0.36s var(--ease-soft) forwards;
 }
 .record-modal[data-anim="opening"] .record-modal-close,
 .record-modal[data-anim="opening"] .speak-view,
@@ -602,9 +599,6 @@ body {
 .record-modal[data-anim="closing"] .speak-view,
 .record-modal[data-anim="closing"] .complete-view {
   visibility: hidden;
-}
-.record-modal[data-anim="closing"] .rm-flash {
-  animation: rm-flash-out 0.42s ease forwards;
 }
 .record-modal[data-anim="closing"] .rm-fly-mic {
   animation: rm-fly-to-fab 0.42s var(--ease-soft) forwards;
