@@ -39,6 +39,8 @@ cssVars:
   --text-xl:   "24px"
   --text-2xl:  "32px"
   --text-3xl:  "48px"
+  # Font stacks
+  --font-body: 'LINE Seed JP', "Hiragino Kaku Gothic ProN", Meiryo, sans-serif
 ---
 
 # YUZU - Design Document
