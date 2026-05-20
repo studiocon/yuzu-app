@@ -10,8 +10,8 @@ export default function OnboardingView({ onStart }: Props) {
   return (
     <section className="onboarding-view">
       <div className="onboarding-copy">
-        <p className="onboarding-headline">話せ。</p>
-        <p className="onboarding-sub">1 分でいい。声を残せ。</p>
+        <p className="onboarding-headline">話せ</p>
+        <p className="onboarding-sub">まずは、長押しして声を残せ</p>
       </div>
 
       <button
@@ -22,8 +22,6 @@ export default function OnboardingView({ onStart }: Props) {
       >
         <Microphone size={40} weight="fill" />
       </button>
-
-      <p className="onboarding-hint">長押しで録音</p>
     </section>
   );
 }
