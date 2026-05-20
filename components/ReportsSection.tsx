@@ -86,8 +86,8 @@ export default function ReportsSection({ mySessionId, firstPostAt }: Props) {
           {reports.map((meta) => {
             const n = firstPostAt != null
               ? meta.kind === "week"
-                ? weekIndexNum(meta.start, firstPostAt)
-                : monthIndexNum(meta.start, firstPostAt)
+                ? weekIndexNum(meta.rangeStart, firstPostAt)
+                : monthIndexNum(meta.rangeStart, firstPostAt)
               : undefined;
             return <ReportCard key={meta.periodKey} meta={meta} indexNum={n} />;
           })}
