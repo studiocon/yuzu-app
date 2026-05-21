@@ -7,6 +7,7 @@ import HomeView from "@/components/HomeView";
 import MyPageView from "@/components/MyPageView";
 import OnboardingView from "@/components/OnboardingView";
 import RecordModal from "@/components/RecordModal";
+import IndexDetailModal from "@/components/IndexDetailModal";
 import TabBar, { type MainTab } from "@/components/TabBar";
 import type { Post } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
@@ -30,6 +31,7 @@ export default function Home() {
   const [myEmoji, setMyEmoji] = useState<string>("🍑");
   const [mySessionId, setMySessionId] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [detailPost, setDetailPost] = useState<Post | null>(null);
   const [tab, setTab] = useState<MainTab>("home");
   const [lastPost, setLastPost] = useState<Post | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -317,9 +319,9 @@ export default function Home() {
       {!isLoaded ? null : isOnboarding ? (
         <OnboardingView onStart={() => setRecordOpen(true)} />
       ) : tab === "home" ? (
-        <HomeView myEmoji={myEmoji} myPosts={myPosts} />
+        <HomeView myEmoji={myEmoji} myPosts={myPosts} onOpenDetail={setDetailPost} />
       ) : (
-        <MyPageView myEmoji={myEmoji} myPosts={myPosts} mySessionId={mySessionId} />
+        <MyPageView myEmoji={myEmoji} myPosts={myPosts} mySessionId={mySessionId} onOpenDetail={setDetailPost} />
       )}
 
       {isLoaded && !isOnboarding && (
@@ -330,6 +332,8 @@ export default function Home() {
           hidden={recordOpen}
         />
       )}
+
+      <IndexDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
 
       <RecordModal
         open={recordOpen}

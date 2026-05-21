@@ -1683,3 +1683,89 @@ button.settings-row:focus-visible {
   margin-top: 0;
 }
 
+
+/* IndexDetailModal: #番号単体ビュー */
+.index-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--ink);
+  color: var(--yuzu-white);
+  padding: max(40px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  opacity: 0;
+  transition: opacity 220ms var(--ease-soft);
+  overflow-y: auto;
+}
+.index-detail-modal[data-anim="open"] { opacity: 1; }
+.index-detail-modal[data-anim="opening"] { opacity: 0; }
+.index-detail-modal[data-anim="closing"] { opacity: 0; }
+.index-detail-close {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--yuzu-white);
+  cursor: pointer;
+}
+.index-detail-close:focus-visible {
+  outline: 2px solid var(--yuzu-yellow);
+  outline-offset: 2px;
+}
+.index-detail-body {
+  max-width: 720px;
+  margin: 0;
+  padding-top: 24px;
+  text-align: left;
+}
+.index-detail-num {
+  font-weight: 900;
+  font-size: clamp(96px, 28vw, 200px);
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--yuzu-yellow);
+  margin: 0 0 32px;
+}
+.index-detail-text {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: 1.55;
+  color: var(--yuzu-white);
+  margin: 0 0 40px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.index-detail-stamp {
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  color: var(--ink-muted);
+  margin: 0;
+}
+.post-index--btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.post-index--btn:focus-visible {
+  outline: 2px solid var(--yuzu-yellow);
+  outline-offset: 2px;
+}
+.mypage-stat-value--index.mypage-stat-value--btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}

@@ -9,6 +9,7 @@ import { getNickname } from "@/lib/userClient";
 type Props = {
   myEmoji: string;
   myPosts: Post[];
+  onOpenDetail?: (post: Post) => void;
 };
 
 const formatTimeLabel = (ts: number): string => {
@@ -27,7 +28,7 @@ const formatTimeLabel = (ts: number): string => {
 
 const EMPTY_PHRASES = ["話せ", "出せ", "整えるな"] as const;
 
-export default function HomeView({ myEmoji, myPosts }: Props) {
+export default function HomeView({ myEmoji, myPosts, onOpenDetail }: Props) {
   const emptyPhrase = useRef(EMPTY_PHRASES[Math.floor(Math.random() * EMPTY_PHRASES.length)]).current;
   const [nickname, setNickname] = useState("GUEST");
 
@@ -49,7 +50,18 @@ export default function HomeView({ myEmoji, myPosts }: Props) {
                 <AvatarMark emoji={p.emoji ?? myEmoji} size="sm" />
                 <span className="post-name">{nickname}</span>
                 <time className="post-time">{formatTimeLabel(p.createdAt)}</time>
-                <span className="post-index font-display">#{p.index}</span>
+                {onOpenDetail ? (
+                  <button
+                    type="button"
+                    className="post-index post-index--btn font-display"
+                    onClick={() => onOpenDetail(p)}
+                    aria-label={`#${p.index} を開く`}
+                  >
+                    #{p.index}
+                  </button>
+                ) : (
+                  <span className="post-index font-display">#{p.index}</span>
+                )}
                 <CopyButton text={p.text} />
               </div>
               <div className="post-body">

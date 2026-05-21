@@ -16,11 +16,12 @@ type Props = {
   myEmoji: string;
   myPosts: Post[];
   mySessionId: string | null;
+  onOpenDetail?: (post: Post) => void;
 };
 
 const dateKey = (ts: number): string => dayKey(new Date(ts));
 
-export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
+export default function MyPageView({ myEmoji, myPosts, mySessionId, onOpenDetail }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNicknameState] = useState("GUEST");
   const [cache, setCache] = useState<Record<string, number>>({});
@@ -116,9 +117,20 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId }: Props) {
         </div>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">LATEST</span>
-          <span className="mypage-stat-value mypage-stat-value--index font-display">
-            {latestIndex !== null ? `#${latestIndex}` : "—"}
-          </span>
+          {latestIndex !== null && onOpenDetail ? (
+            <button
+              type="button"
+              className="mypage-stat-value mypage-stat-value--index mypage-stat-value--btn font-display"
+              onClick={() => onOpenDetail(myPosts[0])}
+              aria-label={`#${latestIndex} を開く`}
+            >
+              {`#${latestIndex}`}
+            </button>
+          ) : (
+            <span className="mypage-stat-value mypage-stat-value--index font-display">
+              {latestIndex !== null ? `#${latestIndex}` : "—"}
+            </span>
+          )}
         </div>
       </div>
 
