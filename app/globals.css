@@ -1769,3 +1769,37 @@ button.settings-row:focus-visible {
   padding: 0;
   cursor: pointer;
 }
+
+/* CompleteView: 画像書き出し + SILENCE */
+.complete-shareable {
+  display: contents;
+}
+.complete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  align-items: stretch;
+  text-align: left;
+}
+.complete-export-btn {
+  appearance: none;
+  background: var(--ink);
+  color: var(--yuzu-white);
+  border: 0;
+  border-radius: 4px;
+  padding: 14px 18px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  text-align: left;
+}
+.complete-export-btn:disabled { opacity: 0.5; cursor: default; }
+.streak-day-silence {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  opacity: 0.55;
+}
