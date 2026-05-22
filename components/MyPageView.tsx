@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import SentimentChart, { SentimentPoint } from "./SentimentChart";
+import SentimentChart from "./SentimentChart";
 import ReportsSection from "./ReportsSection";
 import AvatarMark from "./AvatarMark";
 import type { Post } from "@/lib/types";
-import { computeStreak, dayKey } from "@/lib/streak";
+import { computeStreak } from "@/lib/streak";
+import { computeSentimentSeries } from "@/lib/sentimentSeries";
 import {
   getNickname,
   loadSentimentCache,
@@ -18,8 +19,6 @@ type Props = {
   mySessionId: string | null;
   onOpenDetail?: (post: Post) => void;
 };
-
-const dateKey = (ts: number): string => dayKey(new Date(ts));
 
 export default function MyPageView({ myEmoji, myPosts, mySessionId, onOpenDetail }: Props) {
   const [hydrated, setHydrated] = useState(false);
@@ -66,19 +65,10 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId, onOpenDetail
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, myPosts]);
 
-  const sentimentData: SentimentPoint[] = useMemo(() => {
-    const byDate = new Map<string, number[]>();
-    for (const p of myPosts) {
-      if (!(p.id in cache)) continue;
-      const d = dateKey(p.createdAt);
-      const arr = byDate.get(d) ?? [];
-      arr.push(cache[p.id]);
-      byDate.set(d, arr);
-    }
-    return [...byDate.entries()]
-      .map(([date, scores]) => ({ date, score: scores.reduce((s, v) => s + v, 0) / scores.length }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [myPosts, cache]);
+  const sentimentData = useMemo(
+    () => computeSentimentSeries(myPosts, cache),
+    [myPosts, cache],
+  );
 
   const streak = useMemo(() => computeStreak(myPosts).streak, [myPosts]);
   // myPosts is newest-first; [0] = latest post, [last] = oldest (first ever)

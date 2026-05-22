@@ -9,12 +9,10 @@ import OnboardingView from "@/components/OnboardingView";
 import RecordModal from "@/components/RecordModal";
 import IndexDetailModal from "@/components/IndexDetailModal";
 import TabBar, { type MainTab } from "@/components/TabBar";
-import type { Post } from "@/lib/types";
+import type { Post, Phase } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
-
-type Phase = "idle" | "recording" | "busy" | "complete";
 
 const EMOJI_KEY = "yuzu-emoji";
 const MIN_RECORD_MS = 500;

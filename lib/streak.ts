@@ -1,6 +1,6 @@
 import type { Post } from "./types";
 
-const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"] as const;
+export const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
 export function dayKey(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");

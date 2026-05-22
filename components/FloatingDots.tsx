@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-
-type Phase = "idle" | "recording" | "busy" | "complete";
+import type { Phase } from "@/lib/types";
 
 type Dot = {
   left: string;

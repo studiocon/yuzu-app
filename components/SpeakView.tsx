@@ -5,8 +5,7 @@ import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import FloatingDots from "./FloatingDots";
 import Waveform from "./Waveform";
 import { pickPrompt } from "@/lib/prompts";
-
-type Phase = "idle" | "recording" | "busy" | "complete";
+import type { Phase } from "@/lib/types";
 
 type Props = {
   phase: Phase;

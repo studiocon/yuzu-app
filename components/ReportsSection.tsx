@@ -6,10 +6,7 @@ import { ArrowRight } from "@phosphor-icons/react";
 import ReportCard from "./ReportCard";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
-import { jstSundayStart } from "@/lib/period";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const JST_MS = 9 * 60 * 60 * 1000;
+import { jstSundayStart, DAY_MS, JST_OFFSET_MS } from "@/lib/period";
 
 function weekIndexNum(periodStart: number, firstPostAt: number): number {
   const firstWeekStart = jstSundayStart(firstPostAt);
@@ -17,8 +14,8 @@ function weekIndexNum(periodStart: number, firstPostAt: number): number {
 }
 
 function monthIndexNum(periodStart: number, firstPostAt: number): number {
-  const d1 = new Date(firstPostAt + JST_MS);
-  const d2 = new Date(periodStart + JST_MS);
+  const d1 = new Date(firstPostAt + JST_OFFSET_MS);
+  const d2 = new Date(periodStart + JST_OFFSET_MS);
   return (d2.getUTCFullYear() - d1.getUTCFullYear()) * 12 + (d2.getUTCMonth() - d1.getUTCMonth()) + 1;
 }
 

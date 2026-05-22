@@ -1,8 +1,8 @@
 // JST 固定で週/月の境界を扱うユーティリティ。
 // 週は日曜始まり。境界は JST 0:00。
 
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type PeriodKind = "week" | "month";
 export type PeriodMeta = {

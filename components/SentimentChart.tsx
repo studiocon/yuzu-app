@@ -11,14 +11,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { WEEKDAY_JA } from "@/lib/streak";
+import type { SentimentPoint } from "@/lib/sentimentSeries";
 
-export type SentimentPoint = { date: string; score: number };
+export type { SentimentPoint };
 
 type Props = { data: SentimentPoint[] };
 
 const POS_COLOR = "#E8A020"; // --yuzu-zest
 const NEG_COLOR = "#1A1A2E"; // --ink
-const DOW = ["日", "月", "火", "水", "木", "金", "土"];
 
 function scoreLabel(score: number): string {
   if (score >= 0.5) return "ポジティブ";
@@ -35,7 +36,7 @@ function makeDateTick(dates: string[]) {
     const prevMonth = (index ?? 0) > 0 ? dates[(index ?? 0) - 1].split("-")[1] : null;
     const showMonth = (index ?? 0) === 0 || m !== prevMonth;
     const label = showMonth ? `${Number(m)}/${Number(d)}` : `${Number(d)}`;
-    const dow = DOW[new Date(dateStr).getDay()];
+    const dow = WEEKDAY_JA[new Date(dateStr).getDay()];
     return (
       <g transform={`translate(${x ?? 0},${y ?? 0})`}>
         <text x={0} y={0} dy={12} textAnchor="middle" fill="var(--ink-muted)" fontSize={11}>{label}</text>

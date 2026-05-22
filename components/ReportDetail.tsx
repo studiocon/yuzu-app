@@ -6,6 +6,7 @@ import SentimentChart from "./SentimentChart";
 import { loadSentimentCache } from "@/lib/userClient";
 import { buildMockReport, isMockMode } from "@/lib/mockReports";
 import type { Report } from "@/lib/reportTypes";
+import { periodLabel } from "@/lib/period";
 
 type Props = { periodKey: string };
 
@@ -81,7 +82,7 @@ export default function ReportDetail({ periodKey }: Props) {
       {status === "ok" && report && (
         <article className="report-detail">
           <header className="report-detail-titleblock">
-            <h1 className="report-detail-title font-display">{labelFromKey(periodKey)}</h1>
+            <h1 className="report-detail-title font-display">{periodLabel(periodKey)}</h1>
             <p className="report-detail-headline">{report.payload.headline}</p>
           </header>
 
@@ -139,15 +140,3 @@ function Paragraphs({ text }: { text: string }) {
   );
 }
 
-function labelFromKey(key: string): string {
-  const w = key.match(/^w-\d{4}-(\d{2})-(\d{2})$/);
-  if (w) {
-    const month = +w[1];
-    const day = +w[2];
-    const wn = Math.floor((day - 1) / 7) + 1;
-    return `${month}月${wn}週 週次レポート`;
-  }
-  const m = key.match(/^m-\d{4}-(\d{2})$/);
-  if (m) return `${+m[1]}月 月次レポート`;
-  return key;
-}

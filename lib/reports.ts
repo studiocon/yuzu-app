@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getRedis } from "./kv";
-import { jstDateString, parsePeriodKey, periodLabel, type PeriodKind } from "./period";
+import { parsePeriodKey, periodLabel, type PeriodKind } from "./period";
+import { computeSentimentSeries } from "./sentimentSeries";
 import type { Post } from "./types";
 import type { Report, ReportPayload } from "./reportTypes";
 
@@ -107,24 +108,6 @@ function formatJstTimestamp(ts: number): string {
   const d = new Date(ts + 9 * 60 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-}
-
-function computeSentimentSeries(
-  posts: Post[],
-  scores: Record<string, number>,
-): { date: string; score: number }[] {
-  const byDate = new Map<string, number[]>();
-  for (const p of posts) {
-    const s = scores[p.id];
-    if (typeof s !== "number") continue;
-    const d = jstDateString(p.createdAt);
-    const arr = byDate.get(d) ?? [];
-    arr.push(s);
-    byDate.set(d, arr);
-  }
-  return [...byDate.entries()]
-    .map(([date, arr]) => ({ date, score: arr.reduce((a, b) => a + b, 0) / arr.length }))
-    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function generateReport(args: {

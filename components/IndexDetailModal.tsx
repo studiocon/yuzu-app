@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 type AnimState = "opening" | "open" | "closing";
 
@@ -38,12 +39,7 @@ export default function IndexDetailModal({ post, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post]);
 
-  useEffect(() => {
-    if (!mounted) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [mounted]);
+  useBodyScrollLock(mounted);
 
   useEffect(() => {
     if (!mounted) return;
@@ -68,8 +64,6 @@ export default function IndexDetailModal({ post, onClose }: Props) {
   }, [mounted, onClose]);
 
   if (!mounted || !post) return null;
-
-  void OPEN_MS;
 
   return (
     <div

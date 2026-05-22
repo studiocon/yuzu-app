@@ -4,9 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Microphone, X } from "@phosphor-icons/react";
 import SpeakView from "./SpeakView";
 import CompleteView from "./CompleteView";
-import type { Post } from "@/lib/types";
+import type { Post, Phase } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
-type Phase = "idle" | "recording" | "busy" | "complete";
 type AnimState = "measuring" | "opening" | "open" | "closing";
 
 const OPEN_MS = 480;
@@ -97,12 +97,7 @@ export default function RecordModal({
     }
   }, [animState]);
 
-  useEffect(() => {
-    if (!mounted) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [mounted]);
+  useBodyScrollLock(mounted);
 
   if (!mounted) return null;
 
