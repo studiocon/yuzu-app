@@ -2,5 +2,9 @@ node_modules
 .next
 .env*.local
 .DS_Store
-.claude/
 *.tsbuildinfo
+
+# Claude Code: 共有設定（settings.json / agents / skills）は commit する。
+# ローカル個別の許可リストや作業ログのみ無視。
+.claude/settings.local.json
+.claude/*.local.json
