@@ -13,6 +13,13 @@ import type { Post, Phase } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import {
+  MAX_DAILY_SESSIONS,
+  MAX_RECORD_MS,
+  getTodayCount,
+  incrementCount,
+  canRecord,
+} from "@/lib/dailyLimit";
 
 const EMOJI_KEY = "yuzu-emoji";
 const MIN_RECORD_MS = 500;
@@ -34,9 +41,13 @@ export default function Home() {
   const [lastPost, setLastPost] = useState<Post | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [todayCount, setTodayCount] = useState(0);
+  const [recordingElapsed, setRecordingElapsed] = useState(0);
 
   const phaseRef = useRef<Phase>("idle");
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const showHint = (msg: string) => {
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
@@ -66,6 +77,8 @@ export default function Home() {
       }
     } catch {}
     if (e) setMyEmoji(e);
+
+    setTodayCount(getTodayCount());
 
     if (isMockMode()) {
       const { posts: mockPosts, sentiments } = buildMockPosts(e ?? "🍑", "mock-session");
@@ -173,6 +186,18 @@ export default function Home() {
       mr.stop();
     });
 
+  const clearRecordingTimers = () => {
+    if (autoStopTimerRef.current) {
+      clearTimeout(autoStopTimerRef.current);
+      autoStopTimerRef.current = null;
+    }
+    if (elapsedTimerRef.current) {
+      clearInterval(elapsedTimerRef.current);
+      elapsedTimerRef.current = null;
+    }
+    setRecordingElapsed(0);
+  };
+
   const cancelRecorder = () => {
     const mr = recorderRef.current;
     if (mr && mr.state !== "inactive") { mr.onstop = null; mr.stop(); }
@@ -188,6 +213,7 @@ export default function Home() {
       (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     } catch {}
     if (phaseRef.current !== "idle") return;
+    if (!canRecord()) return;
 
     setError(null);
     setPermissionDenied(false);
@@ -197,11 +223,20 @@ export default function Home() {
 
     const ok = await startMediaRecorder();
     if (!ok) return;
+
+    setRecordingElapsed(0);
+    elapsedTimerRef.current = setInterval(() => {
+      setRecordingElapsed(Date.now() - pressStartRef.current);
+    }, 250);
+    autoStopTimerRef.current = setTimeout(() => {
+      handlePressEnd();
+    }, MAX_RECORD_MS);
   };
 
   const handlePressEnd = async () => {
     if (phaseRef.current !== "recording") return;
 
+    clearRecordingTimers();
     const held = Date.now() - pressStartRef.current;
 
     if (held < MIN_RECORD_MS) {
@@ -219,6 +254,7 @@ export default function Home() {
   };
 
   const handlePressCancel = () => {
+    clearRecordingTimers();
     cancelRecorder();
     setPhaseSync("idle");
   };
@@ -268,6 +304,7 @@ export default function Home() {
       setPosts((prev) => [newPost, ...(prev ?? [])]);
       setStatusMsg(null);
       setLastPost(newPost);
+      setTodayCount(incrementCount());
       setPhaseSync("complete");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "エラーが発生しました");
@@ -282,6 +319,9 @@ export default function Home() {
     setPhaseSync("idle");
     setLastPost(null);
   };
+
+  const limitReached = todayCount >= MAX_DAILY_SESSIONS;
+  const remainingSessions = Math.max(0, MAX_DAILY_SESSIONS - todayCount);
 
   const myPosts = useMemo<Post[]>(() => {
     if (!posts) return [];
@@ -345,6 +385,10 @@ export default function Home() {
         analyser={analyser}
         lastPost={lastPost}
         posts={posts ?? []}
+        limitReached={limitReached}
+        remainingSessions={remainingSessions}
+        recordingElapsed={recordingElapsed}
+        maxRecordMs={MAX_RECORD_MS}
         onPressStart={handlePressStart}
         onPressEnd={handlePressEnd}
         onPressCancel={handlePressCancel}

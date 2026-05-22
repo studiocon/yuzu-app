@@ -15,10 +15,22 @@ type Props = {
   hint: string | null;
   permissionDenied: boolean;
   analyser: AnalyserNode | null;
+  remainingSessions: number;
+  recordingElapsed: number;
+  maxRecordMs: number;
   onPressStart: (e: React.PointerEvent) => void;
   onPressEnd: () => void;
   onPressCancel: () => void;
 };
+
+const CIRCUMFERENCE = 339.3; // 2π × 54
+
+function formatCountdown(remainingMs: number): string {
+  const total = Math.max(0, Math.ceil(remainingMs / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 export default function SpeakView({
   phase,
@@ -28,6 +40,9 @@ export default function SpeakView({
   hint,
   permissionDenied,
   analyser,
+  remainingSessions,
+  recordingElapsed,
+  maxRecordMs,
   onPressStart,
   onPressEnd,
   onPressCancel,
@@ -39,6 +54,10 @@ export default function SpeakView({
   const isIdleHero =
     phase === "idle" && !permissionDenied && !error && !shortTap;
 
+  const remainingMs = Math.max(0, maxRecordMs - recordingElapsed);
+  const progress = Math.min(recordingElapsed / maxRecordMs, 1);
+  const ringOffset = CIRCUMFERENCE * (1 - progress);
+
   const status =
     permissionDenied ? "マイクを許可しろ" :
     error ? error :
@@ -49,6 +68,11 @@ export default function SpeakView({
   return (
     <section className="speak-view">
       {!isIdleHero && <p className="speak-top" role="status" aria-live="polite">{status}</p>}
+      {isRecording && (
+        <p className="speak-timer font-display" aria-live="off">
+          {formatCountdown(remainingMs)}
+        </p>
+      )}
 
       <div className="speak-stage">
         {phase === "idle" && <FloatingDots phase={phase} />}
@@ -70,11 +94,20 @@ export default function SpeakView({
             <p className="speak-prompt-hint">長押し。話せ</p>
           </div>
         )}
+        {isIdleHero && remainingSessions < 3 && (
+          <p className="speak-remaining font-display">
+            {remainingSessions} LEFT.
+          </p>
+        )}
         <div className="mic-wrap">
           {isRecording && (
             <svg className="mic-progress-ring" viewBox="0 0 116 116" aria-hidden>
               <circle className="mic-progress-track" cx="58" cy="58" r="54" />
-              <circle className="mic-progress-fill" cx="58" cy="58" r="54" />
+              <circle
+                className="mic-progress-fill"
+                cx="58" cy="58" r="54"
+                style={{ strokeDashoffset: ringOffset }}
+              />
             </svg>
           )}
           <button

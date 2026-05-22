@@ -7,6 +7,15 @@ import CompleteView from "./CompleteView";
 import type { Post, Phase } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
+function LimitView() {
+  return (
+    <section className="limit-view">
+      <p className="limit-view-count font-display">3 / 3</p>
+      <p className="limit-view-msg">今日はここまで。<br />明日また話せ。</p>
+    </section>
+  );
+}
+
 type AnimState = "measuring" | "opening" | "open" | "closing";
 
 const OPEN_MS = 480;
@@ -24,6 +33,10 @@ type Props = {
   analyser: AnalyserNode | null;
   lastPost: Post | null;
   posts: Post[];
+  limitReached: boolean;
+  remainingSessions: number;
+  recordingElapsed: number;
+  maxRecordMs: number;
   onPressStart: (e: React.PointerEvent) => void;
   onPressEnd: () => void;
   onPressCancel: () => void;
@@ -41,6 +54,10 @@ export default function RecordModal({
   analyser,
   lastPost,
   posts,
+  limitReached,
+  remainingSessions,
+  recordingElapsed,
+  maxRecordMs,
   onPressStart,
   onPressEnd,
   onPressCancel,
@@ -124,6 +141,8 @@ export default function RecordModal({
 
       {isComplete && lastPost ? (
         <CompleteView post={lastPost} posts={posts} onBack={onClose} />
+      ) : limitReached ? (
+        <LimitView />
       ) : (
         <SpeakView
           phase={phase}
@@ -133,6 +152,9 @@ export default function RecordModal({
           hint={hint}
           permissionDenied={permissionDenied}
           analyser={analyser}
+          remainingSessions={remainingSessions}
+          recordingElapsed={recordingElapsed}
+          maxRecordMs={maxRecordMs}
           onPressStart={onPressStart}
           onPressEnd={onPressEnd}
           onPressCancel={onPressCancel}

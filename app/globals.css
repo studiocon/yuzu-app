@@ -873,10 +873,51 @@ button.settings-row:focus-visible {
   stroke-linecap: round;
   stroke-dasharray: 339.3;
   stroke-dashoffset: 339.3;
-  animation: progress-ring-fill 0.3s linear forwards;
+  transition: stroke-dashoffset 0.25s linear;
 }
-@keyframes progress-ring-fill {
-  to { stroke-dashoffset: 0; }
+
+/* ===== Recording timer ===== */
+.speak-timer {
+  margin: 4px 0 0;
+  font-size: var(--text-xl);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.06em;
+  text-align: left;
+  min-height: 1.4em;
+}
+
+/* ===== Remaining sessions ===== */
+.speak-remaining {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.14em;
+}
+
+/* ===== Limit reached view ===== */
+.limit-view {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 24px;
+  color: #fff;
+  text-align: center;
+}
+.limit-view-count {
+  margin: 0;
+  font-size: var(--text-3xl);
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+.limit-view-msg {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 @keyframes mic-press {
