@@ -11,7 +11,7 @@ export type ReportPayload = {
 };
 
 export type Report = {
-  sessionId: string;
+  user_id: string;
   periodKey: string;
   kind: PeriodKind;
   rangeStart: number;

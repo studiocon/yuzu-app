@@ -42,16 +42,16 @@ function timestampFor(seed: Seed, now: Date): number {
 }
 
 export function buildMockPosts(
-  emoji: string,
-  sessionId: string,
+  _emoji: string,
+  userId: string,
 ): { posts: Post[]; sentiments: Record<string, number> } {
   const now = new Date();
   const posts: Post[] = SEEDS.map((seed, i) => ({
     id: `mock-${String(i + 1).padStart(2, "0")}`,
+    user_id: userId,
     text: seed.text,
     createdAt: timestampFor(seed, now),
-    emoji,
-    sessionId,
+    char_count: seed.text.length,
     index: i + 1,
   }));
   posts.sort((a, b) => b.createdAt - a.createdAt);

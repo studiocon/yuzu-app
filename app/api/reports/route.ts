@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { listPosts } from "@/lib/kv";
-import { getOrCreateSessionId, setSessionCookie } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import { getReport, listReportKeys } from "@/lib/reports";
 import {
   parsePeriodKey,
@@ -12,32 +11,34 @@ import type { ReportMeta } from "@/lib/reportTypes";
 
 export const runtime = "nodejs";
 
-const KV_MISSING = !process.env.KV_REDIS_URL && !process.env.REDIS_URL;
-
 // GET /api/reports?scope=recent (default) | all
 export async function GET(req: Request) {
-  if (KV_MISSING) {
-    return NextResponse.json(
-      { error: "kv_not_configured", reports: [] },
-      { status: 503 },
-    );
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized", reports: [] }, { status: 401 });
   }
 
-  const { id: sid, isNew } = getOrCreateSessionId();
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") === "all" ? "all" : "recent";
 
   try {
-    const [posts, savedKeys] = await Promise.all([
-      listPosts(sid, 1000),
-      listReportKeys(sid),
-    ]);
+    // ユーザーの投稿を全件取得（期間フィルタ用）
+    const { data: rows } = await supabase
+      .from("records")
+      .select("id, created_at")
+      .eq("user_id", user.id);
+
+    const postTimes = (rows ?? []).map((r: { created_at: string }) =>
+      new Date(r.created_at).getTime()
+    );
+
+    const [savedKeys] = await Promise.all([listReportKeys(user.id)]);
 
     let candidates: PeriodMeta[];
     if (scope === "recent") {
       candidates = recentClosedPeriods();
     } else {
-      // 確定済み + 過去に保存されたものすべて。重複を避けてマージ。
       const recent = recentClosedPeriods(Date.now(), 12);
       const saved: PeriodMeta[] = savedKeys
         .map((key) => {
@@ -53,9 +54,9 @@ export async function GET(req: Request) {
 
     const metas: ReportMeta[] = await Promise.all(
       candidates.map(async (c): Promise<ReportMeta> => {
-        const cached = await getReport(sid, c.key);
-        const postCount = posts.filter(
-          (p) => p.createdAt >= c.start && p.createdAt < c.end,
+        const cached = await getReport(user.id, c.key);
+        const postCount = postTimes.filter(
+          (t) => t >= c.start && t < c.end,
         ).length;
         return {
           periodKey: c.key,
@@ -71,19 +72,10 @@ export async function GET(req: Request) {
       }),
     );
 
-    // 投稿0件かつ未生成のものは除外（カードを出さない）
     const filtered = metas.filter((m) => m.generated || m.postCount > 0);
-
-    const res = NextResponse.json({ reports: filtered, sessionId: sid });
-    if (isNew) setSessionCookie(res, sid);
-    return res;
+    return NextResponse.json({ reports: filtered });
   } catch (e) {
     console.error("listReports failed", e);
-    const res = NextResponse.json(
-      { error: "kv_error", reports: [] },
-      { status: 500 },
-    );
-    if (isNew) setSessionCookie(res, sid);
-    return res;
+    return NextResponse.json({ error: "internal_error", reports: [] }, { status: 500 });
   }
 }

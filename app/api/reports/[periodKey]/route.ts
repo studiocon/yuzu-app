@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listPosts } from "@/lib/kv";
-import { getOrCreateSessionId, setSessionCookie } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import { generateReport, getReport } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
+import type { Post } from "@/lib/types";
 
 export const runtime = "nodejs";
 
-const KV_MISSING = !process.env.KV_REDIS_URL && !process.env.REDIS_URL;
+type Params = { params: Promise<{ periodKey: string }> };
 
-type Params = { params: { periodKey: string } };
-
-// GET /api/reports/[periodKey]?scores=postId:0.4,postId:-0.2
-// クライアントが localStorage に持っている感情スコアを query で渡す（POST にしてもよいが GET で十分）。
 function parseScoresParam(value: string | null): Record<string, number> {
   if (!value) return {};
   const out: Record<string, number> = {};
@@ -24,8 +20,16 @@ function parseScoresParam(value: string | null): Record<string, number> {
   return out;
 }
 
-async function handle(req: NextRequest, { params }: Params, scores: Record<string, number>) {
-  const periodKey = params.periodKey;
+interface RecordRow {
+  id: string;
+  user_id: string;
+  text: string;
+  char_count: number;
+  created_at: string;
+}
+
+async function handle(req: NextRequest, params: { periodKey: string }, scores: Record<string, number>) {
+  const { periodKey } = params;
   const period = parsePeriodKey(periodKey);
   if (!period) {
     return NextResponse.json({ error: "invalid_period_key" }, { status: 400 });
@@ -34,28 +38,38 @@ async function handle(req: NextRequest, { params }: Params, scores: Record<strin
     return NextResponse.json({ error: "period_in_progress" }, { status: 422 });
   }
 
-  if (KV_MISSING) {
-    return NextResponse.json({ error: "kv_not_configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { id: sid, isNew } = getOrCreateSessionId();
-
   try {
-    const cached = await getReport(sid, periodKey);
+    const cached = await getReport(user.id, periodKey);
     if (cached) {
-      const res = NextResponse.json({ report: cached });
-      if (isNew) setSessionCookie(res, sid);
-      return res;
+      return NextResponse.json({ report: cached });
     }
 
-    const posts = await listPosts(sid, 1000);
-    const inRange = posts.filter(
-      (p) => p.createdAt >= period.start && p.createdAt < period.end,
-    );
-    if (inRange.length === 0) {
-      const res = NextResponse.json({ error: "no_posts" }, { status: 404 });
-      if (isNew) setSessionCookie(res, sid);
-      return res;
+    // 期間内の投稿を取得
+    const { data: rows } = await supabase
+      .from("records")
+      .select("id, user_id, text, char_count, created_at")
+      .eq("user_id", user.id)
+      .gte("created_at", new Date(period.start).toISOString())
+      .lt("created_at", new Date(period.end).toISOString())
+      .order("created_at", { ascending: true });
+
+    const posts: Post[] = (rows as RecordRow[] ?? []).map((r, i) => ({
+      id: r.id,
+      user_id: r.user_id,
+      text: r.text,
+      char_count: r.char_count,
+      createdAt: new Date(r.created_at).getTime(),
+      index: i + 1,
+    }));
+
+    if (posts.length === 0) {
+      return NextResponse.json({ error: "no_posts" }, { status: 404 });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -63,41 +77,38 @@ async function handle(req: NextRequest, { params }: Params, scores: Record<strin
     }
 
     try {
+      // generateReport は全投稿を渡す（期間フィルタは内部で行う）
+      // ここでは期間内の投稿のみを渡す
       const report = await generateReport({
-        sessionId: sid,
+        userId: user.id,
         periodKey,
         posts,
         scores,
       });
-      const res = NextResponse.json({ report });
-      if (isNew) setSessionCookie(res, sid);
-      return res;
+      return NextResponse.json({ report });
     } catch (e) {
       console.error("generateReport failed", e);
-      const res = NextResponse.json({ error: "llm_failed" }, { status: 502 });
-      if (isNew) setSessionCookie(res, sid);
-      return res;
+      return NextResponse.json({ error: "llm_failed" }, { status: 502 });
     }
   } catch (e) {
     console.error("report fetch failed", e);
-    const res = NextResponse.json({ error: "kv_error" }, { status: 500 });
-    if (isNew) setSessionCookie(res, sid);
-    return res;
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest, ctx: Params) {
+  const params = await ctx.params;
   const url = new URL(req.url);
   const scores = parseScoresParam(url.searchParams.get("scores"));
-  return handle(req, ctx, scores);
+  return handle(req, params, scores);
 }
 
-// クライアントは scores を body 経由で渡せる（GET の URL 長制限回避）
 export async function POST(req: NextRequest, ctx: Params) {
+  const params = await ctx.params;
   let body: { scores?: Record<string, number> } = {};
   try {
     body = await req.json();
   } catch {}
   const scores = body.scores && typeof body.scores === "object" ? body.scores : {};
-  return handle(req, ctx, scores);
+  return handle(req, params, scores);
 }

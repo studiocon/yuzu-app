@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRight, SignOut } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
-import { getNickname, setNickname as persistNickname } from "@/lib/userClient";
+import { createClient } from "@/lib/supabase/client";
 
 const VERSION = "0.1.0";
 
@@ -11,11 +11,30 @@ export default function SettingsPage() {
   const [nickname, setNicknameState] = useState("");
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const supabase = createClient();
 
   useEffect(() => {
-    const n = getNickname("🍑");
-    setNicknameState(n);
-    setDraft(n);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setEmail(user.email ?? null);
+      setUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nickname")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const n = profile?.nickname ?? "GUEST";
+      setNicknameState(n);
+      setDraft(n);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startEdit = () => {
@@ -23,12 +42,19 @@ export default function SettingsPage() {
     setEditing(true);
   };
 
-  const commitEdit = () => {
+  const commitEdit = async () => {
     const trimmed = draft.trim();
-    if (trimmed) {
-      persistNickname(trimmed);
-      setNicknameState(trimmed);
+    if (!trimmed) { setEditing(false); return; }
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ nickname: trimmed })
+        .eq("id", user.id);
     }
+    setNicknameState(trimmed);
+    setSaving(false);
     setEditing(false);
   };
 
@@ -36,6 +62,14 @@ export default function SettingsPage() {
     if (e.key === "Enter") commitEdit();
     if (e.key === "Escape") setEditing(false);
   };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const shortId = userId ? userId.slice(0, 8) + "..." : "―";
+  const displayEmail = email ?? "―";
 
   return (
     <main className="settings-page">
@@ -61,14 +95,16 @@ export default function SettingsPage() {
                 onKeyDown={handleKeyDown}
                 autoFocus
                 maxLength={20}
-                placeholder="名前をつけよう"
+                placeholder="名前をつけろ"
+                disabled={saving}
               />
               <button
                 type="button"
                 className="settings-save-btn font-display"
                 onClick={commitEdit}
+                disabled={saving}
               >
-                保存
+                {saving ? "..." : "保存"}
               </button>
             </div>
           ) : (
@@ -104,12 +140,12 @@ export default function SettingsPage() {
 
           <div className="settings-row settings-row--disabled" aria-disabled="true">
             <span className="settings-row-label">メールアドレス</span>
-            <span className="settings-row-value">―</span>
+            <span className="settings-row-value">{displayEmail}</span>
           </div>
 
           <div className="settings-row settings-row--disabled" aria-disabled="true">
             <span className="settings-row-label">ユーザーID</span>
-            <span className="settings-row-value">―</span>
+            <span className="settings-row-value settings-row-value--mono">{shortId}</span>
           </div>
         </section>
 
@@ -125,6 +161,17 @@ export default function SettingsPage() {
             <span className="settings-row-label">プライバシーポリシー</span>
             <CaretRight size={14} className="settings-row-chevron" />
           </div>
+        </section>
+
+        <section className="settings-section">
+          <button
+            type="button"
+            className="settings-row settings-row--danger"
+            onClick={handleSignOut}
+          >
+            <SignOut size={16} weight="bold" />
+            <span className="settings-row-label">ログアウト</span>
+          </button>
         </section>
       </div>
 

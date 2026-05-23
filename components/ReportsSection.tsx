@@ -20,11 +20,10 @@ function monthIndexNum(periodStart: number, firstPostAt: number): number {
 }
 
 type Props = {
-  mySessionId: string | null;
   firstPostAt?: number | null;
 };
 
-export default function ReportsSection({ mySessionId, firstPostAt }: Props) {
+export default function ReportsSection({ firstPostAt }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [reports, setReports] = useState<ReportMeta[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +41,6 @@ export default function ReportsSection({ mySessionId, firstPostAt }: Props) {
       setError(null);
       return;
     }
-    if (!mySessionId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -63,7 +61,7 @@ export default function ReportsSection({ mySessionId, firstPostAt }: Props) {
       }
     })();
     return () => { cancelled = true; };
-  }, [hydrated, mySessionId]);
+  }, [hydrated]);
 
   if (!hydrated || (!loading && reports.length === 0 && !error)) return null;
 

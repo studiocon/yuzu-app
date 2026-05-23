@@ -1,55 +1,82 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { getRedis } from "./kv";
+import { createAdminClient } from "./supabase/admin";
 import { parsePeriodKey, periodLabel, type PeriodKind } from "./period";
 import { computeSentimentSeries } from "./sentimentSeries";
 import type { Post } from "./types";
 import type { Report, ReportPayload } from "./reportTypes";
 
+// Anthropic SDK を import するためクライアントから直接呼ばないこと（CLAUDE.md 参照）
+
 const MODEL = "claude-sonnet-4-6";
 
-const reportKey = (sid: string, key: string) => `report:${sid}:${key}`;
-const reportZset = (sid: string) => `reports:${sid}`;
+// ── Supabase-backed storage ──
 
-export async function getReport(sid: string, key: string): Promise<Report | null> {
-  const r = await getRedis();
-  const raw = await r.hGetAll(reportKey(sid, key));
-  if (!raw || Object.keys(raw).length === 0) return null;
+interface ReportRow {
+  id: string;
+  user_id: string;
+  period_key: string;
+  kind: string;
+  range_start: string;
+  range_end: string;
+  payload: ReportPayload;
+  generated_at: string;
+  model: string;
+}
+
+function rowToReport(row: ReportRow): Report {
+  return {
+    user_id: row.user_id,
+    periodKey: row.period_key,
+    kind: row.kind as PeriodKind,
+    rangeStart: new Date(row.range_start).getTime(),
+    rangeEnd: new Date(row.range_end).getTime(),
+    payload: row.payload,
+    generatedAt: new Date(row.generated_at).getTime(),
+    model: row.model,
+  };
+}
+
+export async function getReport(userId: string, periodKey: string): Promise<Report | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("period_key", periodKey)
+    .maybeSingle();
+  if (error || !data) return null;
   try {
-    return {
-      sessionId: sid,
-      periodKey: key,
-      kind: raw.kind as PeriodKind,
-      rangeStart: Number(raw.rangeStart),
-      rangeEnd: Number(raw.rangeEnd),
-      payload: JSON.parse(String(raw.payload)) as ReportPayload,
-      generatedAt: Number(raw.generatedAt),
-      model: String(raw.model ?? ""),
-    };
+    return rowToReport(data as ReportRow);
   } catch {
     return null;
   }
 }
 
-export async function listReportKeys(sid: string): Promise<string[]> {
-  const r = await getRedis();
-  return await r.zRange(reportZset(sid), 0, -1, { REV: true });
+export async function listReportKeys(userId: string): Promise<string[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("reports")
+    .select("period_key")
+    .eq("user_id", userId)
+    .order("range_end", { ascending: false });
+  return (data ?? []).map((r: { period_key: string }) => r.period_key);
 }
 
 async function saveReport(report: Report): Promise<void> {
-  const r = await getRedis();
-  await r.hSet(reportKey(report.sessionId, report.periodKey), {
+  const supabase = createAdminClient();
+  await supabase.from("reports").upsert({
+    user_id: report.user_id,
+    period_key: report.periodKey,
     kind: report.kind,
-    rangeStart: String(report.rangeStart),
-    rangeEnd: String(report.rangeEnd),
-    payload: JSON.stringify(report.payload),
-    generatedAt: String(report.generatedAt),
+    range_start: new Date(report.rangeStart).toISOString(),
+    range_end: new Date(report.rangeEnd).toISOString(),
+    payload: report.payload,
+    generated_at: new Date(report.generatedAt).toISOString(),
     model: report.model,
-  });
-  await r.zAdd(reportZset(report.sessionId), {
-    score: report.rangeEnd,
-    value: report.periodKey,
-  });
+  }, { onConflict: "user_id,period_key" });
 }
+
+// ── Anthropic レポート生成 ──
 
 const PROMPT = (windowText: string, kind: PeriodKind): string => {
   const periodWord = kind === "week" ? "1週間" : "1か月";
@@ -81,7 +108,6 @@ type RawJson = {
 };
 
 function extractJson(raw: string): RawJson | null {
-  // 最初の { から最後の } までを取り出す（モデルが余計な文字を返した場合の保険）
   const s = raw.indexOf("{");
   const e = raw.lastIndexOf("}");
   if (s < 0 || e < 0 || e <= s) return null;
@@ -111,7 +137,7 @@ function formatJstTimestamp(ts: number): string {
 }
 
 export async function generateReport(args: {
-  sessionId: string;
+  userId: string;
   periodKey: string;
   posts: Post[];
   scores: Record<string, number>;
@@ -128,8 +154,8 @@ export async function generateReport(args: {
 
   if (inRange.length === 0) throw new Error("no posts in range");
 
-  // 二重生成抑止: ロック前にもう一度確認
-  const cached = await getReport(args.sessionId, args.periodKey);
+  // 二重生成抑止
+  const cached = await getReport(args.userId, args.periodKey);
   if (cached) return cached;
 
   const windowText = inRange
@@ -164,7 +190,7 @@ export async function generateReport(args: {
   };
 
   const report: Report = {
-    sessionId: args.sessionId,
+    user_id: args.userId,
     periodKey: args.periodKey,
     kind: period.kind,
     rangeStart: period.start,

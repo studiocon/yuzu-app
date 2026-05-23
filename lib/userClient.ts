@@ -1,6 +1,5 @@
-// クライアント側のユーザープロフィール（ニックネーム・登録日・感情キャッシュ）
-// userId/sessionIdはサーバーCookie(yuzu_sid)由来 → /api/postsレスポンスから受け取る。
-// V2でSupabase Authに移行する際は、サーバー側のセッション解決をauthに差し替えるだけでよい。
+// クライアント側のユーザープロフィール（ニックネーム・感情キャッシュ）
+// ニックネームは Supabase profiles.nickname と localStorage の両方に保持する（オフラインフォールバック）。
 
 export const NICKNAME_KEY = "yuzu-nickname";
 export const SENTIMENT_CACHE_KEY = "yuzu-sentiment-cache";

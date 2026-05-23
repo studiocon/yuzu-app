@@ -47,7 +47,7 @@ export default function HomeView({ myEmoji, myPosts, onOpenDetail }: Props) {
           {myPosts.map((p) => (
             <article key={p.id} className="post-card mypage-post-card">
               <div className="post-header">
-                <AvatarMark emoji={p.emoji ?? myEmoji} size="sm" />
+                <AvatarMark emoji={myEmoji} size="sm" />
                 <span className="post-name">{nickname}</span>
                 <time className="post-time">{formatTimeLabel(p.createdAt)}</time>
                 {onOpenDetail ? (

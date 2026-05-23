@@ -16,11 +16,10 @@ import {
 type Props = {
   myEmoji: string;
   myPosts: Post[];
-  mySessionId: string | null;
   onOpenDetail?: (post: Post) => void;
 };
 
-export default function MyPageView({ myEmoji, myPosts, mySessionId, onOpenDetail }: Props) {
+export default function MyPageView({ myEmoji, myPosts, onOpenDetail }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNicknameState] = useState("GUEST");
   const [cache, setCache] = useState<Record<string, number>>({});
@@ -139,7 +138,7 @@ export default function MyPageView({ myEmoji, myPosts, mySessionId, onOpenDetail
         </section>
       )}
 
-      <ReportsSection mySessionId={mySessionId} firstPostAt={firstPostAt} />
+      <ReportsSection firstPostAt={firstPostAt} />
 
     </section>
   );

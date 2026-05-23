@@ -107,7 +107,7 @@ export function buildMockReport(periodKey: string): Report | null {
   const idx = found >= 0 ? found : 0;
   const s = SAMPLES[idx % SAMPLES.length];
   return {
-    sessionId: "mock-session",
+    user_id: "mock-user",
     periodKey,
     kind: period.kind,
     rangeStart: period.start,

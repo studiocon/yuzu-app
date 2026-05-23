@@ -14,9 +14,8 @@ Claude Code でこのリポジトリに作業させる場合の規約は [CLAUDE
 | 録音 | MediaRecorder API |
 | STT | [ElevenLabs Scribe v2](https://elevenlabs.io/) |
 | レポート生成 | Anthropic Claude（`@anthropic-ai/sdk`） |
-| ストレージ | Upstash Redis（`redis`） |
+| DB / Auth | Supabase（Postgres + Auth） |
 | ホスティング | Vercel |
-| 認証 | Supabase Auth（Google / Apple、V2 以降） |
 
 ## デザイン
 
@@ -45,10 +44,60 @@ npm run dev
 ```
 ELEVENLABS_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
-KV_URL=redis://...
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
+SUPABASE_SERVICE_ROLE_KEY=eyJh...   # サーバー専用。NEXT_PUBLIC を付けない
 ```
 
 ブラウザで `http://localhost:3000` を開く。マイク権限の許可が必要。デザインプレビューは `http://localhost:3000/design-preview.html`。
+
+## Supabase セットアップ（初回・手動作業）
+
+以下は **Supabase ダッシュボードでオーナーが行う手動設定**。コードでは設定しない。
+
+### 1. プロジェクト作成
+
+1. [supabase.com](https://supabase.com) でプロジェクトを作成
+2. `Settings > API` から `Project URL` と `anon key`、`service_role key` を取得して `.env.local` と Vercel 環境変数に設定
+
+### 2. データベース マイグレーション
+
+SQL Editor から `supabase/migrations/` 内の SQL ファイルを順番に実行する:
+
+```
+0001_init.sql      — profiles / records テーブル + RLS + トリガー
+0002_reports.sql   — reports テーブル + RLS
+0003_streak.sql    — get_streak() RPC 関数（JST 連続日数）
+```
+
+### 3. 認証プロバイダの有効化
+
+`Authentication > Providers` で以下を有効化する:
+
+**Apple Sign In:**
+- Client ID（App の Bundle ID）
+- Team ID
+- Key ID
+- Private Key（`.p8` ファイルの内容）
+
+**Google:**
+- Client ID（Google Cloud Console で取得）
+- Client Secret
+
+**Email（Magic Link）:**
+- 「Enable Email provider」をオン
+- 「Confirm email」をオン
+- 「Email OTP」はデフォルトで有効
+- パスワードサインインは **使わない**（UI に出さない）
+
+### 4. Redirect URL の登録
+
+`Authentication > URL Configuration` に以下を追加:
+
+```
+http://localhost:3000/auth/callback        # ローカル開発
+https://yourdomain.com/auth/callback       # 本番
+```
 
 ## ディレクトリ構成
 
