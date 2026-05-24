@@ -62,6 +62,9 @@ SUPABASE_SERVICE_ROLE_KEY=eyJh...   # サーバー専用。NEXT_PUBLIC を付け
 
 ### 2. データベース マイグレーション
 
+> 本番への適用手順 / smoke test / ロールバック SQL は **[docs/deploy.md](docs/deploy.md)** に集約。
+> 0005 適用後の RLS / GRANT 検証は `supabase/verify/0005_grants_check.sql` を Impersonate モードで実行。
+
 SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順** に実行する:
 
 ```
