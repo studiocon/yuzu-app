@@ -231,6 +231,14 @@
   .ng.good .head { color: #2d7a3e; }
   .ng ul { margin: 0; padding-left: 18px; font-size: var(--text-sm); }
 
+  /* component index */
+  .comp-index { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0; border-top: 1px solid var(--divider); border-left: 1px solid var(--divider); margin-bottom: 32px; }
+  .comp-index a { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-right: 1px solid var(--divider); border-bottom: 1px solid var(--divider); text-decoration: none; color: var(--ink); transition: background .15s var(--ease-soft); }
+  .comp-index a:hover { background: var(--surface-hover); }
+  .comp-index .num { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.16em; color: var(--ink-muted); }
+  .comp-index .name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.08em; }
+  .comp-index .desc { font-family: var(--font-body); font-weight: 400; font-size: var(--text-xs); color: var(--ink-secondary); line-height: 1.5; }
+
   /* deprecated mark */
   .pill-dep { display: inline-block; font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 0.16em; padding: 4px 8px; background: var(--ink); color: var(--yuzu-white); border-radius: var(--radius-sharp); vertical-align: middle; margin-left: 12px; }
 
@@ -359,10 +367,23 @@
 
     <section id="components">
       <h2><span class="num">05</span>COMPONENTS</h2>
-      <p class="lead">マイクボタン・投稿カード・スタッツ・状態ピル・感情グラフの5点。</p>
+      <p class="lead">マイクボタン・ボタン・状態ピル・スタッツ・投稿カード・感情グラフ・レポート一覧／詳細。</p>
+
+      <nav class="comp-index" aria-label="コンポーネント一覧">
+        <a href="#c-mic-idle"><span class="num">01</span><span class="name">MIC / IDLE</span><span class="desc">録音待機。正円・<code>--ink</code> 背景。</span></a>
+        <a href="#c-mic-recording"><span class="num">02</span><span class="name">MIC / RECORDING</span><span class="desc">録音中。<code>--yuzu-zest</code> ＋同心円。</span></a>
+        <a href="#c-button"><span class="num">03</span><span class="name">BUTTON</span><span class="desc">Primary / Secondary / Accent / Ghost / Danger。</span></a>
+        <a href="#c-iconbutton"><span class="num">04</span><span class="name">ICON BUTTON</span><span class="desc">44px・round・lg のアイコン専用ボタン。</span></a>
+        <a href="#c-status"><span class="num">05</span><span class="name">STATUS PILL</span><span class="desc">RECORDING. / DECODING. / RECORDED.</span></a>
+        <a href="#c-stat"><span class="num">06</span><span class="name">STAT CARD</span><span class="desc">DAY / RECORDS / STREAK の数値表示。</span></a>
+        <a href="#c-post"><span class="num">07</span><span class="name">POST CARD</span><span class="desc">投稿の最小単位。連番＋タイムスタンプ。</span></a>
+        <a href="#c-sentiment"><span class="num">08</span><span class="name">SENTIMENT CHART</span><span class="desc">ポジ＝黄／ネガ＝墨の面グラフ。</span></a>
+        <a href="#c-reports"><span class="num">09</span><span class="name">REPORT TAB</span><span class="desc">独立タブ。AI 解釈の週次レポート。</span></a>
+        <a href="#c-report-detail"><span class="num">10</span><span class="name">REPORT DETAIL</span><span class="desc">SENTIMENT / TOPICS / SURFACE / DEPTH / ADVICE。</span></a>
+      </nav>
 
       <div class="comp-grid">
-        <div class="comp">
+        <div class="comp" id="c-mic-idle">
           <h4>MIC BUTTON / IDLE</h4>
           <div class="stage">
             <button class="mic-fab" aria-label="record">
@@ -371,7 +392,7 @@
           </div>
           <p class="note">正円・<code>--ink</code>背景。長押しで録音開始。</p>
         </div>
-        <div class="comp">
+        <div class="comp" id="c-mic-recording">
           <h4>MIC BUTTON / RECORDING</h4>
           <div class="stage">
             <button class="mic-fab recording" aria-label="recording">
@@ -381,7 +402,7 @@
           <p class="note"><code>--yuzu-zest</code>＋同心円リング3重。</p>
         </div>
 
-        <div class="comp" style="grid-column: 1 / -1">
+        <div class="comp" id="c-button" style="grid-column: 1 / -1">
           <h4>BUTTON / VARIANTS</h4>
           <div class="stage" style="flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:32px">
             <div class="btn-row"><div class="btn-group-label">PRIMARY</div>
@@ -414,7 +435,7 @@
           <p class="note">Unbounded 700・角丸 4px・Primary は <code>--ink</code>、Accent のみ <code>--yuzu-yellow</code> で信号化。クリック時はわずかに縮んで押下感。</p>
         </div>
 
-        <div class="comp" style="grid-column: 1 / -1">
+        <div class="comp" id="c-iconbutton" style="grid-column: 1 / -1">
           <h4>ICON BUTTON / VARIANTS</h4>
           <div class="stage" style="flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:32px">
             <div class="btn-row"><div class="btn-group-label">PRIMARY</div>
@@ -438,7 +459,7 @@
           <p class="note">44px 角丸 4px が基本・<code>iconbtn--round</code> で正円・<code>iconbtn--lg</code> で 56px。クリック時はわずかに縮んで押下感。タッチターゲット 44px 確保。</p>
         </div>
 
-        <div class="comp">
+        <div class="comp" id="c-status">
           <h4>STATUS / STATE PILLS</h4>
           <div class="stage" style="flex-direction:column;gap:10px;align-items:flex-start">
             <span class="status">LONG PRESS. TALK.</span>
@@ -449,7 +470,7 @@
           <p class="note">Unbounded 700・トラッキング広め。</p>
         </div>
 
-        <div class="comp">
+        <div class="comp" id="c-stat">
           <h4>STAT CARD</h4>
           <div class="stage" style="display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;gap:0;padding:0">
             <div class="stat-card"><span class="stat-label">DAY</span><span class="stat-value">14</span></div>
@@ -459,23 +480,22 @@
           <p class="note">ラベル上・数値下・中央揃え。罫線で区切る。</p>
         </div>
 
-        <div class="comp">
-          <h4>POST CARD</h4>
+        <div class="comp" id="c-post">
+          <h4>RECORD CARD (v2)</h4>
           <div class="stage" style="align-items:flex-start">
             <div class="post-card">
-              <div class="row">
-                <span class="emoji">🍎</span>
-                <span class="name">りんご</span>
-                <span class="time">21:08</span>
+              <div class="row" style="justify-content:space-between;align-items:center">
+                <span class="time">たった今</span>
+                <span class="index" style="margin-left:auto">#042</span>
+                <span style="display:inline-flex;gap:4px;margin-left:8px;color:var(--ink-muted);font-size:14px">📌 ⧉</span>
               </div>
               <p class="text">今日はずっと機嫌が良かった。理由はわからない。</p>
-              <div class="index">#0042</div>
             </div>
           </div>
-          <p class="note">罫線で区切る・連番＋タイムスタンプは Unbounded。</p>
+          <p class="note">v2: アイコン・名前なし（identity は <code>#NNN</code> のみ）。右端に低主張の MARK / COPY のみ。COPY は <strong>Notion 移行期間限定の一時機能</strong>。</p>
         </div>
 
-        <div class="comp" style="grid-column: 1 / -1">
+        <div class="comp" id="c-sentiment" style="grid-column: 1 / -1">
           <h4>SENTIMENT CHART</h4>
           <div class="sent-card">
             <svg class="sent-svg" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden>
@@ -495,8 +515,8 @@
           <p class="note">ポジ＝<code>--yuzu-zest</code>、ネガ＝<code>--ink</code>。ゼロは点線。</p>
         </div>
 
-        <div class="comp" style="grid-column: 1 / -1">
-          <h4>REPORTS SECTION / MYPAGE</h4>
+        <div class="comp" id="c-reports" style="grid-column: 1 / -1">
+          <h4>REPORT TAB (v2)</h4>
           <div class="stage" style="flex-direction:column;align-items:stretch;gap:16px;min-height:0;padding:24px;background:var(--yuzu-white)">
             <div class="reports-head">
               <div style="font-family:var(--font-display);font-weight:700;font-size:40px;letter-spacing:0.04em;text-transform:uppercase;line-height:1">REPORT</div>
@@ -547,7 +567,7 @@
           <p class="note">SENTIMENT セクションと RECORDS セクションの間に挿入。直近1か月の確定済み週／月レポートを横スクロール snap で並べる。<code>more →</code> で <code>/reports</code> 全件ページへ。</p>
         </div>
 
-        <div class="comp" style="grid-column: 1 / -1">
+        <div class="comp" id="c-report-detail" style="grid-column: 1 / -1">
           <h4>REPORT DETAIL</h4>
           <div class="stage" style="align-items:stretch;padding:0;background:transparent">
             <div class="report-detail-mock">
@@ -629,8 +649,12 @@
           <tr><td class="where">録音中</td><td class="what en">RECORDING.</td></tr>
           <tr><td class="where">変換中</td><td class="what en">DECODING.</td></tr>
           <tr><td class="where">投稿完了</td><td class="what en">RECORDED.</td></tr>
+          <tr><td class="where">MARK 操作直後</td><td class="what en">MARKED.</td></tr>
+          <tr><td class="where">COPY 操作直後</td><td class="what en">COPIED.</td></tr>
+          <tr><td class="where">RECORDS フィルタ</td><td class="what en">ALL / PINNED</td></tr>
+          <tr><td class="where">PINNED 空表示</td><td class="what">MARK されたものは無い。</td></tr>
+          <tr><td class="where">INDEX 通し番号</td><td class="what en">#NNN（ゼロ埋め3桁）</td></tr>
           <tr><td class="where">タイムライン空</td><td class="what">話せ / 出せ / 整えるな（ランダム）</td></tr>
-          <tr><td class="where">ニックネーム未設定</td><td class="what">名前をつけよう</td></tr>
           <tr><td class="where">投稿数</td><td class="what en">○ RECORDS</td></tr>
           <tr><td class="where">連続日数</td><td class="what en">STREAK</td></tr>
           <tr><td class="where">登録日数</td><td class="what en">DAY ○</td></tr>
@@ -685,14 +709,53 @@
     </section>
 
     <section id="layout">
-      <h2><span class="num">08</span>LAYOUT</h2>
-      <p class="lead">左揃え・グリッド・大胆な余白の不均衡。センター寄せの和的余白は廃止。</p>
+      <h2><span class="num">08</span>LAYOUT (v2)</h2>
+      <p class="lead">左揃え・グリッド・大胆な余白の不均衡。タブは <strong>INDEX / TALK / REPORT の 3 つ</strong>。デフォルト = INDEX。TALK は中央 FAB で RecordModal を開くアクション（state を持たない）。</p>
+
+      <h3 style="font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:0.04em;margin:24px 0 8px">INDEX 画面（自分が出した記録）</h3>
+      <pre style="background:transparent;border:1px solid var(--divider);padding:16px;font-family:monospace;font-size:12px;line-height:1.6;overflow:auto;color:var(--ink)">┌─────────────────────────────┐
+│ #042                         │  ← ① 通し番号（巨大・identity 兼）
+│ DAY 14 | RECORDS 42 | STREAK 7 │  ← ② STATS
+│ SENTIMENT                    │  ← ③ 折れ線チャート
+│ RECORDS         [ ALL|PINNED ]│  ← ④ Raw 矩形カード一覧
+└─────────────────────────────┘ ← ここで完結（PROFILE なし）</pre>
+
+      <h3 style="font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:0.04em;margin:24px 0 8px">REPORT 画面（AI 解釈）</h3>
+      <pre style="background:transparent;border:1px solid var(--divider);padding:16px;font-family:monospace;font-size:12px;line-height:1.6;overflow:auto;color:var(--ink)">┌─────────────────────────────┐
+│ REPORT                       │
+│ [WEEK #2] [WEEK #1] →        │  ← 横スクロール
+└─────────────────────────────┘</pre>
+
+      <h3 style="font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:0.04em;margin:24px 0 8px">タブバー</h3>
+      <pre style="background:transparent;border:1px solid var(--divider);padding:16px;font-family:monospace;font-size:12px;line-height:1.6;overflow:auto;color:var(--ink)">┌──[ INDEX ]──[ 🎤 TALK ]──[ REPORT ]──┐</pre>
+
       <ul style="font-size:var(--text-sm); line-height:1.9; padding-left:18px;">
         <li>背景は <code>--yuzu-white</code> 単色。ゆず黄が信号として浮く構造。</li>
         <li>タッチターゲット最小 44×44。マイクボタンは 140px。</li>
         <li>テキストコントラスト比 4.5:1 以上。<code>prefers-reduced-motion</code> 対応。</li>
         <li><code>safe-area-inset-bottom</code> 必須・iOS Safari の <code>-webkit-backdrop-filter</code> 必須。</li>
+        <li><strong>v2 で廃止</strong>: ホーム / ME / マイページ / PROFILE / ニックネーム / 果物絵文字アイコン / AvatarMark。identity は <code>#NNN</code> のみ。</li>
       </ul>
+    </section>
+
+    <section id="glossary">
+      <h2><span class="num">09</span>GLOSSARY</h2>
+      <p class="lead">UI で用いる用語の定義表。NG ワード（お気に入り / 癒し / 育つ / 入力 / テキスト 等）は <a href="#voice">§07 VOICE</a> を参照。</p>
+      <table class="copy-table">
+        <thead><tr><th>用語</th><th>定義</th><th>NG 言い換え</th></tr></thead>
+        <tbody>
+          <tr><td class="where">TALK</td><td>はなす画面。中央 FAB で RecordModal を開くアクション。</td><td>—</td></tr>
+          <tr><td class="where">INDEX</td><td>ユーザー自身が出した記録の集約面（#NNN / STATS / SENTIMENT / RECORDS）。</td><td>「ME」「マイページ」「PROFILE」</td></tr>
+          <tr><td class="where">REPORT</td><td>AI 解釈の週次レポート。独立タブ。</td><td>INDEX と同居させない</td></tr>
+          <tr><td class="where">#NNN</td><td>ユーザーの identity 兼通し番号。名前・アイコンの代替。</td><td>「名前は無い。お前は #020 だ」</td></tr>
+          <tr><td class="where">RECORD / RECORDS</td><td>1 件の声の記録 / その一覧。</td><td>「投稿」「日記」「テキスト」</td></tr>
+          <tr><td class="where">MARK</td><td>RECORD に刻印を打つ唯一の能動操作。常時トグル（v2）。</td><td>「お気に入り」「いいね」「ブックマーク」</td></tr>
+          <tr><td class="where">PINNED</td><td>MARK 済み RECORD のみのフィルタ。</td><td>独立タブにしない</td></tr>
+          <tr><td class="where">COPY</td><td>本文 + #NNN + 日時をクリップボードへ。<strong>Notion 移行期間限定の一時機能</strong>。</td><td>⚠️ 将来削除。恒久 UI ではない</td></tr>
+          <tr><td class="where">STATS / DAY / RECORDS / STREAK</td><td>INDEX 上部 3 スタッツ。</td><td>「DAYS. NO SKIP.」は使わない</td></tr>
+          <tr><td class="where">SENTIMENT</td><td>感情推移の折れ線チャート。</td><td>「気づき」「自分を知ろう」</td></tr>
+        </tbody>
+      </table>
     </section>
   </main>
 </div>

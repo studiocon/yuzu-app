@@ -62,12 +62,31 @@ SUPABASE_SERVICE_ROLE_KEY=eyJh...   # サーバー専用。NEXT_PUBLIC を付け
 
 ### 2. データベース マイグレーション
 
-SQL Editor から `supabase/migrations/` 内の SQL ファイルを順番に実行する:
+SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順** に実行する:
 
 ```
-0001_init.sql      — profiles / records テーブル + RLS + トリガー
-0002_reports.sql   — reports テーブル + RLS
-0003_streak.sql    — get_streak() RPC 関数（JST 連続日数）
+0001_init.sql                     — profiles / records テーブル + RLS + トリガー
+0002_reports.sql                  — reports テーブル + RLS
+0003_streak.sql                   — get_streak() RPC（JST 連続日数）
+0004_mark.sql                     — records.marked カラム + UPDATE RLS
+0005_records_column_grants.sql    — INSERT/UPDATE のカラム単位 GRANT（編集禁止思想を担保）
+```
+
+#### マイグレーション適用後の検証
+
+`0005` 適用後、編集禁止が効いていることを SQL Editor で確認:
+
+```sql
+-- ① 本文を改竄しようとして失敗するはず（権限エラー）
+update public.records set text = 'hacked' where id = '<any-id>';
+
+-- ② marked のトグルは通る
+update public.records set marked = true where id = '<any-id>';
+
+-- ③ marked = true で INSERT しても DB 上は false になる（GRANT (user_id, text, char_count) のみ許可）
+insert into public.records (user_id, text, char_count, marked)
+  values (auth.uid(), 'test', 4, true)
+  returning marked;  -- → false
 ```
 
 ### 3. 認証プロバイダの有効化
@@ -115,10 +134,30 @@ scripts/              design:drift / design:sync スクリプト
 ## 検証コマンド
 
 ```bash
-npx tsc --noEmit       # 型チェック
-npm run design:check   # デザイン整合性チェック
+npm run typecheck      # tsc --noEmit
+npm run lint           # next lint（server-only 誤 import を捕捉）
+npm run design:check   # デザイン整合性チェック（drift + linter）
+npm run verify         # 上記 3 つを一括（commit/push 前推奨）
 npm run dev            # ローカル起動
 ```
+
+CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）でも `typecheck` / `lint` / `build` を自動実行する。
+`npm install` で husky が pre-commit hook を自動セットアップ（DESIGN.md ステージ時に preview 同期）。
+
+## Mock モード
+
+Supabase 接続なしで UI を動作させたい時:
+
+```
+http://localhost:3000/?mock=1
+```
+
+- `sessionStorage` + `yuzu-mock-mode` cookie に印が立ち、middleware の保護ルート（`/reports` / `/settings`）チェックをバイパス
+- 投稿は localStorage 擬似で本番 DB に書かない
+- レポート・センチメントは固定ダミーを返す
+- mock を抜けるには `sessionStorage.clear()` + cookie 削除 + リロード
+
+新規開発者は **これを最初に試す** と Supabase 未設定でも UI 全体を回せる。
 
 ## Claude Code との連携
 
