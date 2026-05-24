@@ -119,7 +119,12 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await res.json();
-  const cleanText = ((data.text as string | undefined) ?? "").replace(/\[.*?\]/g, "").trim();
+  // ElevenLabs Scribe は非音声を括弧つき annotation で返す: [音楽] / (背景ノイズ) / （咳）
+  // 半角[] / 半角() / 全角（） すべて落とす。
+  const cleanText = ((data.text as string | undefined) ?? "")
+    .replace(/[\[(（][^\])）]*[\])）]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   const response = NextResponse.json({ text: cleanText });
 
