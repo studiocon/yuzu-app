@@ -35,9 +35,10 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
+  const isMock = request.cookies.get("yuzu-mock-mode")?.value === "1";
 
-  if (isProtected && !user) {
-    // 未ログインで保護ルートへアクセスした場合はホームへ
+  if (isProtected && !user && !isMock) {
+    // 未ログインで保護ルートへアクセスした場合はホームへ（mock-mode はバイパス）
     return NextResponse.redirect(new URL("/", request.url));
   }
 
