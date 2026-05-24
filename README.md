@@ -41,12 +41,20 @@ npm run dev
 
 `.env.local` に必要な環境変数:
 
+- `ELEVENLABS_API_KEY`: ElevenLabs API Key（STT / Scribe v2）
+- `ANTHROPIC_API_KEY`: Anthropic API Key（レポート生成・感情分析）
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase `Project URL`（クライアント参照のため `NEXT_PUBLIC_` が必要）
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase `anon key`（クライアント参照のため `NEXT_PUBLIC_` が必要）
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase `service_role key`（サーバー専用。**絶対に `NEXT_PUBLIC_` を付けない**）
+
+例（ダミー値）:
+
 ```
-ELEVENLABS_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
-SUPABASE_SERVICE_ROLE_KEY=eyJh...   # サーバー専用。NEXT_PUBLIC を付けない
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 ```
 
 ブラウザで `http://localhost:3000` を開く。マイク権限の許可が必要。デザインプレビューは `http://localhost:3000/design-preview.html`。
