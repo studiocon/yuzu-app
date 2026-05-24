@@ -115,15 +115,25 @@ export default function Home() {
         });
         const data = await safeJson(res);
         if (!res.ok) {
-          if (getString(data, "error") === "daily_limit") {
+          const errCode = getString(data, "error");
+          if (errCode === "daily_limit") {
             const tc = getNumber(data, "todayCount");
             if (typeof tc === "number") setTodayCount(tc);
+            recorder.failWithError(`今日はここまで（${res.status}）`);
+            return;
           }
-          // recorder の error は recorder 側 setError で表示済
+          if (res.status === 401 || errCode === "unauthorized") {
+            recorder.failWithError("ログインし直せ（401）");
+            return;
+          }
+          recorder.failWithError(`保存失敗 ${res.status} ${errCode ?? ""}`.trim());
           return;
         }
         const newPost = getPost(data);
-        if (!newPost) return;
+        if (!newPost) {
+          recorder.failWithError("保存応答が不正");
+          return;
+        }
         setPosts((prev) => [newPost, ...(prev ?? [])]);
         setLastPost(newPost);
         setTotalCount((t) => Math.max(t ?? 0, newPost.index));
@@ -131,8 +141,9 @@ export default function Home() {
         const tc = getNumber(data, "todayCount");
         if (typeof tc === "number") setTodayCount(tc);
         recorder.setComplete();
-      } catch {
-        // silent
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "通信失敗";
+        recorder.failWithError(msg);
       }
     },
   });

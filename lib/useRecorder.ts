@@ -53,6 +53,8 @@ export type RecorderApi = {
   resetIfIdleOrComplete: () => void;
   /** 録音できる状態か（client side check; server が信頼源） */
   canRecord: () => boolean;
+  /** 外部（保存失敗等）からエラー表示 + idle に戻す */
+  failWithError: (msg: string) => void;
 };
 
 type Options = {
@@ -290,6 +292,12 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
 
   const setComplete = useCallback(() => setPhaseFromOutside("complete"), []);
 
+  const failWithError = useCallback((msg: string) => {
+    setError(msg);
+    setStatusMsg(null);
+    setPhaseFromOutside("idle");
+  }, []);
+
   return {
     phase,
     shortTap,
@@ -307,5 +315,6 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     dismissComplete,
     resetIfIdleOrComplete,
     canRecord,
+    failWithError,
   };
 }
