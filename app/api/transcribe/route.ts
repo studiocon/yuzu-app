@@ -7,7 +7,17 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const ENDPOINT = "https://api.elevenlabs.io/v1/speech-to-text";
-const MODEL_ID = "scribe_v2";
+// ElevenLabs 公開モデルは scribe_v1。v2 は silently invalid → text=""
+const MODEL_ID = "scribe_v1";
+
+function pickExtension(file: Blob): string {
+  const t = (file.type || "").toLowerCase();
+  if (t.includes("mp4") || t.includes("m4a") || t.includes("aac")) return "mp4";
+  if (t.includes("ogg")) return "ogg";
+  if (t.includes("wav")) return "wav";
+  if (t.includes("mpeg") || t.includes("mp3")) return "mp3";
+  return "webm";
+}
 
 const ANON_COOKIE = "yuzu_anon_stt";
 
@@ -92,7 +102,8 @@ export async function POST(req: NextRequest) {
   }
 
   const upstream = new FormData();
-  upstream.append("file", file, "recording.webm");
+  const ext = pickExtension(file);
+  upstream.append("file", file, `recording.${ext}`);
   upstream.append("model_id", MODEL_ID);
   upstream.append("language_code", "ja");
 
