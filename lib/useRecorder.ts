@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Phase } from "./types";
 import { MAX_RECORD_MS } from "./constants";
 
@@ -65,6 +65,13 @@ type Options = {
 };
 
 export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): RecorderApi {
+  // onTranscribed / isAtDailyLimit を ref に逃がして stale closure を回避。
+  // onPressEnd 等の useCallback は deps=[] のため、初回レンダー時のコールバックを握り続けてしまう。
+  const onTranscribedRef = useRef(onTranscribed);
+  const isAtDailyLimitRef = useRef(isAtDailyLimit);
+  useEffect(() => { onTranscribedRef.current = onTranscribed; }, [onTranscribed]);
+  useEffect(() => { isAtDailyLimitRef.current = isAtDailyLimit; }, [isAtDailyLimit]);
+
   const [phase, setPhase] = useState<Phase>("idle");
   const [shortTap, setShortTap] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -203,12 +210,12 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
         const err = getString(data, "error");
         if (err === "login_required") {
           setStatusMsg(null); setPhaseSync("idle");
-          await onTranscribed({ kind: "login_required" });
+          await onTranscribedRef.current({ kind: "login_required" });
           return;
         }
         if (err === "daily_limit") {
           setStatusMsg(null); setPhaseSync("idle");
-          await onTranscribed({ kind: "daily_limit" });
+          await onTranscribedRef.current({ kind: "daily_limit" });
           return;
         }
         throw new Error(err || "失敗、話せ");
@@ -220,20 +227,24 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
 
       // 成功 — phase は呼び出し側が save 結果に応じて complete / idle を決める
       setStatusMsg(null);
-      await onTranscribed({ kind: "text", text });
+      await onTranscribedRef.current({ kind: "text", text });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "エラーが発生しました";
       setError(msg);
       setStatusMsg(null); setPhaseSync("idle");
-      await onTranscribed({ kind: "error", message: msg });
+      await onTranscribedRef.current({ kind: "error", message: msg });
     }
   };
+
+  // transcribe を ref で固定（毎レンダー再生成されるが、最新の onTranscribedRef を読むのでOK）
+  const transcribeRef = useRef(transcribe);
+  transcribeRef.current = transcribe;
 
   const onPressStart = useCallback(async (e: React.PointerEvent) => {
     e.preventDefault();
     try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
     if (phaseRef.current !== "idle") return;
-    if (isAtDailyLimit()) return;
+    if (isAtDailyLimitRef.current()) return;
 
     setError(null);
     setPermissionDenied(false);
@@ -266,7 +277,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     setPhaseSync("busy");
     const blob = await stopAndGetBlob();
     if (blob.size === 0) { setPhaseSync("idle"); return; }
-    await transcribe(blob);
+    await transcribeRef.current(blob);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -288,7 +299,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     setPhaseFromOutside("idle");
   }, []);
 
-  const canRecord = useCallback(() => !isAtDailyLimit() && phaseRef.current === "idle", [isAtDailyLimit]);
+  const canRecord = useCallback(() => !isAtDailyLimitRef.current() && phaseRef.current === "idle", []);
 
   const setComplete = useCallback(() => setPhaseFromOutside("complete"), []);
 
