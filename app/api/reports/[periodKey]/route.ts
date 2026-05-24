@@ -66,6 +66,7 @@ async function handle(req: NextRequest, params: { periodKey: string }, scores: R
       char_count: r.char_count,
       createdAt: new Date(r.created_at).getTime(),
       index: i + 1,
+      marked: false,
     }));
 
     if (posts.length === 0) {

@@ -3,14 +3,31 @@ import type { Report, ReportMeta } from "./reportTypes";
 
 const MOCK_KEY = "yuzu-mock-mode";
 
+// mock mode は sessionStorage（タブ寿命）に加えて cookie でもマークし、
+// middleware（サーバ側）が /reports や /settings の保護をスキップできるようにする。
+function setMockCookie() {
+  try {
+    // タブを閉じたら消える（Max-Age なし）。本番 HTTPS では Secure 属性を付与。
+    const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${MOCK_KEY}=1; path=/; SameSite=Lax${secure}`;
+  } catch {}
+}
+
 export function isMockMode(): boolean {
   if (typeof window === "undefined") return false;
   const fromQuery = new URLSearchParams(window.location.search).get("mock") === "1";
   if (fromQuery) {
     try { sessionStorage.setItem(MOCK_KEY, "1"); } catch {}
+    setMockCookie();
     return true;
   }
-  try { return sessionStorage.getItem(MOCK_KEY) === "1"; } catch { return false; }
+  try {
+    if (sessionStorage.getItem(MOCK_KEY) === "1") {
+      setMockCookie(); // cookie が消えていても session が残っていれば再付与
+      return true;
+    }
+  } catch {}
+  return false;
 }
 
 const SAMPLES: Array<{

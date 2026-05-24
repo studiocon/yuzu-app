@@ -79,96 +79,50 @@ body {
   gap: 10px;
 }
 
-.post-emoji {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-.avatar-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--yuzu-zest);
-  color: #fff;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  user-select: none;
-}
-.avatar-mark--lg {
-  width: 96px;
-  height: 96px;
-  font-size: 32px;
-  border-radius: 4px;
-}
-.avatar-mark--sm {
-  width: 40px;
-  height: 40px;
-  font-size: 13px;
-  border-radius: 50%;
-}
-
-.post-name {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink);
-}
+/* v2: avatar / nickname / post-emoji / post-meta(-sep) 系は廃止。identity は通し番号 #NNN のみ。 */
 
 .post-time {
+  flex: 1;
   font-size: 12px;
+  letter-spacing: 0.02em;
   color: var(--ink-muted);
   white-space: nowrap;
 }
 
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
 .post-index {
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--ink-muted);
 }
-.post-meta-sep {
-  font-size: 10px;
-  color: var(--ink-muted);
-  opacity: 0.5;
-}
 
-.post-copy-btn {
+/* v2: 右端の低主張アイコンボタン（MARK + COPY 共通） */
+.post-actions {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+.post-iconbtn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
   color: var(--ink-muted);
   cursor: pointer;
-  padding: 0;
-  margin-left: 4px;
-  transition: background 0.15s var(--ease-soft), color 0.15s var(--ease-soft), transform 0.15s var(--ease-soft);
+  transition: color 0.15s var(--ease-soft), transform 0.12s var(--ease-soft);
 }
-.post-copy-btn:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
-}
-.post-copy-btn:active { transform: scale(0.9); }
-.post-copy-btn.is-copied {
-  color: #2ea043;
-  background: rgba(46, 160, 67, 0.12);
-}
+.post-iconbtn:hover { color: var(--ink); }
+.post-iconbtn:active { transform: scale(0.92); }
+.post-iconbtn.is-marked { color: var(--yuzu-zest); }
+.post-iconbtn.is-copied { color: var(--ink); }
 
 .post-body { display: block; }
 .post-text {
@@ -178,124 +132,6 @@ body {
   color: var(--ink);
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-/* ===== Stamp bar (reactions) ===== */
-.stamp-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-}
-.stamp-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 16px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(245, 216, 74, 0.2);
-  border: 1.5px solid var(--surface-border);
-  color: var(--ink);
-  cursor: pointer;
-  line-height: 1;
-  transition: transform 0.15s var(--ease-soft),
-              background 0.15s var(--ease-soft),
-              border-color 0.15s var(--ease-soft);
-}
-.stamp-btn:hover {
-  transform: scale(1.12);
-  background: rgba(245, 216, 74, 0.4);
-}
-.stamp-btn:active { transform: scale(0.96); }
-.stamp-btn.reacted {
-  background: var(--yuzu-yellow);
-  border-color: var(--yuzu-zest);
-}
-.stamp-emoji { font-size: 16px; line-height: 1; }
-.stamp-count {
-  font-size: var(--text-xs);
-  color: var(--ink-muted);
-  margin-left: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.stamp-btn.reacted .stamp-count { color: var(--ink); }
-
-/* ===== Stamp add button + picker ===== */
-.stamp-add-wrap { position: relative; display: inline-flex; }
-.stamp-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  padding: 4px 8px;
-  font-size: 13px;
-  line-height: 1;
-  border-radius: 999px;
-  background: transparent;
-  border: 1.5px dashed var(--surface-border);
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: transform 0.15s var(--ease-soft),
-              background 0.15s var(--ease-soft),
-              border-color 0.15s var(--ease-soft),
-              color 0.15s var(--ease-soft);
-}
-.stamp-add-btn:hover {
-  transform: scale(1.06);
-  background: rgba(245, 216, 74, 0.25);
-  border-color: var(--yuzu-yellow);
-  color: var(--ink-secondary);
-}
-.stamp-add-btn[aria-expanded="true"] {
-  background: rgba(245, 216, 74, 0.35);
-  border-style: solid;
-  border-color: var(--yuzu-zest);
-  color: var(--ink);
-}
-.stamp-add-plus {
-  font-size: 11px;
-  font-weight: 700;
-  margin-left: 1px;
-  line-height: 1;
-}
-
-.stamp-picker {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  display: flex;
-  gap: 4px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--surface-border);
-  border-radius: 999px;
-  z-index: 10;
-  animation: fadeIn 160ms var(--ease-soft);
-}
-.stamp-picker-item {
-  font-size: 18px;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: transparent;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  line-height: 1;
-  transition: transform 0.12s var(--ease-soft), background 0.12s var(--ease-soft);
-}
-.stamp-picker-item:hover {
-  transform: scale(1.18);
-  background: rgba(245, 216, 74, 0.35);
-}
-.stamp-picker-item:active { transform: scale(0.94); }
-.stamp-picker-item.reacted {
-  background: var(--yuzu-yellow);
-  border-color: var(--yuzu-zest);
 }
 
 /* ===== App shell / header fade ===== */
@@ -530,28 +366,7 @@ button.settings-row:focus-visible {
   font-family: monospace;
   letter-spacing: 0.02em;
 }
-.settings-nickname-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: var(--text-base);
-  color: var(--ink);
-  outline: none;
-  min-width: 0;
-  text-align: right;
-}
-.settings-nickname-input::placeholder { color: var(--ink-muted); }
-.settings-save-btn {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--yuzu-zest);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 0;
-  flex-shrink: 0;
-}
+/* v2: settings-nickname-input / settings-save-btn は撤廃済（ニックネーム機能なし） */
 .settings-version {
   text-align: left;
   padding: 24px 0;
@@ -1227,57 +1042,11 @@ button.settings-row:focus-visible {
   max-width: 640px;
   margin: 0 auto;
 }
-.mypage-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.mypage-avatar {
-  width: 96px;
-  height: 96px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-}
-.mypage-nickname-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.mypage-nickname {
-  font-size: var(--text-xl);
-  color: var(--ink);
-  margin: 0;
-}
-.mypage-nickname-input {
-  font-family: var(--font-body), sans-serif;
-  font-size: 16px; /* iOS Safari ズーム抑制 */
-  border: 1.5px solid var(--surface-border);
-  border-radius: 2px;
-  padding: 4px 10px;
-  background: var(--surface-card);
-  color: var(--ink);
-  outline: none;
-  min-width: 120px;
-}
-.mypage-nickname-input:focus { border-color: var(--yuzu-zest); }
-.mypage-edit-btn {
-  background: transparent;
-  border: 1px solid var(--surface-border);
-  color: var(--ink-secondary);
-  padding: 4px 10px;
-  font-size: var(--text-xs);
-  border-radius: 2px;
-  cursor: pointer;
-  transition: background 0.2s var(--ease-soft);
-}
-.mypage-edit-btn:hover { background: var(--surface-hover); }
+/* v2: profile / nickname / avatar / mypage-edit-btn 系は撤廃。identity は #NNN のみ。 */
 
 .mypage-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
 }
 .mypage-stat-card {
@@ -1482,7 +1251,7 @@ button.settings-row:focus-visible {
   -webkit-tap-highlight-color: transparent;
   color: var(--ink);
 }
-.iconbtn svg { width: 20px; height: 20px; }
+.iconbtn svg { width: 20px; height: 20px; pointer-events: none; }
 .iconbtn:hover { background: var(--surface-hover); color: var(--ink); }
 .iconbtn:active { transform: scale(0.94); transition-duration: 60ms; }
 .iconbtn[disabled], .iconbtn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
@@ -2057,4 +1826,150 @@ button.settings-row:focus-visible {
   opacity: 0.5;
   margin: 8px 0 0;
   word-break: break-all;
+}
+
+/* ===== INDEX view (旧 ME + 旧ホーム統合) ===== */
+.index-view {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px calc(140px + env(safe-area-inset-bottom));
+  gap: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.index-number {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  text-align: left;
+}
+
+/* RECORDS section head: title + filter on same row */
+.records-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 44px;
+  border-top: 1px solid var(--divider);
+}
+.records-section-head .mypage-section-title {
+  padding-top: 0;
+  border-top: 0;
+}
+.mypage-section .records-section-head + .mypage-post-list,
+.mypage-section .records-section-head ~ .mypage-post-list {
+  margin-top: 8px;
+}
+
+/* ALL / PINNED filter toggle */
+.records-filter {
+  display: inline-flex;
+  gap: 0;
+  align-self: flex-end;
+}
+.records-filter-item {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.records-filter-item.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--yuzu-zest);
+}
+.records-filter-item:hover { color: var(--ink); }
+
+/* 無限スクロール sentinel */
+.records-sentinel {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+}
+
+/* v2: MARK / COPY ボタン本体は .post-iconbtn（旧 .post-mark-btn の枠線・背景は撤廃済） */
+
+.post-card { position: relative; }
+.post-card.is-marked {
+  border-top-color: var(--yuzu-zest);
+}
+
+.post-mark-flash,
+.post-copy-flash {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  animation: mark-flash 900ms var(--ease-soft) both;
+}
+.post-mark-flash { color: var(--yuzu-zest); }
+.post-copy-flash { color: var(--ink); }
+
+@keyframes mark-flash {
+  0%   { opacity: 0; transform: translateY(4px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-mark-flash,
+  .post-copy-flash { animation: none; opacity: 1; }
+}
+
+/* REPORT view (独立タブ) */
+.report-view {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px calc(140px + env(safe-area-inset-bottom));
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.report-view-title {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  text-align: left;
+}
+.report-view .reports-section .mypage-section-title { display: none; }
+.report-view .reports-header { padding-top: 0; border-top: 0; }
+
+/* TALK view: inline wrapper for SpeakView / CompleteView / LimitView */
+.talk-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0 20px calc(120px + env(safe-area-inset-bottom));
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+.talk-view .speak-view,
+.talk-view .complete-view,
+.talk-view .limit-view {
+  flex: 1;
 }

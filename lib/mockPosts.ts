@@ -53,6 +53,7 @@ export function buildMockPosts(
     createdAt: timestampFor(seed, now),
     char_count: seed.text.length,
     index: i + 1,
+    marked: false,
   }));
   posts.sort((a, b) => b.createdAt - a.createdAt);
 

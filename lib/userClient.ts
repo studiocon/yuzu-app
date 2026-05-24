@@ -1,61 +1,8 @@
-// クライアント側のユーザープロフィール（ニックネーム・感情キャッシュ）
-// ニックネームは Supabase profiles.nickname と localStorage の両方に保持する（オフラインフォールバック）。
+// クライアント側のユーザー関連ストア（感情キャッシュのみ）。
+// v2 以降、ユーザー identity は通し番号 `#NNN` のみ。
+// ニックネーム / 果物アイコンの概念は廃止。DB カラムは残るが UI 不参照。
 
-export const NICKNAME_KEY = "yuzu-nickname";
 export const SENTIMENT_CACHE_KEY = "yuzu-sentiment-cache";
-
-export const FRUIT_CODES: Record<string, string> = {
-  "🍑": "MO",
-  "🍋": "LE",
-  "🍇": "BU",
-  "🥝": "KI",
-  "🍓": "IC",
-  "🫐": "BL",
-  "🍈": "ME",
-  "🍊": "OR",
-  "🍍": "PA",
-  "🥭": "MA",
-  "🍌": "BA",
-  "🍒": "SA",
-  "🍎": "AP",
-  "🍐": "NA",
-  "🫒": "OL",
-};
-
-export const FRUIT_NAMES: Record<string, string> = {
-  "🍑": "もも",
-  "🍋": "レモン",
-  "🍇": "ぶどう",
-  "🥝": "キウイ",
-  "🍓": "いちご",
-  "🫐": "ブルーベリー",
-  "🍈": "メロン",
-  "🍊": "オレンジ",
-  "🍍": "パイナップル",
-  "🥭": "マンゴー",
-  "🍌": "バナナ",
-  "🍒": "さくらんぼ",
-  "🍎": "りんご",
-  "🍐": "なし",
-  "🫒": "オリーブ",
-};
-
-const safeGet = (key: string): string | null => {
-  try { return localStorage.getItem(key); } catch { return null; }
-};
-const safeSet = (key: string, value: string): void => {
-  try { localStorage.setItem(key, value); } catch {}
-};
-
-export function getNickname(emoji: string): string {
-  const stored = safeGet(NICKNAME_KEY);
-  if (stored && stored.trim()) return stored;
-  return FRUIT_NAMES[emoji] ?? "ゲスト";
-}
-
-export function setNickname(name: string): void {
-  safeSet(NICKNAME_KEY, name.trim());
-}
 
 export function loadSentimentCache(): Record<string, number> {
   try {
