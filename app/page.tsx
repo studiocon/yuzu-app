@@ -1,156 +1,168 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Gear } from "@phosphor-icons/react";
 import type { User } from "@supabase/supabase-js";
-import HomeView from "@/components/HomeView";
-import MyPageView from "@/components/MyPageView";
+import IndexView from "@/components/IndexView";
+import ReportView from "@/components/ReportView";
 import OnboardingView from "@/components/OnboardingView";
 import RecordModal from "@/components/RecordModal";
 import IndexDetailModal from "@/components/IndexDetailModal";
 import LoginModal from "@/components/LoginModal";
 import TabBar, { type MainTab } from "@/components/TabBar";
-import type { Post, Phase } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
-import {
-  MAX_DAILY_SESSIONS,
-  MAX_RECORD_MS,
-  getTodayCount,
-  incrementCount,
-  canRecord,
-} from "@/lib/dailyLimit";
+import { MAX_DAILY_SESSIONS, incrementMockCount, getMockTodayCount } from "@/lib/dailyLimit";
 import { createClient } from "@/lib/supabase/client";
+import { usePostsApi } from "@/lib/usePostsApi";
+import { useRecorder } from "@/lib/useRecorder";
 
 const PENDING_TEXT_KEY = "yuzu_pending_text";
-const EMOJI_KEY = "yuzu-emoji";
-const MIN_RECORD_MS = 500;
-const FRUITS = ["🍑","🍋","🍇","🥝","🍓","🫐","🍈","🍊","🍍","🥭","🍌","🍒","🍎","🍐","🫒"];
-const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];
+
+function isObj(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+function getString(d: unknown, k: string): string | undefined {
+  return isObj(d) && typeof d[k] === "string" ? (d[k] as string) : undefined;
+}
+function getNumber(d: unknown, k: string): number | undefined {
+  return isObj(d) && typeof d[k] === "number" ? (d[k] as number) : undefined;
+}
+function getPost(d: unknown, k = "post"): Post | undefined {
+  if (!isObj(d)) return undefined;
+  const v = d[k];
+  return isObj(v) && typeof v.id === "string" ? (v as unknown as Post) : undefined;
+}
+async function safeJson(res: Response): Promise<unknown> {
+  try { const t = await res.text(); return t ? JSON.parse(t) : null; } catch { return null; }
+}
 
 export default function Home() {
   // ── Auth ──
   const [user, setUser] = useState<User | null | undefined>(undefined); // undefined = loading
-  const [myEmoji, setMyEmoji] = useState<string>("🍑");
 
-  // ── Posts ──
-  const [posts, setPosts] = useState<Post[] | null>(null);
-
-  // ── Recording ──
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [shortTap, setShortTap] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [hint, setHint] = useState<string | null>(null);
+  // ── UI state ──
   const [recordOpen, setRecordOpen] = useState(false);
   const [lastPost, setLastPost] = useState<Post | null>(null);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [todayCount, setTodayCount] = useState(0);
-  const [recordingElapsed, setRecordingElapsed] = useState(0);
-
-  // ── UI ──
   const [detailPost, setDetailPost] = useState<Post | null>(null);
-  const [tab, setTab] = useState<MainTab>("home");
+  const [tab, setTab] = useState<MainTab>("index");
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingText, setPendingText] = useState<string | null>(null);
 
-  // ── Refs ──
-  const phaseRef = useRef<Phase>("idle");
-  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pressStartRef = useRef<number>(0);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-
   const supabase = createClient();
+  const router = useRouter();
 
-  const showHint = (msg: string) => {
-    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-    setHint(msg);
-    hintTimerRef.current = setTimeout(() => setHint(null), 2000);
+  const openSettings = () => {
+    // mock-mode は cookie でマーク済 → middleware がバイパスする
+    router.push("/settings");
   };
 
-  const setPhaseSync = (p: Phase) => {
-    phaseRef.current = p;
-    setPhase(p);
-  };
+  // ── Posts API（fetch / pagination / mark / stats） ──
+  const postsApi = usePostsApi(user, getMockTodayCount());
+  const {
+    posts, setPosts, totalCount, setTotalCount, serverStreak,
+    firstPostAt, setFirstPostAt, todayCount, setTodayCount,
+    nextOffset, loadingMore, loadMore, toggleMark,
+  } = postsApi;
 
-  // ── 初期化 + auth 監視 ──
+  // ── Recorder（録音 + STT） ──
+  const recorder = useRecorder({
+    isAtDailyLimit: () => todayCount >= MAX_DAILY_SESSIONS,
+    onTranscribed: async (outcome) => {
+      if (outcome.kind === "login_required") {
+        setRecordOpen(false);
+        setLoginOpen(true);
+        return;
+      }
+      if (outcome.kind !== "text") return; // silence/short/daily_limit/error は recorder 側で処理済
+
+      const text = outcome.text;
+
+      // 未ログイン onboarding: ログインモーダルを促す（save は pending text として保留）
+      if (!user) {
+        setRecordOpen(false);
+        setPendingText(text);
+        return;
+      }
+
+      // mock mode: API を叩かずクライアント擬似 insert
+      if (isMockMode()) {
+        const mockPost: Post = {
+          id: `mock-${crypto.randomUUID()}`,
+          user_id: user.id,
+          text,
+          char_count: text.length,
+          createdAt: Date.now(),
+          index: (posts?.length ?? 0) + 1,
+          marked: false,
+        };
+        setPosts((prev) => [mockPost, ...(prev ?? [])]);
+        setLastPost(mockPost);
+        setTodayCount(incrementMockCount());
+        recorder.setComplete();
+        return;
+      }
+
+      // 本番: /api/records POST
+      try {
+        const res = await fetch("/api/records", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await safeJson(res);
+        if (!res.ok) {
+          if (getString(data, "error") === "daily_limit") {
+            const tc = getNumber(data, "todayCount");
+            if (typeof tc === "number") setTodayCount(tc);
+          }
+          // recorder の error は recorder 側 setError で表示済
+          return;
+        }
+        const newPost = getPost(data);
+        if (!newPost) return;
+        setPosts((prev) => [newPost, ...(prev ?? [])]);
+        setLastPost(newPost);
+        setTotalCount((t) => Math.max(t ?? 0, newPost.index));
+        if (!firstPostAt) setFirstPostAt(newPost.createdAt);
+        const tc = getNumber(data, "todayCount");
+        if (typeof tc === "number") setTodayCount(tc);
+        recorder.setComplete();
+      } catch {
+        // silent
+      }
+    },
+  });
+
+  // ── 初期化（mock or auth 監視） ──
   useEffect(() => {
-    // emoji / カウント
-    let e: string | null = null;
-    try {
-      e = localStorage.getItem(EMOJI_KEY);
-      if (!e) { e = pickFruit(); localStorage.setItem(EMOJI_KEY, e); }
-    } catch {}
-    if (e) setMyEmoji(e);
-    setTodayCount(getTodayCount());
-
     if (isMockMode()) {
-      const { posts: mockPosts, sentiments } = buildMockPosts(e ?? "🍑", "mock-user");
+      const { posts: mockPosts, sentiments } = buildMockPosts("🍑", "mock-user");
       setPosts(mockPosts);
       setUser({ id: "mock-user" } as User);
       const prev = loadSentimentCache();
       saveSentimentCache({ ...prev, ...sentiments });
       return;
     }
-
-    // auth 状態を確認
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      setUser(u ?? null);
-    });
-
-    // auth 変化を購読
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
-
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── ログイン済みになったら投稿を取得 ──
-  useEffect(() => {
-    if (!user || isMockMode()) return;
-
-    // プロフィールから emoji を取得（あれば上書き）
-    supabase
-      .from("profiles")
-      .select("fruit_emoji, nickname")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.fruit_emoji) setMyEmoji(data.fruit_emoji);
-      });
-
-    fetch("/api/records")
-      .then(safeJson)
-      .then((data) => {
-        setPosts(data?.posts ?? []);
-      })
-      .catch(() => setPosts([]));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  // ── ログイン後: pending text を保存して RECORDED. を出す ──
+  // ── ログイン直後: sessionStorage の pendingText を /api/records に POST ──
   useEffect(() => {
     if (!user || isMockMode()) return;
     let pending: string | null = null;
-    try {
-      pending = sessionStorage.getItem(PENDING_TEXT_KEY);
-    } catch {}
+    try { pending = sessionStorage.getItem(PENDING_TEXT_KEY); } catch {}
     if (!pending) return;
-
     try { sessionStorage.removeItem(PENDING_TEXT_KEY); } catch {}
 
-    // 投稿を保存
     (async () => {
       try {
         const res = await fetch("/api/records", {
@@ -159,220 +171,34 @@ export default function Home() {
           body: JSON.stringify({ text: pending }),
         });
         const data = await safeJson(res);
-        if (!res.ok) throw new Error(data?.error || "保存失敗");
-        const newPost: Post | undefined = data?.post;
-        if (!newPost) throw new Error("保存失敗");
+        if (!res.ok) return;
+        const newPost = getPost(data);
+        if (!newPost) return;
         setPosts([newPost]);
         setLastPost(newPost);
-        setTodayCount(incrementCount());
+        setTotalCount((t) => Math.max(t ?? 0, newPost.index));
+        if (!firstPostAt) setFirstPostAt(newPost.createdAt);
+        const tc = getNumber(data, "todayCount");
+        if (typeof tc === "number") setTodayCount(tc);
         setPendingText(null);
-        setPhaseSync("complete");
+        recorder.setComplete();
         setRecordOpen(true);
-      } catch {
-        // サイレントフェイル
-      }
+      } catch {/* silent */}
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // ── Media Recorder ──
-  const pickRecorderMime = (): string | undefined => {
-    if (typeof MediaRecorder === "undefined") return undefined;
-    const candidates = [
-      "audio/mp4", "audio/mp4;codecs=mp4a.40.2",
-      "audio/webm;codecs=opus", "audio/webm",
-      "audio/ogg;codecs=opus",
-    ];
-    for (const m of candidates) {
-      try { if (MediaRecorder.isTypeSupported(m)) return m; } catch {}
-    }
-    return undefined;
-  };
-
-  const setupAnalyser = (stream: MediaStream) => {
-    try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
-      ctx.resume?.();
-      const source = ctx.createMediaStreamSource(stream);
-      const node = ctx.createAnalyser();
-      node.fftSize = 32;
-      source.connect(node);
-      audioCtxRef.current = ctx;
-      analyserRef.current = node;
-      setAnalyser(node);
-    } catch (err) {
-      console.warn("AudioContext setup failed", err);
-    }
-  };
-
-  const teardownAnalyser = () => {
-    try { analyserRef.current?.disconnect(); } catch {}
-    try { audioCtxRef.current?.close(); } catch {}
-    analyserRef.current = null;
-    audioCtxRef.current = null;
-    setAnalyser(null);
-  };
-
-  const startMediaRecorder = async (): Promise<boolean> => {
-    try {
-      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-        setError("このブラウザは録音に対応していません");
-        setPhaseSync("idle");
-        return false;
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      setupAnalyser(stream);
-      const mime = pickRecorderMime();
-      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-      chunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.start();
-      recorderRef.current = mr;
-      return true;
-    } catch (err) {
-      if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
-        setPermissionDenied(true);
-      } else {
-        setError("マイクへのアクセスに失敗しました");
-      }
-      setPhaseSync("idle");
-      return false;
-    }
-  };
-
-  const stopAndGetBlob = (): Promise<Blob> =>
-    new Promise((resolve) => {
-      const mr = recorderRef.current;
-      if (!mr || mr.state === "inactive") { resolve(new Blob([])); return; }
-      mr.onstop = () => {
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-        teardownAnalyser();
-        resolve(new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" }));
-        recorderRef.current = null;
-      };
-      mr.stop();
-    });
-
-  const clearRecordingTimers = () => {
-    if (autoStopTimerRef.current) { clearTimeout(autoStopTimerRef.current); autoStopTimerRef.current = null; }
-    if (elapsedTimerRef.current) { clearInterval(elapsedTimerRef.current); elapsedTimerRef.current = null; }
-    setRecordingElapsed(0);
-  };
-
-  const cancelRecorder = () => {
-    const mr = recorderRef.current;
-    if (mr && mr.state !== "inactive") { mr.onstop = null; mr.stop(); }
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    recorderRef.current = null;
-    teardownAnalyser();
-  };
-
-  const handlePressStart = async (e: React.PointerEvent) => {
-    e.preventDefault();
-    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
-    if (phaseRef.current !== "idle") return;
-    if (!canRecord()) return;
-
-    setError(null);
-    setPermissionDenied(false);
-    setShortTap(false);
-    pressStartRef.current = Date.now();
-    setPhaseSync("recording");
-
-    const ok = await startMediaRecorder();
-    if (!ok) return;
-
-    setRecordingElapsed(0);
-    elapsedTimerRef.current = setInterval(() => {
-      setRecordingElapsed(Date.now() - pressStartRef.current);
-    }, 250);
-    autoStopTimerRef.current = setTimeout(() => { handlePressEnd(); }, MAX_RECORD_MS);
-  };
-
-  const handlePressEnd = async () => {
-    if (phaseRef.current !== "recording") return;
-    clearRecordingTimers();
-    const held = Date.now() - pressStartRef.current;
-    if (held < MIN_RECORD_MS) {
-      cancelRecorder();
-      setPhaseSync("idle");
-      setShortTap(true);
-      setTimeout(() => setShortTap(false), 2500);
-      return;
-    }
-    setPhaseSync("busy");
-    const blob = await stopAndGetBlob();
-    if (blob.size === 0) { setPhaseSync("idle"); return; }
-    await transcribeAndSave(blob);
-  };
-
-  const handlePressCancel = () => {
-    clearRecordingTimers();
-    cancelRecorder();
-    setPhaseSync("idle");
-  };
-
-  const transcribeAndSave = async (blob: Blob) => {
-    setStatusMsg("DECODING.");
-    try {
-      const ext = blob.type.includes("mp4") ? "mp4"
-        : blob.type.includes("ogg") ? "ogg"
-        : "webm";
-      const fd = new FormData();
-      fd.append("audio", blob, `recording.${ext}`);
-      const res = await fetch("/api/transcribe", { method: "POST", body: fd });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || "失敗、話せ");
-
-      const text: string = data?.text ?? "";
-      if (text === "") { showHint("無音、話せ"); setStatusMsg(null); setPhaseSync("idle"); return; }
-      if (text.length < 5) { showHint("短い、話せ"); setStatusMsg(null); setPhaseSync("idle"); return; }
-
-      // オンボーディング（未ログイン）: 保存せずにテキストを表示して閉じる
-      if (!user) {
-        setStatusMsg(null);
-        setPhaseSync("idle");
-        setRecordOpen(false);
-        setPendingText(text);
-        return;
-      }
-
-      // ログイン済み: Supabase に保存
-      const saveRes = await fetch("/api/records", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const saveData = await safeJson(saveRes);
-      if (!saveRes.ok) throw new Error(saveData?.error || "保存失敗");
-
-      const newPost: Post | undefined = saveData?.post;
-      if (!newPost) throw new Error("保存に失敗しました");
-      setPosts((prev) => [newPost, ...(prev ?? [])]);
-      setStatusMsg(null);
-      setLastPost(newPost);
-      setTodayCount(incrementCount());
-      setPhaseSync("complete");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "エラーが発生しました");
-      setStatusMsg(null);
-      setPhaseSync("idle");
-    }
-  };
-
   const handleCloseModal = () => {
-    if (phaseRef.current !== "idle" && phaseRef.current !== "complete") return;
     setRecordOpen(false);
-    setPhaseSync("idle");
+    recorder.resetIfIdleOrComplete();
     setLastPost(null);
   };
 
-  // 「記録する」ボタン（オンボーディング → ログインモーダルへ）
+  const handleCompleteDismiss = () => {
+    recorder.dismissComplete();
+    setLastPost(null);
+  };
+
   const handleOnboardingSave = () => {
     if (pendingText) {
       try { sessionStorage.setItem(PENDING_TEXT_KEY, pendingText); } catch {}
@@ -402,9 +228,9 @@ export default function Home() {
             <path fillRule="evenodd" clipRule="evenodd" d="M95.0898 45.501C95.0899 47.2374 95.3873 48.7411 95.9824 50.0117C96.6201 51.24 97.5764 52.1934 98.8516 52.8711C100.127 53.5487 101.763 53.8876 103.761 53.8877C105.801 53.8877 107.459 53.5698 108.734 52.9346C110.01 52.2569 110.945 51.2823 111.54 50.0117C112.135 48.7411 112.433 47.2374 112.433 45.501V19.7051H128.884V46.3896C128.884 50.8369 127.842 54.7129 125.76 58.0166C123.677 61.3204 120.743 63.9048 116.96 65.7686C113.219 67.5898 108.819 68.5 103.761 68.5C98.745 68.4999 94.3456 67.5898 90.5625 65.7686C86.8217 63.9048 83.8881 61.3204 81.7627 58.0166C79.6799 54.7128 78.6387 50.8369 78.6387 46.3896V19.7051H95.0898V45.501ZM198.306 45.501C198.306 47.2374 198.604 48.7411 199.199 50.0117C199.837 51.2399 200.793 52.1934 202.068 52.8711C203.344 53.5486 204.98 53.8877 206.978 53.8877C209.018 53.8877 210.676 53.5698 211.951 52.9346C213.226 52.2569 214.162 51.2824 214.757 50.0117C215.352 48.7411 215.649 47.2374 215.649 45.501V19.7051H232.101V46.3896C232.101 50.8369 231.059 54.7129 228.977 58.0166C226.894 61.3204 223.96 63.9048 220.177 65.7686C216.436 67.5899 212.036 68.5 206.978 68.5C201.962 68.5 197.562 67.5897 193.779 65.7686C190.039 63.9048 187.105 61.3204 184.979 58.0166C182.897 54.7128 181.855 50.837 181.855 46.3896V19.7051H198.306V45.501ZM178.917 31.2686L153.448 54.7773H179.108V67.3574H131.669V55.7295L157.193 32.2217H131.86V19.6416H178.917V31.2686ZM48.1182 35.708L60.5273 19.7051H78.5723L56.3828 48.1006V67.3564H39.9326V48.3604L17.6152 19.7051H35.6602L48.1182 35.708Z" fill="#1A1A30"/>
           </svg>
           {isLoggedIn ? (
-            <Link href="/settings" className="iconbtn iconbtn--ghost" aria-label="設定">
+            <button type="button" className="iconbtn iconbtn--ghost" aria-label="設定" onClick={openSettings}>
               <Gear size={22} weight="bold" />
-            </Link>
+            </button>
           ) : (
             <span className="app-header-spacer" aria-hidden />
           )}
@@ -417,10 +243,20 @@ export default function Home() {
           pendingText={pendingText}
           onSave={handleOnboardingSave}
         />
-      ) : tab === "home" ? (
-        <HomeView myEmoji={myEmoji} myPosts={myPosts} onOpenDetail={setDetailPost} />
+      ) : tab === "report" ? (
+        <ReportView myPosts={myPosts} />
       ) : (
-        <MyPageView myEmoji={myEmoji} myPosts={myPosts} onOpenDetail={setDetailPost} />
+        <IndexView
+          myPosts={myPosts}
+          totalCount={totalCount}
+          serverStreak={serverStreak}
+          firstPostAt={firstPostAt}
+          hasMore={nextOffset !== null}
+          loadingMore={loadingMore}
+          onLoadMore={loadMore}
+          onOpenDetail={setDetailPost}
+          onToggleMark={toggleMark}
+        />
       )}
 
       {isLoaded && isLoggedIn && (
@@ -428,6 +264,7 @@ export default function Home() {
           tab={tab}
           onChange={setTab}
           onOpenRecord={() => setRecordOpen(true)}
+          recordOpen={recordOpen}
           hidden={recordOpen || !!detailPost}
         />
       )}
@@ -437,35 +274,25 @@ export default function Home() {
       <RecordModal
         open={recordOpen}
         onClose={handleCloseModal}
-        phase={phase}
-        shortTap={shortTap}
-        statusMsg={statusMsg}
-        error={error}
-        hint={hint}
-        permissionDenied={permissionDenied}
-        analyser={analyser}
+        phase={recorder.phase}
+        shortTap={recorder.shortTap}
+        statusMsg={recorder.statusMsg}
+        error={recorder.error}
+        hint={recorder.hint}
+        permissionDenied={recorder.permissionDenied}
+        analyser={recorder.analyser}
         lastPost={lastPost}
         posts={myPosts}
         limitReached={limitReached}
         remainingSessions={remainingSessions}
-        recordingElapsed={recordingElapsed}
-        maxRecordMs={MAX_RECORD_MS}
-        onPressStart={handlePressStart}
-        onPressEnd={handlePressEnd}
-        onPressCancel={handlePressCancel}
+        recordingElapsed={recorder.recordingElapsed}
+        maxRecordMs={recorder.maxRecordMs}
+        onPressStart={recorder.onPressStart}
+        onPressEnd={recorder.onPressEnd}
+        onPressCancel={recorder.onPressCancel}
       />
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </main>
   );
-}
-
-async function safeJson(res: Response): Promise<any | null> {
-  try {
-    const text = await res.text();
-    if (!text) return null;
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
 }
