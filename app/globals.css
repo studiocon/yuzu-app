@@ -159,14 +159,11 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-.app-header-spacer {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
+  /* DESIGN.md §8: ヘッダーは左揃え。ロゴ左、設定アイコンは ml:auto で右端へ。 */
+  gap: 12px;
 }
 .app-logo { height: 44px; width: auto; display: block; flex-shrink: 0; }
+.app-header-row .iconbtn { margin-left: auto; }
 
 /* ===== Onboarding view (first-visit empty state) ===== */
 .onboarding-view {

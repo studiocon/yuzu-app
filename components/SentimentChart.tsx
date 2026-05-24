@@ -21,12 +21,14 @@ type Props = { data: SentimentPoint[] };
 const POS_COLOR = "#E8A020"; // --yuzu-zest
 const NEG_COLOR = "#1A1A2E"; // --ink
 
+// Mirror 原則: 感情を judging せず、状態を描写する短い言葉だけ返す。
+// 「ポジティブ／ネガティブ」のような評価語は使わない。
 function scoreLabel(score: number): string {
-  if (score >= 0.5) return "ポジティブ";
-  if (score >= 0.15) return "ややポジティブ";
-  if (score > -0.15) return "穏やか";
-  if (score > -0.5) return "ややネガティブ";
-  return "ネガティブ";
+  if (score >= 0.5) return "高い";
+  if (score >= 0.15) return "上向き";
+  if (score > -0.15) return "凪";
+  if (score > -0.5) return "下向き";
+  return "低い";
 }
 
 function makeDateTick(dates: string[]) {

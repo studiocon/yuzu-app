@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Unbounded } from "next/font/google";
 
 const unbounded = Unbounded({
@@ -9,10 +9,45 @@ const unbounded = Unbounded({
   variable: "--font-display",
 });
 
+const SITE_NAME = "YUZU";
+const SITE_DESCRIPTION = "BE TRUE / 本物でいろ — 声を絞り出すジャーナル。長押し。話せ。";
+const SITE_URL = "https://yuzu.style";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://yuzu-journal.vercel.app"),
-  title: "YUZU",
-  description: "本物でいろ",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: "%s — YUZU",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: ["YUZU", "ジャーナル", "音声", "BE TRUE", "本物でいろ"],
+  authors: [{ name: "YUZU" }],
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#FAFAF5",
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

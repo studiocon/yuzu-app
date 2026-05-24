@@ -48,7 +48,7 @@ export default function CompleteView({ post, posts, onBack }: Props) {
   return (
     <section className="complete-view">
       <div ref={cardRef} className="complete-shareable">
-        <p className="complete-stamp font-display">RECORDED</p>
+        <p className="complete-stamp font-display">RECORDED.</p>
         <p className="complete-index font-display">#{post.index}</p>
         <div className="complete-card">
           <p className="complete-text">{post.text}</p>
@@ -84,7 +84,7 @@ export default function CompleteView({ post, posts, onBack }: Props) {
           {exporting ? "EXPORTING." : "画像で晒す"}
         </button>
         <button type="button" className="complete-back-btn" onClick={onBack}>
-          ホームに戻る
+          戻る
         </button>
       </div>
     </section>
