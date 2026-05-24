@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "design:lint": "npx -y @google/design.md lint DESIGN.md",
     "design:drift": "node scripts/check-design-drift.mjs",
     "design:sync": "node scripts/sync-design-preview.mjs",
-    "design:check": "npm run design:drift && npm run design:lint"
+    "design:check": "npm run design:drift && npm run design:lint",
+    "verify": "npm run typecheck && npm run lint && npm run design:check",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -26,6 +30,9 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "husky": "^9.1.7",
     "typescript": "^5"
   }
 }

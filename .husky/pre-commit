@@ -1,0 +1,11 @@
+# DESIGN.md がステージされていたら preview HTML を同期して一緒にステージ
+if git diff --cached --name-only | grep -q "^DESIGN\.md$"; then
+  echo "→ DESIGN.md changed: running design:sync"
+  npm run design:sync
+  git add public/design-preview.html
+fi
+
+# globals.css / DESIGN.md が動いていたら drift チェック
+if git diff --cached --name-only | grep -qE "^(DESIGN\.md|app/globals\.css)$"; then
+  npm run design:drift
+fi

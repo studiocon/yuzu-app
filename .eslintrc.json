@@ -1,0 +1,24 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "@next/next/no-html-link-for-pages": "off"
+  },
+  "overrides": [
+    {
+      "files": ["components/**/*.{ts,tsx}", "lib/userClient.ts", "lib/dailyLimit.ts", "lib/streak.ts", "lib/sentimentSeries.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/lib/reports", "**/lib/supabase/admin", "**/lib/supabase/server"],
+                "message": "Server-only module. Do not import from client components — SUPABASE_SERVICE_ROLE_KEY / Anthropic SDK would leak into the bundle."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
