@@ -19,8 +19,23 @@ import { MAX_DAILY_SESSIONS, incrementMockCount, getMockTodayCount } from "@/lib
 import { createClient } from "@/lib/supabase/client";
 import { usePostsApi } from "@/lib/usePostsApi";
 import { useRecorder } from "@/lib/useRecorder";
+import SignalCardModal from "@/components/SignalCardModal";
 
 const PENDING_TEXT_KEY = "yuzu_pending_text";
+const SIGNAL_SHOWN_KEY = "yuzu-signal-shown";
+const MILESTONES = [7, 14, 30, 60, 100, 365];
+
+function checkSignalMilestone(streak: number): boolean {
+  if (!MILESTONES.includes(streak)) return false;
+  try {
+    const shown: number[] = JSON.parse(localStorage.getItem(SIGNAL_SHOWN_KEY) ?? "[]");
+    if (shown.includes(streak)) return false;
+    localStorage.setItem(SIGNAL_SHOWN_KEY, JSON.stringify([...shown, streak]));
+  } catch {
+    return false;
+  }
+  return true;
+}
 
 function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
@@ -51,6 +66,7 @@ export default function Home() {
   const [tab, setTab] = useState<MainTab>("index");
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingText, setPendingText] = useState<string | null>(null);
+  const [signalCard, setSignalCard] = useState<{ streak: number; totalCount: number } | null>(null);
 
   const supabase = createClient();
   const router = useRouter();
@@ -199,6 +215,15 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // ── SIGNAL カード節目検出 ──
+  useEffect(() => {
+    if (!serverStreak || !totalCount || !user || isMockMode()) return;
+    if (checkSignalMilestone(serverStreak)) {
+      setSignalCard({ streak: serverStreak, totalCount });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverStreak, totalCount]);
+
   const handleCloseModal = () => {
     setRecordOpen(false);
     recorder.resetIfIdleOrComplete();
@@ -301,6 +326,14 @@ export default function Home() {
       />
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+
+      {signalCard && (
+        <SignalCardModal
+          streak={signalCard.streak}
+          totalCount={signalCard.totalCount}
+          onClose={() => setSignalCard(null)}
+        />
+      )}
     </main>
   );
 }
