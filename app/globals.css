@@ -1677,14 +1677,6 @@ button.settings-row:focus-visible {
   text-align: left;
 }
 .complete-export-btn:disabled { opacity: 0.5; cursor: default; }
-.streak-day-silence {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--ink-muted);
-  opacity: 0.55;
-}
-
 /* ===== Login modal ===== */
 .login-modal {
   position: fixed;

@@ -60,9 +60,7 @@ export default function CompleteView({ post, posts, onBack }: Props) {
               <div key={i} className="streak-day" style={{ animationDelay: `${0.6 + i * 0.08}s` }}>
                 <span className="streak-day-label">{d.label}</span>
                 <span className={"streak-day-check" + (d.done ? " done" : "") + (d.isToday ? " today" : "")}>
-                  {d.done ? "✓" : (
-                    <span className="streak-day-silence font-display">SILENCE.</span>
-                  )}
+                  {d.done ? "✓" : null}
                 </span>
               </div>
             ))}
