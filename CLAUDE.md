@@ -128,7 +128,7 @@ npm run dev            # ローカル起動（http://localhost:3000）
 
 ## 環境変数
 
-- `ELEVENLABS_API_KEY` — Scribe v2 STT
+- `ELEVENLABS_API_KEY` — Scribe v1 STT（`scribe_v2` は存在しない）
 - `ANTHROPIC_API_KEY` — レポート生成（lib/reports.ts）
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase プロジェクト URL（クライアント露出可）
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — anon キー（RLS で保護される）
@@ -151,3 +151,8 @@ npm run dev            # ローカル起動（http://localhost:3000）
 - `app/page.tsx` の `user` state は **三値**（`undefined` = ロード中 / `null` = 未ログイン / `User` = ログイン済み）。`isLoaded = user !== undefined` / `isOnboarding = user === null` の判定を維持
 - Supabase テーブルに新規テーブルを足したら **RLS ポリシーと別に `GRANT` も必要**。「Automatically expose new tables」OFF の場合は `grant select, insert on public.<table> to authenticated;` を手で打つ（過去にこれで `permission denied for table records` を踏んだ）
 - `Post.index` は DB に保存しない。`/api/records` GET / POST で `total_count - position` から算出してレスポンスに含める（INDEX は永久欠番なし・編集削除不可前提）
+- **`lib/use*.ts` のカスタムフックで親から渡された関数を `useCallback(..., [])` で握らない**。`useRecorder` で「録音→DECODING→モーダルが閉じて保存されない」事故あり（2026-05）。`onTranscribed` が初回レンダー時の `user === undefined` を握り続けて `!user` 分岐に常に落ちていた。**親から受け取るコールバックは `useRef` に逃がして `ref.current(...)` で呼ぶ**こと（[lib/useRecorder.ts](lib/useRecorder.ts) の `onTranscribedRef` / `isAtDailyLimitRef` / `transcribeRef` パターン参照）
+- **STT は ElevenLabs Scribe `scribe_v1`**（`scribe_v2` は存在しない／silently `{text:""}` を返す）。アップストリームへの FormData ファイル名は録音 blob の `type` から拡張子を導出する（Safari/macOS Chrome は mp4 を選ぶので `.webm` 固定だと ElevenLabs 側で format 判定が外れて空文字になる）。詳細は [app/api/transcribe/route.ts](app/api/transcribe/route.ts) の `pickExtension`
+- **ElevenLabs Scribe は非音声を annotation で返す**：`[音楽]` / `(背景ノイズ)` / `（咳）`。これらは記録として保存したくないので、半角 `[]` / 半角 `()` / 全角 `（）` を **全部 strip** する（[app/api/transcribe/route.ts](app/api/transcribe/route.ts)）。strip 後に `text.length < 5` で silent reject → `useRecorder.ts` の `showHint("無音、話せ")` / `showHint("短い、話せ")`
+- **`/api/records` POST の失敗を silent catch しない**。`recorder.failWithError(msg)` でステータスコード／エラーコードを SpeakView に出す。`catch {}` で握り潰すと「モーダルが busy のまま」 or 「モーダル閉じて何も起きない」の原因不明バグが量産される（ユーザは何が起きたかわからず、DevTools を開ける人しか報告できなくなる）
+- **デバッグ困難バグは「複数層の silent failure」が重なって起きる**ことが多い。今回の保存されない事故は (1) `useRecorder` の stale closure、(2) `scribe_v2` の存在しないモデル ID、(3) `/api/records` POST の silent catch、の3層が重なって診断不能になっていた。新規コードでは silent fail を許さない方針
