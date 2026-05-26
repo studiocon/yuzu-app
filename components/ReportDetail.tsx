@@ -56,8 +56,15 @@ export default function ReportDetail({ periodKey }: Props) {
       <PageHeader backHref="/reports" backLabel="REPORTS" />
 
       {status === "loading" && (
-        <div className="report-detail-status">
-          <p>解読中。</p>
+        <div className="report-detail-skeleton" aria-busy="true" aria-label="解読中">
+          <div className="skeleton-block skeleton-block--title" />
+          <div className="skeleton-block skeleton-block--headline" />
+          <div className="skeleton-block skeleton-block--chart" />
+          <div className="skeleton-block skeleton-block--line" />
+          <div className="skeleton-block skeleton-block--line" />
+          <div className="skeleton-block skeleton-block--line skeleton-block--line-short" />
+          <div className="skeleton-block skeleton-block--line" />
+          <div className="skeleton-block skeleton-block--line" />
           <p className="report-detail-status-sub">AIが分析中。他の画面に移動したり閉じても生成は続きます。</p>
         </div>
       )}

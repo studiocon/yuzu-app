@@ -292,6 +292,7 @@ export default function Home() {
           totalCount={totalCount}
           serverStreak={serverStreak}
           firstPostAt={firstPostAt}
+          loading={posts === null}
           hasMore={nextOffset !== null}
           loadingMore={loadingMore}
           onLoadMore={loadMore}

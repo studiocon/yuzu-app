@@ -95,7 +95,22 @@ export default function ReadView({ myPosts }: Props) {
 
       <section className="mypage-section">
         <h3 className="mypage-section-title font-display">REPORTS</h3>
-        {loading && <p className="reports-empty">解読中。</p>}
+        {loading && (
+          <div className="reports-index-list" aria-busy="true" aria-label="解読中">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="report-card-skeleton">
+                <div className="skeleton-block skeleton-block--kind" />
+                <div className="skeleton-block skeleton-block--label" />
+                <div className="skeleton-block skeleton-block--headline" />
+                <div className="skeleton-chips">
+                  <div className="skeleton-chip" />
+                  <div className="skeleton-chip" />
+                  <div className="skeleton-chip" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {!loading && reports.length === 0 && !error && (
           <div className="reports-empty-state">
             <p className="reports-empty-headline font-display">NOTHING TO READ YET.</p>
@@ -103,7 +118,7 @@ export default function ReadView({ myPosts }: Props) {
           </div>
         )}
         {error && <p className="reports-empty">{error}</p>}
-        {reports.length > 0 && (
+        {!loading && reports.length > 0 && (
           <div className="reports-index-list">
             {reports.map((meta) => (
               <ReportCard key={meta.periodKey} meta={meta} />

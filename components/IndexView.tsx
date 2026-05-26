@@ -15,6 +15,8 @@ type Props = {
   serverStreak?: number;
   /** サーバから取得した初回投稿日時。null/undef は myPosts[last] から fallback。 */
   firstPostAt?: number | null;
+  /** 初回 fetch 中（posts === null） */
+  loading?: boolean;
   /** ページング: まだ取れる行があるか */
   hasMore?: boolean;
   loadingMore?: boolean;
@@ -33,6 +35,7 @@ export default function IndexView({
   totalCount,
   serverStreak,
   firstPostAt: firstPostAtProp,
+  loading,
   hasMore,
   loadingMore,
   onLoadMore,
@@ -125,24 +128,41 @@ export default function IndexView({
           </div>
         </div>
         <div className="mypage-post-list">
-          {filteredPosts.length === 0 && (
-            <p className="mypage-empty">
-              {filter === "pinned" ? "MARK されたものは無い。" : "話せ。"}
-            </p>
-          )}
-          {filteredPosts.map((p) => (
-            <RecordCard
-              key={p.id}
-              post={p}
-              onOpenDetail={onOpenDetail}
-              onToggleMark={onToggleMark}
-            />
-          ))}
-          {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}
-          {hasMore && filter === "all" && (
-            <div ref={sentinelRef} className="records-sentinel" aria-hidden>
-              {loadingMore && <span className="font-display">LOADING.</span>}
+          {loading ? (
+            <div aria-busy="true" aria-label="解読中" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="record-card-skeleton">
+                  <div className="skeleton-row">
+                    <div className="skeleton-block skeleton-block--kind" />
+                    <div className="skeleton-block skeleton-block--kind" />
+                  </div>
+                  <div className="skeleton-block skeleton-block--line" />
+                  <div className="skeleton-block skeleton-block--line skeleton-block--line-short" />
+                </div>
+              ))}
             </div>
+          ) : (
+            <>
+              {filteredPosts.length === 0 && (
+                <p className="mypage-empty">
+                  {filter === "pinned" ? "MARK されたものは無い。" : "話せ。"}
+                </p>
+              )}
+              {filteredPosts.map((p) => (
+                <RecordCard
+                  key={p.id}
+                  post={p}
+                  onOpenDetail={onOpenDetail}
+                  onToggleMark={onToggleMark}
+                />
+              ))}
+              {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}
+              {hasMore && filter === "all" && (
+                <div ref={sentinelRef} className="records-sentinel" aria-hidden>
+                  {loadingMore && <span className="font-display">LOADING.</span>}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
