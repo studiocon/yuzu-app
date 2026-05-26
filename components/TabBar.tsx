@@ -2,7 +2,7 @@
 
 import { Microphone, ListNumbers, FileText } from "@phosphor-icons/react";
 
-export type MainTab = "index" | "report";
+export type MainTab = "index" | "read";
 
 type Props = {
   tab: MainTab;
@@ -35,18 +35,18 @@ export default function TabBar({ tab, onChange, onOpenRecord, recordOpen, hidden
         onClick={onOpenRecord}
       >
         <Microphone size={28} weight="fill" />
-        <span className="tab-label font-display">TALK</span>
+        <span className="tab-label font-display">RECORD</span>
       </button>
       <button
         type="button"
         role="tab"
-        aria-selected={tab === "report"}
+        aria-selected={tab === "read"}
         aria-controls="main-view"
         className="tab-item"
-        onClick={() => onChange("report")}
+        onClick={() => onChange("read")}
       >
-        <FileText size={24} weight={tab === "report" ? "fill" : "regular"} />
-        <span className="tab-label font-display">REPORT</span>
+        <FileText size={24} weight={tab === "read" ? "fill" : "regular"} />
+        <span className="tab-label font-display">READ.</span>
       </button>
     </nav>
   );

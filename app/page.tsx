@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Gear } from "@phosphor-icons/react";
 import type { User } from "@supabase/supabase-js";
 import IndexView from "@/components/IndexView";
-import ReportView from "@/components/ReportView";
+import ReadView from "@/components/ReadView";
 import OnboardingView from "@/components/OnboardingView";
 import RecordModal from "@/components/RecordModal";
 import IndexDetailModal from "@/components/IndexDetailModal";
@@ -164,6 +164,14 @@ export default function Home() {
     },
   });
 
+  // ── URL クエリ ?tab=read で初期タブを切替 ──
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "read") setTab("read");
+    } catch {}
+  }, []);
+
   // ── 初期化（mock or auth 監視） ──
   useEffect(() => {
     if (isMockMode()) {
@@ -276,8 +284,8 @@ export default function Home() {
           pendingText={pendingText}
           onSave={handleOnboardingSave}
         />
-      ) : tab === "report" ? (
-        <ReportView myPosts={myPosts} />
+      ) : tab === "read" ? (
+        <ReadView myPosts={myPosts} />
       ) : (
         <IndexView
           myPosts={myPosts}

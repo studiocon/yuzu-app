@@ -1924,8 +1924,8 @@ button.settings-row:focus-visible {
   .post-copy-flash { animation: none; opacity: 1; }
 }
 
-/* REPORT view (独立タブ) */
-.report-view {
+/* READ. view (独立タブ) */
+.read-view {
   display: flex;
   flex-direction: column;
   padding: 24px 20px calc(140px + env(safe-area-inset-bottom));
@@ -1933,7 +1933,7 @@ button.settings-row:focus-visible {
   max-width: 640px;
   margin: 0 auto;
 }
-.report-view-title {
+.read-view-title {
   font-family: var(--font-display), 'Unbounded', sans-serif;
   font-weight: 700;
   font-size: var(--text-3xl);
@@ -1943,8 +1943,44 @@ button.settings-row:focus-visible {
   margin: 0;
   text-align: left;
 }
-.report-view .reports-section .mypage-section-title { display: none; }
-.report-view .reports-header { padding-top: 0; border-top: 0; }
+
+/* Long sentiment toggle */
+.long-sentiment-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.long-sentiment-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.long-sentiment-toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.long-sentiment-toggle-btn.active {
+  background: var(--ink);
+  color: #fff;
+}
+.long-sentiment-toggle-btn:not(.active):hover {
+  color: var(--ink);
+}
 
 /* TALK view: inline wrapper for SpeakView / CompleteView / LimitView */
 .talk-view {
