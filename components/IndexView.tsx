@@ -7,6 +7,7 @@ import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
 import { computeSentimentSeries } from "@/lib/sentimentSeries";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import { buildDummySentiment } from "@/lib/dummySentiment";
 
 type Filter = "all" | "pinned";
 
@@ -151,20 +152,24 @@ export default function IndexView({
         </div>
       </div>
 
-      {(sentimentData.length > 0 || analyzing) && (
-        <section className="mypage-section">
-          <h3 className="mypage-section-title font-display">SENTIMENT</h3>
-          <div className="mypage-chart-card">
-            {analyzing ? (
-              <p className="mypage-loading-hint">DECODING.</p>
-            ) : sentimentData.length < 3 ? (
-              <p className="sentiment-empty">声が少ない</p>
-            ) : (
-              <SentimentChart data={sentimentData} />
-            )}
-          </div>
-        </section>
-      )}
+      <section className="mypage-section">
+        <h3 className="mypage-section-title font-display">SENTIMENT</h3>
+        <div className="mypage-chart-card">
+          {analyzing ? (
+            <p className="mypage-loading-hint">DECODING.</p>
+          ) : sentimentData.length < 3 ? (
+            <div className="sentiment-preview">
+              <SentimentChart data={buildDummySentiment()} />
+              <div className="sentiment-preview-overlay">
+                <p className="sentiment-preview-label font-display">PREVIEW.</p>
+                <p className="sentiment-preview-msg">RECORD すると、ここに見える</p>
+              </div>
+            </div>
+          ) : (
+            <SentimentChart data={sentimentData} />
+          )}
+        </div>
+      </section>
 
       <section className="mypage-section">
         <div className="records-section-head">

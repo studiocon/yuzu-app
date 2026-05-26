@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import SentimentChart from "./SentimentChart";
 import { computeSentimentSeries, aggregateSentimentByWeek } from "@/lib/sentimentSeries";
+import { buildDummySentiment } from "@/lib/dummySentiment";
 import type { Post } from "@/lib/types";
 
 type Mode = "month" | "all";
@@ -54,7 +55,13 @@ export default function LongSentimentChart({ posts, scores }: Props) {
       </header>
       <div className="mypage-chart-card">
         {data.length < 3 ? (
-          <p className="sentiment-empty">声が少ない</p>
+          <div className="sentiment-preview">
+            <SentimentChart data={buildDummySentiment()} />
+            <div className="sentiment-preview-overlay">
+              <p className="sentiment-preview-label font-display">PREVIEW.</p>
+              <p className="sentiment-preview-msg">RECORD すると、ここに見える</p>
+            </div>
+          </div>
         ) : (
           <SentimentChart data={data} />
         )}

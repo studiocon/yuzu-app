@@ -1982,6 +1982,40 @@ button.settings-row:focus-visible {
   color: var(--ink);
 }
 
+/* Sentiment preview (data ない時のダミー + overlay) */
+.sentiment-preview {
+  position: relative;
+}
+.sentiment-preview > .sentiment-chart-wrap {
+  opacity: 0.18;
+  pointer-events: none;
+  filter: saturate(0.6);
+}
+.sentiment-preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+  gap: 4px;
+}
+.sentiment-preview-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  margin: 0;
+}
+.sentiment-preview-msg {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
 /* TALK view: inline wrapper for SpeakView / CompleteView / LimitView */
 .talk-view {
   display: flex;
