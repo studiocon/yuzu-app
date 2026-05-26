@@ -6,7 +6,7 @@ import LongSentimentChart from "./LongSentimentChart";
 import type { Post } from "@/lib/types";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
-import { loadSentimentCache } from "@/lib/userClient";
+import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
 
 type Props = {
   myPosts: Post[];
@@ -24,6 +24,37 @@ export default function ReadView({ myPosts }: Props) {
     setScores(loadSentimentCache());
   }, []);
 
+  // ── 未分析 post のセンチメントスコアを取得（IndexView から移管） ──
+  useEffect(() => {
+    if (!hydrated || myPosts.length === 0 || isMockMode()) return;
+    const unresolved = myPosts.filter((p) => !(p.id in scores));
+    if (unresolved.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/analyze-sentiment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            posts: unresolved.map((p) => ({ id: p.id, text: p.text, createdAt: p.createdAt })),
+          }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { results: { postId: string; score: number }[] };
+        if (cancelled) return;
+        const next = { ...scores };
+        for (const r of data.results) next[r.postId] = r.score;
+        setScores(next);
+        saveSentimentCache(next);
+      } catch {
+        // silent: 次回再試行
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, myPosts]);
+
   useEffect(() => {
     if (!hydrated) return;
     if (isMockMode()) {
@@ -36,7 +67,8 @@ export default function ReadView({ myPosts }: Props) {
     setError(null);
     (async () => {
       try {
-        const res = await fetch("/api/reports?scope=all", { cache: "no-store" });
+        // cache: "no-store" を外してブラウザの HTTP キャッシュを活かす
+        const res = await fetch("/api/reports?scope=all");
         if (!res.ok) {
           if (!cancelled) setReports([]);
           return;
@@ -57,13 +89,13 @@ export default function ReadView({ myPosts }: Props) {
 
   return (
     <section className="read-view">
-      <h2 className="read-view-title font-display">READ.</h2>
+      <h2 className="read-view-title font-display">READ</h2>
 
       <LongSentimentChart posts={myPosts} scores={scores} />
 
       <section className="mypage-section">
         <h3 className="mypage-section-title font-display">REPORTS</h3>
-        {loading && <p className="reports-empty">DECODING.</p>}
+        {loading && <p className="reports-empty">解読中。</p>}
         {!loading && reports.length === 0 && !error && (
           <div className="reports-empty-state">
             <p className="reports-empty-headline font-display">NOTHING TO READ YET.</p>

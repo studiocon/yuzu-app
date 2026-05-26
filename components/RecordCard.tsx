@@ -85,10 +85,10 @@ export default function RecordCard({ post, onOpenDetail, onToggleMark }: Props) 
             onClick={() => onOpenDetail(post)}
             aria-label={`#${post.index} を開く`}
           >
-            #{String(post.index).padStart(3, "0")}
+            #{post.index}
           </button>
         ) : (
-          <span className="post-index font-display">#{String(post.index).padStart(3, "0")}</span>
+          <span className="post-index font-display">#{post.index}</span>
         )}
         <span className="post-actions">
           {onToggleMark && (

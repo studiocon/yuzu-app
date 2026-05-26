@@ -30,11 +30,12 @@ export default function ReportDetail({ periodKey }: Props) {
     (async () => {
       try {
         const scores = loadSentimentCache();
-        const res = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scores }),
-        });
+        // GET ファースト: サーバ側でキャッシュ済みなら即返る。ブラウザの HTTP キャッシュも効く。
+        const scoresParam = Object.entries(scores)
+          .map(([id, s]) => `${id}:${s}`)
+          .join(",");
+        const qs = scoresParam ? `?scores=${encodeURIComponent(scoresParam)}` : "";
+        const res = await fetch(`/api/reports/${encodeURIComponent(periodKey)}${qs}`);
         if (cancelled) return;
         if (res.status === 404) { setStatus("no_posts"); return; }
         if (res.status === 422) { setStatus("in_progress"); return; }
@@ -56,7 +57,7 @@ export default function ReportDetail({ periodKey }: Props) {
 
       {status === "loading" && (
         <div className="report-detail-status">
-          <p className="font-display">DECODING.</p>
+          <p>解読中。</p>
           <p className="report-detail-status-sub">AIが分析中。他の画面に移動したり閉じても生成は続きます。</p>
         </div>
       )}

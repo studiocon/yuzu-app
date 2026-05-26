@@ -46,7 +46,7 @@ export default function TabBar({ tab, onChange, onOpenRecord, recordOpen, hidden
         onClick={() => onChange("read")}
       >
         <FileText size={24} weight={tab === "read" ? "fill" : "regular"} />
-        <span className="tab-label font-display">READ.</span>
+        <span className="tab-label font-display">READ</span>
       </button>
     </nav>
   );

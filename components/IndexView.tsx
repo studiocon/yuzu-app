@@ -1,13 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import SentimentChart from "./SentimentChart";
 import RecordCard from "./RecordCard";
 import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
-import { computeSentimentSeries } from "@/lib/sentimentSeries";
-import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
-import { buildDummySentiment } from "@/lib/dummySentiment";
 
 type Filter = "all" | "pinned";
 
@@ -27,10 +23,6 @@ type Props = {
   onToggleMark?: (post: Post, next: boolean) => void;
 };
 
-function formatIndex(n: number): string {
-  return `#${String(n).padStart(3, "0")}`;
-}
-
 function formatSinceShort(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -47,59 +39,12 @@ export default function IndexView({
   onOpenDetail,
   onToggleMark,
 }: Props) {
-  const [hydrated, setHydrated] = useState(false);
-  const [cache, setCache] = useState<Record<string, number>>({});
-  const [analyzing, setAnalyzing] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setCache(loadSentimentCache());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated || myPosts.length === 0) return;
-    const unresolved = myPosts.filter((p) => !(p.id in cache));
-    if (unresolved.length === 0) return;
-
-    let cancelled = false;
-    setAnalyzing(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/analyze-sentiment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            posts: unresolved.map((p) => ({ id: p.id, text: p.text, createdAt: p.createdAt })),
-          }),
-        });
-        if (!res.ok) throw new Error("感情分析に失敗");
-        const data = (await res.json()) as { results: { postId: string; score: number }[] };
-        if (cancelled) return;
-        const next = { ...cache };
-        for (const r of data.results) next[r.postId] = r.score;
-        setCache(next);
-        saveSentimentCache(next);
-      } catch {
-        // 失敗時は次回再試行
-      } finally {
-        if (!cancelled) setAnalyzing(false);
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, myPosts]);
-
-  const sentimentData = useMemo(
-    () => computeSentimentSeries(myPosts, cache),
-    [myPosts, cache],
-  );
 
   // STATS の信頼源はサーバ集計。undefined のときは client 集計に fallback（mock / 過渡期）。
   const streak = typeof serverStreak === "number" ? serverStreak : computeStreak(myPosts).streak;
   const recordsCount = typeof totalCount === "number" ? totalCount : myPosts.length;
-  const latestIndex = myPosts.length > 0 ? myPosts[0].index : null;
   const firstPostAt = typeof firstPostAtProp === "number"
     ? firstPostAtProp
     : (myPosts.length > 0 ? myPosts[myPosts.length - 1].createdAt : null);
@@ -108,7 +53,6 @@ export default function IndexView({
     return myPosts;
   }, [myPosts, filter]);
 
-  const latestLabel = latestIndex !== null ? formatIndex(latestIndex) : "#000";
   const sinceLabel = firstPostAt !== null ? formatSinceShort(firstPostAt) : "—";
 
   // ── 無限スクロール: 末尾 sentinel が見えたら onLoadMore 発火 ──
@@ -132,12 +76,12 @@ export default function IndexView({
     <section className="index-view">
       {streak >= 1 ? (
         <header className="index-hero">
-          <h2 className="index-hero-number font-display">DAY {streak}.</h2>
-          <p className="index-hero-sub font-display">NO SKIP.</p>
+          <h2 className="index-hero-number font-display">BE TRUE</h2>
+          <p className="index-hero-sub-ja">本物でいろ</p>
         </header>
       ) : (
         <header className="index-hero">
-          <h2 className="index-hero-cta">話せ。</h2>
+          <h2 className="index-hero-number font-display">DAY 0.</h2>
         </header>
       )}
 
@@ -147,33 +91,14 @@ export default function IndexView({
           <span className="mypage-stat-value font-display">{recordsCount}</span>
         </div>
         <div className="mypage-stat-card">
-          <span className="mypage-stat-label font-display">LATEST</span>
-          <span className="mypage-stat-value font-display">{latestLabel}</span>
-        </div>
-        <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">SINCE</span>
           <span className="mypage-stat-value font-display">{sinceLabel}</span>
         </div>
-      </div>
-
-      <section className="mypage-section">
-        <h3 className="mypage-section-title font-display">SENTIMENT</h3>
-        <div className="mypage-chart-card">
-          {analyzing ? (
-            <p className="mypage-loading-hint">DECODING.</p>
-          ) : sentimentData.length < 3 ? (
-            <div className="sentiment-preview">
-              <SentimentChart data={buildDummySentiment()} />
-              <div className="sentiment-preview-overlay">
-                <p className="sentiment-preview-label font-display">PREVIEW.</p>
-                <p className="sentiment-preview-msg">RECORD すると、ここに見える</p>
-              </div>
-            </div>
-          ) : (
-            <SentimentChart data={sentimentData} />
-          )}
+        <div className="mypage-stat-card">
+          <span className="mypage-stat-label font-display">STREAK</span>
+          <span className="mypage-stat-value font-display">{streak}</span>
         </div>
-      </section>
+      </div>
 
       <section className="mypage-section">
         <div className="records-section-head">

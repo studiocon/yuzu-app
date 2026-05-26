@@ -1861,6 +1861,14 @@ button.settings-row:focus-visible {
   margin: 0;
   text-align: left;
 }
+.index-hero-sub-ja {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  margin: 0;
+  text-align: left;
+}
 
 /* RECORDS section head: title + filter on same row */
 .records-section-head {
