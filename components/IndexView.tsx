@@ -31,6 +31,11 @@ function formatIndex(n: number): string {
   return `#${String(n).padStart(3, "0")}`;
 }
 
+function formatSinceShort(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export default function IndexView({
   myPosts,
   totalCount,
@@ -98,21 +103,13 @@ export default function IndexView({
   const firstPostAt = typeof firstPostAtProp === "number"
     ? firstPostAtProp
     : (myPosts.length > 0 ? myPosts[myPosts.length - 1].createdAt : null);
-  const daysSinceStart = useMemo(() => {
-    if (firstPostAt === null) return 0;
-    const start = new Date(firstPostAt);
-    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    return Math.floor((today - startDay) / 86400000) + 1;
-  }, [firstPostAt]);
-
   const filteredPosts = useMemo(() => {
     if (filter === "pinned") return myPosts.filter((p) => p.marked);
     return myPosts;
   }, [myPosts, filter]);
 
-  const headerNumber = latestIndex !== null ? formatIndex(latestIndex) : "#000";
+  const latestLabel = latestIndex !== null ? formatIndex(latestIndex) : "#000";
+  const sinceLabel = firstPostAt !== null ? formatSinceShort(firstPostAt) : "—";
 
   // ── 無限スクロール: 末尾 sentinel が見えたら onLoadMore 発火 ──
   useEffect(() => {
@@ -133,22 +130,29 @@ export default function IndexView({
 
   return (
     <section className="index-view">
-      <h2 className="index-number font-display" aria-label={`通し番号 ${headerNumber}`}>
-        {headerNumber}
-      </h2>
+      {streak >= 1 ? (
+        <header className="index-hero">
+          <h2 className="index-hero-number font-display">DAY {streak}.</h2>
+          <p className="index-hero-sub font-display">NO SKIP.</p>
+        </header>
+      ) : (
+        <header className="index-hero">
+          <h2 className="index-hero-cta">話せ。</h2>
+        </header>
+      )}
 
       <div className="mypage-stats">
-        <div className="mypage-stat-card">
-          <span className="mypage-stat-label font-display">DAY</span>
-          <span className="mypage-stat-value font-display">{daysSinceStart}</span>
-        </div>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">RECORDS</span>
           <span className="mypage-stat-value font-display">{recordsCount}</span>
         </div>
         <div className="mypage-stat-card">
-          <span className="mypage-stat-label font-display">STREAK</span>
-          <span className="mypage-stat-value font-display">{streak}</span>
+          <span className="mypage-stat-label font-display">LATEST</span>
+          <span className="mypage-stat-value font-display">{latestLabel}</span>
+        </div>
+        <div className="mypage-stat-card">
+          <span className="mypage-stat-label font-display">SINCE</span>
+          <span className="mypage-stat-value font-display">{sinceLabel}</span>
         </div>
       </div>
 

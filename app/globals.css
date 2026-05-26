@@ -1826,13 +1826,38 @@ button.settings-row:focus-visible {
   max-width: 640px;
   margin: 0 auto;
 }
-.index-number {
+/* INDEX hero: STREAK 昇格 */
+.index-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+.index-hero-number {
   font-family: var(--font-display), 'Unbounded', sans-serif;
   font-weight: 700;
   font-size: var(--text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ink);
+  margin: 0;
+  text-align: left;
+}
+.index-hero-cta {
+  font-weight: 900;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  text-align: left;
+}
+.index-hero-sub {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
   margin: 0;
   text-align: left;
 }
