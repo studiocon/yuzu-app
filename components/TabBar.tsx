@@ -12,7 +12,13 @@ type Props = {
 
 export default function TabBar({ tab, onChange, hidden }: Props) {
   return (
-    <nav className="tab-bar" role="tablist" aria-label="メインナビ" data-hidden={hidden ? "true" : undefined}>
+    <nav
+      className="tab-bar"
+      role="tablist"
+      aria-label="メインナビ"
+      data-active={tab}
+      data-hidden={hidden ? "true" : undefined}
+    >
       <button
         type="button"
         role="tab"

@@ -78,6 +78,7 @@ DESIGN.md と globals.css の不整合は CI（[.github/workflows/design-check.y
 - **ナビは 2 タブ + 独立 FAB（v2.1〜）。** `LOG` / `INSIGHT` の 2 タブ pill ([components/TabBar.tsx](components/TabBar.tsx)) と、その右に並ぶ正円録音 FAB ([components/RecordFab.tsx](components/RecordFab.tsx)) を [app/page.tsx](app/page.tsx) でレンダリング。内部タブ ID は互換のため `index` / `read`、表示ラベルだけ `LOG` / `INSIGHT`。**旧 3 タブ `TALK / INDEX / REPORT` 構成・YUZU ロゴヘッダー・「BE TRUE / 本物でいろ」ヒーロー・`.mic-fab` クラスはすべて撤去済**。これらの用語/クラスを復活させない
 - **ヘッダーは `.app-header-title` でページ名を最大級（48px）に出し、画面内見出し（`.mypage-section-title` 18px）はそれより小さくする。** ページ階層を視覚的に確立するための約束。新規ビューで画面内 h2 を大きく置きたくなったら `app-header-title` を見直す方が正解
 - **下部ドックは pill + FAB の横並び 296px グループを viewport 中央寄せ。** `left: calc(50% - 148px)` (pill) / `left: calc(50% + 84px)` (FAB) で位置決め、`transform` は hover/scale/hidden 専用に分離。位置と装飾を transform で重ねると hover 毎に位置がリセットされる事故が起きるので分けている
+- **タブ pill のアクティブ表示は `.tab-bar::before` の 1 枚を `translateX` でスライドさせる（iOS 26 ライク）。** `data-active="index" | "read"` で位置を切替。**タブごとの `::before` で個別に黄色チップを置かない**（瞬間切替になる）。`cubic-bezier(0.32, 0.72, 0, 1)` で 0.42s、`prefers-reduced-motion` は `transition: none`
 
 ### Supabase の使い分け
 

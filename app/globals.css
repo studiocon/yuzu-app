@@ -410,8 +410,31 @@ button.settings-row:focus-visible {
   pointer-events: none;
   transform: translateY(8px);
 }
+/*
+  アクティブインジケータ（黄色 pill）はタブごとの ::before ではなく
+  .tab-bar::before で 1 つだけ描き、タブ切替時に translateX で滑らせる（iOS 26 ライク）。
+  位置計算：tab-bar 220px / 2 = 110px per cell。pill は左右 13px インセット。
+*/
+.tab-bar::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 13px;
+  width: 84px;
+  border-radius: 9999px;
+  background: var(--yuzu-yellow);
+  transform: translateX(0);
+  transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+.tab-bar[data-active="read"]::before {
+  transform: translateX(110px);
+}
 .tab-item {
   position: relative;
+  z-index: 1;
   min-height: 44px;
   display: flex;
   flex-direction: column;
@@ -422,19 +445,15 @@ button.settings-row:focus-visible {
   border: 0;
   cursor: pointer;
   color: var(--ink-muted);
-  transition: color 0.18s ease, transform 0.12s var(--ease-snap);
+  transition: color 0.32s cubic-bezier(0.32, 0.72, 0, 1), transform 0.12s var(--ease-snap);
   -webkit-tap-highlight-color: transparent;
 }
 .tab-item[aria-selected="true"] { color: var(--ink); }
-.tab-item[aria-selected="true"]::before {
-  content: "";
-  position: absolute;
-  inset: 6px 12%;
-  border-radius: 9999px;
-  background: var(--yuzu-yellow);
-  z-index: -1;
-}
 .tab-item:active { transform: scale(0.94); }
+@media (prefers-reduced-motion: reduce) {
+  .tab-bar::before { transition: none; }
+  .tab-item { transition: color 0.18s ease; }
+}
 .tab-label {
   font-size: 10px;
   font-weight: 700;

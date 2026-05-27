@@ -8,3 +8,4 @@ node_modules
 # ローカル個別の許可リストや作業ログのみ無視。
 .claude/settings.local.json
 .claude/*.local.json
+supabase/.temp/
