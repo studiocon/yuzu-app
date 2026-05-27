@@ -73,8 +73,11 @@ DESIGN.md と globals.css の不整合は CI（[.github/workflows/design-check.y
 - **Anthropic SDK は [lib/reports.ts](lib/reports.ts) 内のみで import。** クライアントコンポーネントからは絶対 import しない（バンドル肥大化）。クライアントが共有したいロジックは [lib/sentimentSeries.ts](lib/sentimentSeries.ts) のように SDK 非依存ファイルに切り出す
 - **モーダル系コンポーネントは AnimState の状態機械 + `useBodyScrollLock`。** 既存の [RecordModal.tsx](components/RecordModal.tsx) / [IndexDetailModal.tsx](components/IndexDetailModal.tsx) / [LoginModal.tsx](components/LoginModal.tsx) のパターンを踏襲（`opening` → `open` → `closing`）
 - **エラーハンドリングは silent fail + 状態リセット。** トーンとしてユーザーに過剰に説明しない（VOICE & TONE で「やさしく」「ふんわり」が NG）
-- **`box-shadow` / `filter: drop-shadow` は禁止。** 階層は罫線（`--divider` / `--surface-border`）と余白だけで作る（DESIGN.md §5）
+- **`box-shadow` / `filter: drop-shadow` は禁止（例外 2 件のみ）。** 階層は罫線（`--divider` / `--surface-border`）と余白だけで作る（DESIGN.md §5）。例外は下部ドックの `.tab-bar` と `.fab-record` のみ（Liquid Glass 質感を共有）。それ以外のコンポーネントに `box-shadow` を書いたらレビューで弾く
 - **角丸は最小限。** `border-radius` は 0 / 2px(`--radius-sharp`) / 4px(ボタン類) / 9999px(`--radius-pill`、マイクボタン)。`blob` 形状・モーフィングは使わない
+- **ナビは 2 タブ + 独立 FAB（v2.1〜）。** `LOG` / `INSIGHT` の 2 タブ pill ([components/TabBar.tsx](components/TabBar.tsx)) と、その右に並ぶ正円録音 FAB ([components/RecordFab.tsx](components/RecordFab.tsx)) を [app/page.tsx](app/page.tsx) でレンダリング。内部タブ ID は互換のため `index` / `read`、表示ラベルだけ `LOG` / `INSIGHT`。**旧 3 タブ `TALK / INDEX / REPORT` 構成・YUZU ロゴヘッダー・「BE TRUE / 本物でいろ」ヒーロー・`.mic-fab` クラスはすべて撤去済**。これらの用語/クラスを復活させない
+- **ヘッダーは `.app-header-title` でページ名を最大級（48px）に出し、画面内見出し（`.mypage-section-title` 18px）はそれより小さくする。** ページ階層を視覚的に確立するための約束。新規ビューで画面内 h2 を大きく置きたくなったら `app-header-title` を見直す方が正解
+- **下部ドックは pill + FAB の横並び 296px グループを viewport 中央寄せ。** `left: calc(50% - 148px)` (pill) / `left: calc(50% + 84px)` (FAB) で位置決め、`transform` は hover/scale/hidden 専用に分離。位置と装飾を transform で重ねると hover 毎に位置がリセットされる事故が起きるので分けている
 
 ### Supabase の使い分け
 

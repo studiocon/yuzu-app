@@ -264,9 +264,9 @@ YUZU の世界観・UI で用いる用語の定義表。詳細は [DESIGN.md §1
 
 | 用語 | 定義 | NG言い換え |
 |---|---|---|
-| TALK | はなす画面。デフォルトタブ。開いたら即マイク。 | — |
-| INDEX | **ユーザー自身が出した**記録の集約面（#NNN・STATS・SENTIMENT・RECORDS）。 | 「ME」「マイページ」「PROFILE」 |
-| REPORT | **AI** がユーザーの声を解釈して返す週次レポート。独立タブ。 | INDEX と同居させない |
+| LOG | **ユーザー自身が出した**記録の集約面（STATS・RECORDS）。デフォルトタブ。 | 「ME」「マイページ」「PROFILE」「INDEX」（旧称） |
+| INSIGHT | **AI** がユーザーの声を解釈して返す面（SENTIMENT・REPORTS）。 | 「READ」「REPORT」（旧称） |
+| RECORD FAB | 録音アクション。タブバー右に常時並ぶ正円ボタン。タップで RecordModal を開く（state を持たない） | 「TALK」（旧タブ名・廃止） |
 | `#NNN` | ユーザーの **identity 兼通し番号**。名前・アイコンの代替。 | 「名前は無い。お前は #020 だ」 |
 | RECORD / RECORDS | 1件の声の記録 / その一覧。 | 「投稿」「日記」「テキスト」 |
 | SIGNAL | 声を出した瞬間の信号。RECORD の前段（世界観語）。 | — |
@@ -294,7 +294,7 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 
 ### 基本構成
 
-- **3タブ構成（順序固定）**：左から `INDEX`（**デフォルト**・自分が出した記録）/ `TALK`（中央のマイク FAB。タップで RecordModal を開く）/ `REPORT`（AI 解釈の週次レポート）。INDEX と REPORT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。TALK は state を持たないアクション。旧「ホーム」「マイページ（ME）」「PROFILE」は廃止。下部に iOS 26 Liquid Glass 風のフローティングタブバー。
+- **2タブ + FAB 構成（順序固定）**：左から `LOG`（**デフォルト**・自分が出した記録）/ `INSIGHT`（AI 解釈：SENTIMENT・REPORTS）。LOG と INSIGHT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。録音は **独立した RECORD FAB**（タブバー右に並ぶ正円ボタン）で起動し、タブの state を持たない。旧「ホーム」「マイページ（ME）」「PROFILE」「TALK タブ（旧 3 タブ中央のマイク）」は廃止。下部のドックは iOS 26 Liquid Glass 風のフローティング pill（タブ）と FAB が横並び。
 - **ユーザー identity は通し番号 `#NNN` のみ**。SNS 機能を持たないため、自己を他人に示すアイコン・名前は不要。ニックネーム登録 / 果物絵文字アイコンは v2 で全廃止。
 - **認証必須**（MVP v1 から）：Apple Sign In / Google OAuth / Magic Link（メール OTP）の 3 種。パスワード認証は **作らない**。未ログインユーザーには `/` でオンボーディング（録音 → STT → 「記録する」で LoginModal）を見せ、初投稿はログイン後にコミットされる。
 - **未ログイン STT 上限：1 日 1 回**（cookie ベース・[app/api/transcribe/route.ts](app/api/transcribe/route.ts) 内 `ANON_DAILY_STT_LIMIT`）。2 回目以降は **429 `login_required`** を返し、クライアントは自動的に `LoginModal` を開く。cookie 改竄は可能だが「お試し体験」と「課金保護」のバランスとしては必要十分。厳密化は将来 IP rate limit（Upstash 等）で対応する余地を残す。
@@ -312,24 +312,22 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 - NGタグ（[background noise] 等）を除去してから保存
 - 5文字未満の発話は破棄しフィードバック表示
 
-### INDEX（自分が出した記録 / 独立タブ）
+### LOG（自分が出した記録 / 独立タブ・デフォルト）
 
-上から下へ「抽象 → 具体」で縦に積み、**`RECORDS` で完結する**（PROFILE・REPORT を含まない）。
+ヘッダー左上の **ページ名 `LOG.`** が見出しを兼ねる（画面内には別途タイトルを置かない）。上から下へ「抽象 → 具体」で縦に積み、**`RECORDS` で完結する**（PROFILE・INSIGHT を含まない）。
 
-1. **`#NNN`（通し番号 = identity）** — 最上部の背骨。累計 RECORDS と連動。Unbounded 700 / `--text-3xl`。INDEX 見出しを兼ねる。**ユーザーの identity はこれだけ**。
-2. **STATS（横3列）** — `DAY` / `RECORDS` / `STREAK`。
-3. **SENTIMENT** — Claude API の折れ線グラフ。
-4. **RECORDS** — 自分の RECORD 一覧（新着順）。見出し右に `ALL / PINNED` フィルタトグル1つだけ。`PINNED` は MARK 済みのみ抽出。
+1. **STATS（横3列）** — `RECORDS` / `SINCE` / `STREAK`。
+2. **RECORDS** — 自分の RECORD 一覧（新着順）。見出し右に `ALL / PINNED` フィルタトグル1つだけ。`PINNED` は MARK 済みのみ抽出。
 
-設定（`/settings`）はヘッダー右上の歯車アイコンに据え置く。
+設定（`/settings`）はヘッダー右上の歯車アイコンに据え置く。`#NNN`（通し番号）は各 RECORD カード上に表示し、identity として機能する。
 
-### REPORT（AI 解釈 / 独立タブ）
+### INSIGHT（AI 解釈 / 独立タブ）
 
-INDEX とは情報の出どころが違うため別タブ。
+LOG とは情報の出どころが違うため別タブ。ヘッダー左上は **`INSIGHT.`**。
 
-- 週次・月次レポートカードを表示（既存 [components/ReportsSection.tsx](components/ReportsSection.tsx) を移設・流用）
+- **SENTIMENT** — Claude API のセンチメントスコアを折れ線グラフで表示（[components/LongSentimentChart.tsx](components/LongSentimentChart.tsx)）
+- **REPORTS** — 週次・月次レポートカードを一覧表示（[components/ReadView.tsx](components/ReadView.tsx)）
 - "MORE →" で `/reports` 詳細へ遷移
-- **新規ロジックは追加しない**（v1 INDEX 内にあったものを切り出しただけ）
 
 ### MARK（刻印）— v2 常時トグル
 

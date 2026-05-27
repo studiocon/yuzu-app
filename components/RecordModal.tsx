@@ -81,7 +81,7 @@ export default function RecordModal({
 
   const computeFlyVars = () => {
     const fly = flyRef.current;
-    const fab = document.querySelector<HTMLElement>(".mic-fab");
+    const fab = document.querySelector<HTMLElement>(".fab-record");
     if (!fly || !fab) return;
     const flyRect = fly.getBoundingClientRect();
     const fabRect = fab.getBoundingClientRect();

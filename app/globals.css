@@ -162,7 +162,6 @@ body {
   /* DESIGN.md §8: ヘッダーは左揃え。ロゴ左、設定アイコンは ml:auto で右端へ。 */
   gap: 12px;
 }
-.app-logo { height: 44px; width: auto; display: block; flex-shrink: 0; }
 .app-header-title {
   font-family: var(--font-display), 'Unbounded', sans-serif;
   font-size: var(--text-3xl);
@@ -382,15 +381,18 @@ button.settings-row:focus-visible {
 }
 
 /* ===== Tab Bar (iOS 26 Liquid Glass pill) ===== */
+/*
+  下部ドック：左から [tab-bar pill 220px] + 12px gap + [fab-record 64px] = 296px。
+  グループを viewport 中央に置き、各要素は left のみで位置決め（transform は hover/hidden 専用）。
+*/
 .tab-bar {
   position: fixed;
-  left: 50%;
-  transform: translateX(calc(-50% - 38px));
+  left: calc(50% - 148px);
   bottom: calc(env(safe-area-inset-bottom) + 12px);
   z-index: 90;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  width: min(220px, calc(100vw - 120px));
+  width: 220px;
   height: 64px;
   border-radius: 9999px;
   background: rgba(250, 250, 245, 0.72);
@@ -406,7 +408,7 @@ button.settings-row:focus-visible {
 .tab-bar[data-hidden="true"] {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(calc(-50% - 38px)) translateY(8px);
+  transform: translateY(8px);
 }
 .tab-item {
   position: relative;
@@ -440,17 +442,18 @@ button.settings-row:focus-visible {
   text-transform: uppercase;
   line-height: 1;
 }
-.tab-item--center svg { width: 28px; height: 28px; }
-
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .tab-bar { background: rgba(250, 250, 245, 0.96); }
 }
 
-/* ===== Record FAB (常時表示・右下固定) ===== */
+/*
+  ===== Record FAB (常時表示・タブバーと横並び)
+  位置: tab-bar 右端 + 12px gap → left = (50% - 148) + 220 + 12 = 50% + 84
+  RecordModal の fly アニメは `.fab-record` の rect を query する（components/RecordModal.tsx）。
+*/
 .fab-record {
   position: fixed;
-  left: 50%;
-  transform: translateX(calc(-50% + 116px));
+  left: calc(50% + 84px);
   bottom: calc(env(safe-area-inset-bottom) + 12px);
   z-index: 95;
   width: 64px;
@@ -470,16 +473,16 @@ button.settings-row:focus-visible {
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.12s var(--ease-snap), opacity 0.18s ease;
 }
-.fab-record:hover { transform: translateX(calc(-50% + 116px)) scale(1.04); }
-.fab-record:active { transform: translateX(calc(-50% + 116px)) scale(0.94); }
+.fab-record:hover  { transform: scale(1.04); }
+.fab-record:active { transform: scale(0.94); }
 .fab-record[data-hidden="true"] {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(calc(-50% + 116px)) translateY(8px);
+  transform: translateY(8px);
 }
 @media (prefers-reduced-motion: reduce) {
   .fab-record { transition: opacity 0.18s ease; }
-  .fab-record:hover, .fab-record:active { transform: translateX(calc(-50% + 116px)); }
+  .fab-record:hover, .fab-record:active { transform: none; }
 }
 
 /* ===== Record modal ===== */
@@ -1871,49 +1874,7 @@ button.settings-row:focus-visible {
   max-width: 640px;
   margin: 0 auto;
 }
-/* INDEX hero: STREAK 昇格 */
-.index-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-}
-.index-hero-number {
-  font-family: var(--font-display), 'Unbounded', sans-serif;
-  font-weight: 700;
-  font-size: var(--text-xl);
-  line-height: 1;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin: 0;
-  text-align: left;
-}
-.index-hero-cta {
-  font-weight: 900;
-  font-size: var(--text-xl);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin: 0;
-  text-align: left;
-}
-.index-hero-sub {
-  font-family: var(--font-display), 'Unbounded', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.18em;
-  color: var(--ink-muted);
-  margin: 0;
-  text-align: left;
-}
-.index-hero-sub-ja {
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  color: var(--ink-secondary);
-  margin: 0;
-  text-align: left;
-}
+/* (v2.1: BE TRUE タグライン削除に伴い .index-hero* 系は撤去。ページ名は app-header-title へ移管。) */
 
 /* RECORDS section head: title + filter on same row */
 .records-section-head {
@@ -2011,16 +1972,7 @@ button.settings-row:focus-visible {
   max-width: 640px;
   margin: 0 auto;
 }
-.read-view-title {
-  font-family: var(--font-display), 'Unbounded', sans-serif;
-  font-weight: 700;
-  font-size: var(--text-3xl);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin: 0;
-  text-align: left;
-}
+/* (v2.1: ヘッダー INSIGHT. を app-header-title に集約したため .read-view-title は撤去。) */
 
 /* Long sentiment toggle */
 .long-sentiment-header {
