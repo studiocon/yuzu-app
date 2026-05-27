@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
@@ -41,27 +41,47 @@ export default function IndexDetailModal({ post, onClose }: Props) {
 
   useBodyScrollLock(mounted);
 
-  useEffect(() => {
-    if (!mounted) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [mounted, onClose]);
+  // onClose は親の inline arrow なので毎 render 参照が変わる。
+  // effect deps に含めると Strict Mode / 親再 render で cleanup が走り、
+  // popstate effect の history.back() が誤発火 → モーダル即閉じの原因になる。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     if (!mounted) return;
-    window.history.pushState({ indexDetail: true }, "");
-    const onPop = () => onClose();
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      if (window.history.state?.indexDetail) {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mounted]);
+
+  // 戻るボタンで閉じる UX を提供する。
+  // - pushedRef で pushState の冪等性を担保（Strict Mode 二重 mount 対策）
+  // - userBackedRef で「ユーザの戻る操作」と「自前 history.back()」を区別し
+  //   閉じる時に二重 back を防ぐ
+  const pushedRef = useRef(false);
+  const userBackedRef = useRef(false);
+  useEffect(() => {
+    if (!mounted) {
+      if (pushedRef.current && !userBackedRef.current && window.history.state?.indexDetail) {
         window.history.back();
       }
+      pushedRef.current = false;
+      userBackedRef.current = false;
+      return;
+    }
+    if (!pushedRef.current) {
+      window.history.pushState({ indexDetail: true }, "");
+      pushedRef.current = true;
+    }
+    const onPop = () => {
+      userBackedRef.current = true;
+      onCloseRef.current();
     };
-  }, [mounted, onClose]);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [mounted]);
 
   if (!mounted || !post) return null;
 
