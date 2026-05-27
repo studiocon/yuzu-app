@@ -124,9 +124,10 @@ export async function POST(req: NextRequest) {
   // ただし正当な発話に含まれる括弧（hesitation 等）まで剥がすと空文字になって
   // 「無音、話せ」hint が出てしまうので、annotation キーワードを含む短い括弧だけ落とす。
   // 角括弧 [] は Scribe では純然たる annotation なので無条件 strip。
-  const ANNOTATION_KEYWORDS = /音楽|雑音|背景|ノイズ|咳|笑|拍手|無音|沈黙|溜息|くしゃみ|あくび|ため息|息/;
+  const ANNOTATION_KEYWORDS = /音楽|雑音|背景|ノイズ|咳|笑|拍手|無音|沈黙|溜息|くしゃみ|あくび|ため息|息|音声|声|発話/;
   const cleanText = rawText
     .replace(/\[[^\]]{0,30}\]/g, "") // [音楽] [拍手] 等は丸ごと
+    .replace(/[{｛][^}｝]{0,30}[}｝]/g, "") // {音声} {noise} 等も丸ごと
     .replace(/[(（]([^)）]{1,15})[)）]/g, (match, content: string) =>
       ANNOTATION_KEYWORDS.test(content) ? "" : match,
     )
