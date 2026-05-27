@@ -1,18 +1,16 @@
 "use client";
 
-import { Microphone, ListNumbers, FileText } from "@phosphor-icons/react";
+import { ListNumbers, FileText } from "@phosphor-icons/react";
 
 export type MainTab = "index" | "read";
 
 type Props = {
   tab: MainTab;
   onChange: (tab: MainTab) => void;
-  onOpenRecord: () => void;
-  recordOpen?: boolean;
   hidden?: boolean;
 };
 
-export default function TabBar({ tab, onChange, onOpenRecord, recordOpen, hidden }: Props) {
+export default function TabBar({ tab, onChange, hidden }: Props) {
   return (
     <nav className="tab-bar" role="tablist" aria-label="メインナビ" data-hidden={hidden ? "true" : undefined}>
       <button
@@ -24,18 +22,7 @@ export default function TabBar({ tab, onChange, onOpenRecord, recordOpen, hidden
         onClick={() => onChange("index")}
       >
         <ListNumbers size={24} weight={tab === "index" ? "fill" : "regular"} />
-        <span className="tab-label font-display">INDEX</span>
-      </button>
-      <button
-        type="button"
-        className="tab-item tab-item--center mic-fab"
-        aria-label="録音を開く"
-        aria-haspopup="dialog"
-        aria-expanded={recordOpen ?? false}
-        onClick={onOpenRecord}
-      >
-        <Microphone size={28} weight="fill" />
-        <span className="tab-label font-display">RECORD</span>
+        <span className="tab-label font-display">LOG</span>
       </button>
       <button
         type="button"
@@ -46,7 +33,7 @@ export default function TabBar({ tab, onChange, onOpenRecord, recordOpen, hidden
         onClick={() => onChange("read")}
       >
         <FileText size={24} weight={tab === "read" ? "fill" : "regular"} />
-        <span className="tab-label font-display">READ</span>
+        <span className="tab-label font-display">INSIGHT</span>
       </button>
     </nav>
   );

@@ -77,17 +77,6 @@ export default function IndexView({
 
   return (
     <section className="index-view">
-      {streak >= 1 ? (
-        <header className="index-hero">
-          <h2 className="index-hero-number font-display">BE TRUE</h2>
-          <p className="index-hero-sub-ja">本物でいろ</p>
-        </header>
-      ) : (
-        <header className="index-hero">
-          <h2 className="index-hero-number font-display">DAY 0.</h2>
-        </header>
-      )}
-
       <div className="mypage-stats">
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">RECORDS</span>

@@ -163,6 +163,15 @@ body {
   gap: 12px;
 }
 .app-logo { height: 44px; width: auto; display: block; flex-shrink: 0; }
+.app-header-title {
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+  text-transform: uppercase;
+}
 .app-header-row .iconbtn { margin-left: auto; }
 
 /* ===== Onboarding view (first-visit empty state) ===== */
@@ -376,12 +385,12 @@ button.settings-row:focus-visible {
 .tab-bar {
   position: fixed;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - 38px));
   bottom: calc(env(safe-area-inset-bottom) + 12px);
   z-index: 90;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  width: min(360px, calc(100vw - 32px));
+  grid-template-columns: 1fr 1fr;
+  width: min(220px, calc(100vw - 120px));
   height: 64px;
   border-radius: 9999px;
   background: rgba(250, 250, 245, 0.72);
@@ -397,7 +406,7 @@ button.settings-row:focus-visible {
 .tab-bar[data-hidden="true"] {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateX(calc(-50% - 38px)) translateY(8px);
 }
 .tab-item {
   position: relative;
@@ -435,6 +444,42 @@ button.settings-row:focus-visible {
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .tab-bar { background: rgba(250, 250, 245, 0.96); }
+}
+
+/* ===== Record FAB (常時表示・右下固定) ===== */
+.fab-record {
+  position: fixed;
+  left: 50%;
+  transform: translateX(calc(-50% + 116px));
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  z-index: 95;
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  background: var(--yuzu-yellow);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 10px 30px rgba(26, 26, 48, 0.10),
+    0 2px 8px rgba(26, 26, 48, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s var(--ease-snap), opacity 0.18s ease;
+}
+.fab-record:hover { transform: translateX(calc(-50% + 116px)) scale(1.04); }
+.fab-record:active { transform: translateX(calc(-50% + 116px)) scale(0.94); }
+.fab-record[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(calc(-50% + 116px)) translateY(8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fab-record { transition: opacity 0.18s ease; }
+  .fab-record:hover, .fab-record:active { transform: translateX(calc(-50% + 116px)); }
 }
 
 /* ===== Record modal ===== */
@@ -1084,8 +1129,8 @@ button.settings-row:focus-visible {
 .mypage-section { display: flex; flex-direction: column; gap: 10px; }
 .mypage-section-title {
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 40px;
+  letter-spacing: 0.08em;
+  font-size: var(--text-lg);
   line-height: 1;
   font-weight: 700;
   color: var(--ink);
@@ -1836,16 +1881,16 @@ button.settings-row:focus-visible {
 .index-hero-number {
   font-family: var(--font-display), 'Unbounded', sans-serif;
   font-weight: 700;
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: var(--ink);
   margin: 0;
   text-align: left;
 }
 .index-hero-cta {
   font-weight: 900;
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ink);

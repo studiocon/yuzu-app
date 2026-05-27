@@ -89,8 +89,6 @@ export default function ReadView({ myPosts }: Props) {
 
   return (
     <section className="read-view">
-      <h2 className="read-view-title font-display">READ</h2>
-
       <LongSentimentChart posts={myPosts} scores={scores} />
 
       <section className="mypage-section">
