@@ -119,12 +119,26 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await res.json();
-  // ElevenLabs Scribe は非音声を括弧つき annotation で返す: [音楽] / (背景ノイズ) / （咳）
-  // 半角[] / 半角() / 全角（） すべて落とす。
-  const cleanText = ((data.text as string | undefined) ?? "")
-    .replace(/[\[(（][^\])）]*[\])）]/g, "")
+  const rawText = (data.text as string | undefined) ?? "";
+  // ElevenLabs Scribe は非音声を括弧つき annotation で返す: [音楽] / (背景ノイズ) / （咳）。
+  // ただし正当な発話に含まれる括弧（hesitation 等）まで剥がすと空文字になって
+  // 「無音、話せ」hint が出てしまうので、annotation キーワードを含む短い括弧だけ落とす。
+  // 角括弧 [] は Scribe では純然たる annotation なので無条件 strip。
+  const ANNOTATION_KEYWORDS = /音楽|雑音|背景|ノイズ|咳|笑|拍手|無音|沈黙|溜息|くしゃみ|あくび|ため息|息/;
+  const cleanText = rawText
+    .replace(/\[[^\]]{0,30}\]/g, "") // [音楽] [拍手] 等は丸ごと
+    .replace(/[(（]([^)）]{1,15})[)）]/g, (match, content: string) =>
+      ANNOTATION_KEYWORDS.test(content) ? "" : match,
+    )
     .replace(/\s+/g, " ")
     .trim();
+
+  // 診断用ログ。strip で空になるケースを後追いするため raw を残す。
+  if (cleanText === "" || cleanText.length < 5) {
+    console.warn(
+      `[transcribe] short/empty after strip: raw="${rawText}" clean="${cleanText}" userId=${user?.id ?? "anon"}`,
+    );
+  }
 
   const response = NextResponse.json({ text: cleanText });
 
