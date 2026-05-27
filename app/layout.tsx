@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Unbounded } from "next/font/google";
+import SplashScreen from "@/components/SplashScreen";
 
 const unbounded = Unbounded({
   subsets: ["latin"],
@@ -61,7 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=LINE+Seed+JP:wght@400;700&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SplashScreen />
+        {children}
+      </body>
     </html>
   );
 }

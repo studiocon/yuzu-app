@@ -2279,3 +2279,41 @@ button.settings-row:focus-visible {
   transition: color 0.12s;
 }
 .signal-close-btn:hover { color: rgba(255, 255, 255, 0.7); }
+
+/* ── Splash Screen ──────────────────────────────────────── */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--yuzu-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+}
+.splash[data-state="open"] { opacity: 1; pointer-events: auto; }
+.splash[data-state="closing"] { opacity: 0; pointer-events: none; }
+.splash[data-state="hidden"] { display: none; }
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.splash-logo {
+  color: var(--ink);
+  display: block;
+}
+.splash-tagline {
+  margin-top: 12px;
+  font-family: var(--font-display), 'Unbounded', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  color: var(--ink-muted);
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash { transition-duration: 100ms; }
+}
