@@ -2,46 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { hierarchy, pack, type HierarchyCircularNode } from "d3-hierarchy";
-import { isMockMode } from "@/lib/mockReports";
 import { extractWordFrequencies } from "@/lib/wordAnalysis";
+import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
 
 type WordFreq = { word: string; count: number };
 type Datum = { word: string; count: number; value: number };
+
+const computeWords = (posts: Post[]) =>
+  extractWordFrequencies(posts.map((p) => p.text));
 
 const VIEW = 320;
 const PADDING = 6;
 const LABEL_MIN_RADIUS = 18;
 
 export default function WordBubbleMap({ posts }: { posts: Post[] }) {
-  const [words, setWords] = useState<WordFreq[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [poppedAt, setPoppedAt] = useState<{ index: number; nonce: number } | null>(null);
+  const { data: words, error } = useInsightData<WordFreq[]>(
+    "/api/insights/words",
+    posts,
+    computeWords,
+    "words",
+  );
+  const [poppedAt, setPoppedAt] = useState<number | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
-
-  useEffect(() => {
-    if (isMockMode()) {
-      setWords(extractWordFrequencies(posts.map((p) => p.text)));
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/insights/words");
-        if (!res.ok) {
-          if (!cancelled) setError("失敗、話せ");
-          return;
-        }
-        const data = (await res.json()) as { words?: WordFreq[] };
-        if (cancelled) return;
-        setWords(Array.isArray(data.words) ? data.words : []);
-      } catch (e) {
-        console.error("WordBubbleMap fetch:", e);
-        if (!cancelled) setError("失敗、話せ");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [posts]);
 
   const nodes = useMemo(() => {
     if (!words || words.length === 0) return [];
@@ -96,15 +79,13 @@ export default function WordBubbleMap({ posts }: { posts: Post[] }) {
         // ── ボヨーン挙動：押されたバブルとの距離で delay と強度を決める ──
         let popClass = "";
         let popDelay = 0;
-        if (poppedAt) {
-          if (poppedAt.index === i) {
+        if (poppedAt !== null) {
+          if (poppedAt === i) {
             popClass = "word-bubble--pop";
           } else {
-            const source = nodes[poppedAt.index];
+            const source = nodes[poppedAt];
             if (source) {
-              const dx = n.x - source.x;
-              const dy = n.y - source.y;
-              const dist = Math.hypot(dx, dy);
+              const dist = Math.hypot(n.x - source.x, n.y - source.y);
               // 押されたバブルの半径 +n.r +少しのバッファ内 = "隣接" 判定
               if (dist < source.r + n.r + 24) {
                 popClass = "word-bubble--ripple";
@@ -121,7 +102,6 @@ export default function WordBubbleMap({ posts }: { posts: Post[] }) {
           >
             <g
               className={`word-bubble ${!hasEntered ? "word-bubble--enter" : ""} ${popClass}`.replace(/\s+/g, " ").trim()}
-              data-pop-nonce={poppedAt && popClass ? poppedAt.nonce : undefined}
               style={{
                 // @ts-expect-error CSS custom property
                 "--bubble-opacity": opacity,
@@ -129,9 +109,9 @@ export default function WordBubbleMap({ posts }: { posts: Post[] }) {
                 opacity,
                 cursor: "pointer",
               }}
-              onClick={() => setPoppedAt({ index: i, nonce: Date.now() })}
+              onClick={() => setPoppedAt(i)}
               onAnimationEnd={() => {
-                if (poppedAt?.index === i && popClass === "word-bubble--pop") {
+                if (poppedAt === i && popClass === "word-bubble--pop") {
                   setPoppedAt(null);
                 }
               }}

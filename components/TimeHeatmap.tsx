@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { isMockMode } from "@/lib/mockReports";
+import { useMemo, useState } from "react";
 import { buildHeatmap, type HeatmapCell } from "@/lib/heatmap";
+import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
+
+const computeCells = (posts: Post[]) =>
+  buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt })));
 
 const DAYS = 30;
 const HOURS = 24;
@@ -24,33 +27,13 @@ function fmtHour(h: number): string {
 }
 
 export default function TimeHeatmap({ posts }: { posts: Post[] }) {
-  const [cells, setCells] = useState<HeatmapCell[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: cells, error } = useInsightData<HeatmapCell[]>(
+    "/api/insights/heatmap",
+    posts,
+    computeCells,
+    "cells",
+  );
   const [hover, setHover] = useState<HeatmapCell | null>(null);
-
-  useEffect(() => {
-    if (isMockMode()) {
-      setCells(buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt }))));
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/insights/heatmap");
-        if (!res.ok) {
-          if (!cancelled) setError("失敗、話せ");
-          return;
-        }
-        const data = (await res.json()) as { cells?: HeatmapCell[] };
-        if (cancelled) return;
-        setCells(Array.isArray(data.cells) ? data.cells : []);
-      } catch (e) {
-        console.error("TimeHeatmap fetch:", e);
-        if (!cancelled) setError("失敗、話せ");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [posts]);
 
   const { maxChars, dates, hasAny } = useMemo(() => {
     if (!cells || cells.length === 0) {
