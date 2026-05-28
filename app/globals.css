@@ -1917,12 +1917,12 @@ button.settings-row:focus-visible {
 }
 
 /* ALL / PINNED filter toggle */
-.records-filter {
+.section-filter {
   display: inline-flex;
   gap: 0;
   align-self: flex-end;
 }
-.records-filter-item {
+.section-filter-item {
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1936,11 +1936,11 @@ button.settings-row:focus-visible {
   cursor: pointer;
   transition: color 120ms, border-color 120ms;
 }
-.records-filter-item.is-active {
+.section-filter-item.is-active {
   color: var(--ink);
   border-bottom-color: var(--yuzu-zest);
 }
-.records-filter-item:hover { color: var(--ink); }
+.section-filter-item:hover { color: var(--ink); }
 
 /* 無限スクロール sentinel */
 .records-sentinel {
@@ -2004,34 +2004,7 @@ button.settings-row:focus-visible {
   margin-bottom: 8px;
   flex-wrap: wrap;
 }
-.long-sentiment-toggle {
-  display: inline-flex;
-  flex-shrink: 0;
-  gap: 0;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-.long-sentiment-toggle-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.12s, color 0.12s;
-}
-.long-sentiment-toggle-btn.active {
-  background: var(--ink);
-  color: #fff;
-}
-.long-sentiment-toggle-btn:not(.active):hover {
-  color: var(--ink);
-}
+/* .long-sentiment-toggle は撤去 — SENTIMENT も .section-filter を使う */
 
 /* Skeleton UI: API ロード中の placeholder */
 @keyframes skeleton-pulse {

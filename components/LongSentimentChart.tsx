@@ -32,12 +32,12 @@ export default function LongSentimentChart({ posts, scores }: Props) {
     <section className="mypage-section">
       <header className="long-sentiment-header">
         <h3 className="mypage-section-title font-display">SENTIMENT</h3>
-        <div className="long-sentiment-toggle" role="tablist" aria-label="期間切替">
+        <div className="section-filter" role="tablist" aria-label="期間切替">
           <button
             type="button"
             role="tab"
             aria-selected={mode === "month"}
-            className={"long-sentiment-toggle-btn font-display" + (mode === "month" ? " active" : "")}
+            className={"section-filter-item font-display" + (mode === "month" ? " is-active" : "")}
             onClick={() => setMode("month")}
           >
             MONTH
@@ -46,7 +46,7 @@ export default function LongSentimentChart({ posts, scores }: Props) {
             type="button"
             role="tab"
             aria-selected={mode === "all"}
-            className={"long-sentiment-toggle-btn font-display" + (mode === "all" ? " active" : "")}
+            className={"section-filter-item font-display" + (mode === "all" ? " is-active" : "")}
             onClick={() => setMode("all")}
           >
             ALL

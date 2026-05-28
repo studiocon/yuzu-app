@@ -95,12 +95,12 @@ export default function IndexView({
       <section className="mypage-section">
         <div className="records-section-head">
           <h3 className="mypage-section-title font-display">RECORDS</h3>
-          <div className="records-filter" role="tablist" aria-label="RECORDS フィルタ">
+          <div className="section-filter" role="tablist" aria-label="RECORDS フィルタ">
             <button
               type="button"
               role="tab"
               aria-selected={filter === "all"}
-              className={"records-filter-item font-display" + (filter === "all" ? " is-active" : "")}
+              className={"section-filter-item font-display" + (filter === "all" ? " is-active" : "")}
               onClick={() => setFilter("all")}
             >
               ALL
@@ -109,7 +109,7 @@ export default function IndexView({
               type="button"
               role="tab"
               aria-selected={filter === "pinned"}
-              className={"records-filter-item font-display" + (filter === "pinned" ? " is-active" : "")}
+              className={"section-filter-item font-display" + (filter === "pinned" ? " is-active" : "")}
               onClick={() => setFilter("pinned")}
             >
               PINNED
