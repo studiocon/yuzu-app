@@ -2443,3 +2443,60 @@ button.settings-row:focus-visible {
   .time-heatmap-cell:hover,
   .time-heatmap-cell:focus-visible { transform: none; }
 }
+
+/* ── PATTERN 繰り返しテーマ ───────────────────── */
+.theme-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.theme-card {
+  background: var(--surface-card);
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--yuzu-yellow);
+  border-radius: 4px;
+  padding: 14px 16px;
+  animation: themeIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.15s var(--ease-soft), background 0.15s var(--ease-soft);
+}
+.theme-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--ink);
+  border-left-color: var(--yuzu-zest);
+}
+.theme-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.theme-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.theme-card-count {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  flex: 0 0 auto;
+}
+.theme-card-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+@keyframes themeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-card { animation: none; }
+}

@@ -5,6 +5,7 @@ import ReportCard from "./ReportCard";
 import LongSentimentChart from "./LongSentimentChart";
 import WordBubbleMap from "./WordBubbleMap";
 import TimeHeatmap from "./TimeHeatmap";
+import RecurringThemes from "./RecurringThemes";
 import type { Post } from "@/lib/types";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
@@ -101,6 +102,11 @@ export default function ReadView({ myPosts }: Props) {
       <section className="mypage-section">
         <h3 className="mypage-section-title font-display">SIGNAL</h3>
         <TimeHeatmap posts={myPosts} />
+      </section>
+
+      <section className="mypage-section">
+        <h3 className="mypage-section-title font-display">PATTERN</h3>
+        <RecurringThemes posts={myPosts} />
       </section>
 
       <section className="mypage-section">

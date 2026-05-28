@@ -328,10 +328,13 @@ LOG とは情報の出どころが違うため別タブ。ヘッダー左上は 
 - **SENTIMENT** — Claude API のセンチメントスコアを折れ線グラフで表示（[components/LongSentimentChart.tsx](components/LongSentimentChart.tsx)）
 - **WORDS** — 全投稿から頻出語 20 個を抽出してバブルマップ化（[components/WordBubbleMap.tsx](components/WordBubbleMap.tsx)）。形態素解析は TinySegmenter、配置は d3-hierarchy の pack。タップで弾性バウンス（自バブル + 隣接バブルが距離 delay で連動）。「自分がこんな言葉ばっか使ってたのか」という気づきを与える
 - **SIGNAL** — 過去 30 日 × 24 時間 = 720 セルの時間帯ヒートマップ（[components/TimeHeatmap.tsx](components/TimeHeatmap.tsx)）。各セルはその時間帯の投稿文字数合計に応じて opacity 0.2〜1.0 で濃淡。ホバー/フォーカスで `MM/DD HH:00 / N CHARS` tooltip。「俺、夜11時に吐き出しがち」のような自分のリズム発見が狙い
+- **PATTERN** — Claude が全投稿を読んで「無意識に繰り返し語っているテーマ」を最大 5 つ抽出・言語化（[components/RecurringThemes.tsx](components/RecurringThemes.tsx)）。バブルマップが「生の単語」なら PATTERN は「意味の塊」。「こんなこと気にしてたのか」というじわっと来る気づきを返す。WORDS は浅い・即時、PATTERN は深い・じわじわ
+  - 投稿 10 件未満は「もっと話せ、パターンが見えてくる」表示
+  - サーバ側でプロセス内キャッシュ（user_id をキー、24h TTL、`post_count` が変われば invalidate）
 - **REPORTS** — 週次・月次レポートカードを一覧表示（[components/ReadView.tsx](components/ReadView.tsx)）
 - "MORE →" で `/reports` 詳細へ遷移
 
-API は [app/api/insights/words/route.ts](app/api/insights/words/route.ts) と [app/api/insights/heatmap/route.ts](app/api/insights/heatmap/route.ts)。集計は [lib/wordAnalysis.ts](lib/wordAnalysis.ts) と [lib/heatmap.ts](lib/heatmap.ts)（SDK 非依存・サーバ/クライアント共有）。Mock mode（`?mock=1`）ではクライアント側で同じ集計を走らせる共通フックは [lib/useInsightData.ts](lib/useInsightData.ts)。
+API は [app/api/insights/words/route.ts](app/api/insights/words/route.ts) / [app/api/insights/heatmap/route.ts](app/api/insights/heatmap/route.ts) / [app/api/insights/themes/route.ts](app/api/insights/themes/route.ts)。集計・型は [lib/wordAnalysis.ts](lib/wordAnalysis.ts) / [lib/heatmap.ts](lib/heatmap.ts) / [lib/themes.ts](lib/themes.ts)（SDK 非依存はクライアントとも共有、Claude 呼び出しはサーバ専用）。Mock mode（`?mock=1`）ではクライアント側で同等の集計または hardcoded 例（PATTERN は `MOCK_THEMES`）を使う。fetch + mock の共通パターンは [lib/useInsightData.ts](lib/useInsightData.ts)。
 
 ### MARK（刻印）— v2 常時トグル
 
