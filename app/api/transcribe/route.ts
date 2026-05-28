@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const ENDPOINT = "https://api.elevenlabs.io/v1/speech-to-text";
-// ElevenLabs 公開モデルは scribe_v1。v2 は silently invalid → text=""
-const MODEL_ID = "scribe_v1";
+// scribe_v2 が現行の公開モデル。no_verbatim（フィラー除去）は v2 専用パラメータ。
+const MODEL_ID = "scribe_v2";
 
 function pickExtension(file: Blob): string {
   const t = (file.type || "").toLowerCase();
@@ -106,6 +106,8 @@ export async function POST(req: NextRequest) {
   upstream.append("file", file, `recording.${ext}`);
   upstream.append("model_id", MODEL_ID);
   upstream.append("language_code", "ja");
+  upstream.append("no_verbatim", "true"); // フィラー（えーと/あの 等）除去。v2 専用
+  upstream.append("tag_audio_events", "false"); // [音楽]/(咳) 等の annotation を出力させない
 
   const res = await fetch(ENDPOINT, {
     method: "POST",
@@ -120,19 +122,8 @@ export async function POST(req: NextRequest) {
 
   const data = await res.json();
   const rawText = (data.text as string | undefined) ?? "";
-  // ElevenLabs Scribe は非音声を括弧つき annotation で返す: [音楽] / (背景ノイズ) / （咳）。
-  // ただし正当な発話に含まれる括弧（hesitation 等）まで剥がすと空文字になって
-  // 「無音、話せ」hint が出てしまうので、annotation キーワードを含む短い括弧だけ落とす。
-  // 角括弧 [] は Scribe では純然たる annotation なので無条件 strip。
-  const ANNOTATION_KEYWORDS = /音楽|雑音|背景|ノイズ|咳|笑|拍手|無音|沈黙|溜息|くしゃみ|あくび|ため息|息|音声|声|発話/;
-  const cleanText = rawText
-    .replace(/\[[^\]]{0,30}\]/g, "") // [音楽] [拍手] 等は丸ごと
-    .replace(/[{｛][^}｝]{0,30}[}｝]/g, "") // {音声} {noise} 等も丸ごと
-    .replace(/[(（]([^)）]{1,15})[)）]/g, (match, content: string) =>
-      ANNOTATION_KEYWORDS.test(content) ? "" : match,
-    )
-    .replace(/\s+/g, " ")
-    .trim();
+  // tag_audio_events=false で annotation（[音楽]/(咳) 等）は出ない前提。空白正規化のみ。
+  const cleanText = rawText.replace(/\s+/g, " ").trim();
 
   // 診断用ログ。strip で空になるケースを後追いするため raw を残す。
   if (cleanText === "" || cleanText.length < 5) {
