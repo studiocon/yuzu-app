@@ -2319,3 +2319,58 @@ button.settings-row:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .splash { transition-duration: 100ms; }
 }
+
+/* ── WORDS. バブルマップ ───────────────────────── */
+.word-bubble-map {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+.word-bubble {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.word-bubble--enter {
+  animation: bubbleIn 480ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.word-bubble text {
+  pointer-events: none;
+  user-select: none;
+}
+@keyframes bubbleIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: var(--bubble-opacity, 1); }
+}
+/* タップしたバブルが大きくボヨーン */
+.word-bubble--pop {
+  animation: bubblePop 640ms linear both;
+}
+@keyframes bubblePop {
+  0%   { transform: scale(1); }
+  18%  { transform: scale(1.20); }
+  38%  { transform: scale(0.95); }
+  58%  { transform: scale(1.06); }
+  78%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+/* 隣接バブルが軽くバウンス */
+.word-bubble--ripple {
+  animation: bubbleRipple 540ms linear both;
+}
+@keyframes bubbleRipple {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.96); }
+  60%  { transform: scale(1.04); }
+  85%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-bubble,
+  .word-bubble--enter,
+  .word-bubble--pop,
+  .word-bubble--ripple {
+    animation: none;
+    opacity: var(--bubble-opacity, 1);
+  }
+}
