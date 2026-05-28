@@ -360,6 +360,7 @@ export default function Home() {
         analyser={recorder.analyser}
         lastPost={lastPost}
         posts={myPosts}
+        totalDurationMs={totalDurationMs}
         limitReached={limitReached}
         remainingSessions={remainingSessions}
         recordingElapsed={recorder.recordingElapsed}

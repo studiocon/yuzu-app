@@ -1,88 +1,66 @@
 "use client";
 
-import { useRef, useState } from "react";
 import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
+import { useCountUp } from "@/lib/useCountUp";
 
-type Props = { post: Post; posts: Post[]; onBack: () => void };
+type Props = {
+  post: Post;
+  posts: Post[];
+  /** サーバ集計の総録音時間（ms）。undefined は posts から fallback。 */
+  totalDurationMs?: number;
+  onBack: () => void;
+};
 
-export default function CompleteView({ post, posts, onBack }: Props) {
+export default function CompleteView({ post, posts, totalDurationMs, onBack }: Props) {
   const { streak, week } = computeStreak(posts);
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const [exporting, setExporting] = useState(false);
 
-  const handleExport = async () => {
-    const node = cardRef.current;
-    if (!node || exporting) return;
-    setExporting(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      if (document.fonts?.ready) await document.fonts.ready;
-      const dataUrl = await toPng(node, {
-        pixelRatio: 2,
-        backgroundColor: "#FAFAF5",
-        cacheBust: true,
-      });
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `yuzu-${post.index}.png`, { type: "image/png" });
-      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
-      if (nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file] });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `yuzu-${post.index}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      console.error("export failed", err);
-    } finally {
-      setExporting(false);
-    }
-  };
+  // 総録音分数。サーバ集計が信頼源、undefined 時は読み込み済み posts の合計に fallback（IndexView と同ロジック）。
+  const totalMs =
+    typeof totalDurationMs === "number"
+      ? totalDurationMs
+      : posts.reduce((sum, p) => sum + (p.durationMs ?? 0), 0);
+  const totalMinutes = Math.floor(totalMs / 60000);
+
+  // 入場アニメ（streak 帯 ≈ 1.2s）の後に着地させる。
+  const minutesView = useCountUp(totalMinutes, { delayMs: 1200 });
+  const streakView = useCountUp(streak, { delayMs: 1200 });
 
   return (
     <section className="complete-view">
-      <div ref={cardRef} className="complete-shareable">
-        <p className="complete-stamp font-display">RECORDED.</p>
-        <p className="complete-index font-display">#{post.index}</p>
-        <div className="complete-card">
-          <p className="complete-text">{post.text}</p>
+      <p className="complete-stamp font-display">RECORDED.</p>
+      <p className="complete-index font-display">#{post.index}</p>
+      <div className="complete-card">
+        <p className="complete-text">{post.text}</p>
+      </div>
+
+      <div className="streak-block">
+        <div className="streak-week" aria-hidden>
+          {week.map((d, i) => (
+            <div key={i} className="streak-day" style={{ animationDelay: `${0.6 + i * 0.08}s` }}>
+              <span className="streak-day-label">{d.label}</span>
+              <span className={"streak-day-check" + (d.done ? " done" : "") + (d.isToday ? " today" : "")}>
+                {d.done ? "✓" : null}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <div className="streak-block">
-          <div className="streak-week" aria-hidden>
-            {week.map((d, i) => (
-              <div key={i} className="streak-day" style={{ animationDelay: `${0.6 + i * 0.08}s` }}>
-                <span className="streak-day-label">{d.label}</span>
-                <span className={"streak-day-check" + (d.done ? " done" : "") + (d.isToday ? " today" : "")}>
-                  {d.done ? "✓" : null}
-                </span>
-              </div>
-            ))}
+        <div className="complete-stats">
+          <div className="complete-stat-card">
+            <span className="complete-stat-label font-display">MINUTES</span>
+            <span className="complete-stat-value font-display">{minutesView}</span>
           </div>
-          <p className="streak-headline">
-            <span className="streak-count font-display">{streak}</span>
-            <span className="streak-unit font-display">STREAK</span>
-          </p>
+          <div className="complete-stat-card">
+            <span className="complete-stat-label font-display">STREAK</span>
+            <span className="complete-stat-value font-display">{streakView}</span>
+          </div>
         </div>
       </div>
 
       <div className="complete-actions">
-        <button
-          type="button"
-          className="complete-export-btn font-display"
-          onClick={handleExport}
-          disabled={exporting}
-        >
-          {exporting ? "EXPORTING." : "画像で晒す"}
-        </button>
         <button type="button" className="complete-back-btn" onClick={onBack}>
-          戻る
+          閉じる
         </button>
       </div>
     </section>

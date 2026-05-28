@@ -33,6 +33,7 @@ type Props = {
   analyser: AnalyserNode | null;
   lastPost: Post | null;
   posts: Post[];
+  totalDurationMs?: number;
   limitReached: boolean;
   remainingSessions: number;
   recordingElapsed: number;
@@ -54,6 +55,7 @@ export default function RecordModal({
   analyser,
   lastPost,
   posts,
+  totalDurationMs,
   limitReached,
   remainingSessions,
   recordingElapsed,
@@ -140,7 +142,7 @@ export default function RecordModal({
       </button>
 
       {isComplete && lastPost ? (
-        <CompleteView post={lastPost} posts={posts} onBack={onClose} />
+        <CompleteView post={lastPost} posts={posts} totalDurationMs={totalDurationMs} onBack={onClose} />
       ) : limitReached ? (
         <LimitView />
       ) : (

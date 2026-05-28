@@ -1040,24 +1040,39 @@ button.settings-row:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.7);
   outline-offset: 2px;
 }
-.streak-headline {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  text-align: left;
-  color: #fff;
-  letter-spacing: 0.01em;
+/* STATS（MINUTES / STREAK）— 完了画面はダーク背景なので白罫線で階層を作る（box-shadow 不可） */
+.complete-stats {
+  display: flex;
+  width: 100%;
+  gap: 12px;
   opacity: 0;
   animation: streak-headline-pop 0.5s var(--ease-organic) 1.2s forwards;
 }
-.streak-count {
-  font-family: var(--font-display), 'Unbounded', sans-serif;
+.complete-stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sharp);
+}
+.complete-stat-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.complete-stat-value {
   font-size: 44px;
   font-weight: 900;
-  margin-right: 6px;
-  display: inline-block;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
 }
-.streak-unit { font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 
 .complete-back-btn {
   background: #fff;
@@ -1254,8 +1269,6 @@ button.settings-row:focus-visible {
   40%  { opacity: 1; transform: scale(0.95); }
   100% { opacity: 1; transform: scale(1); }
 }
-
-.streak-count { font-size: var(--text-3xl); letter-spacing: -0.02em; }
 
 /* タグライン用ユーティリティ */
 .app-tagline {
@@ -1721,9 +1734,6 @@ button.settings-row:focus-visible {
 }
 
 /* CompleteView: 画像書き出し + SILENCE */
-.complete-shareable {
-  display: contents;
-}
 .complete-actions {
   display: flex;
   flex-direction: column;
@@ -1732,20 +1742,6 @@ button.settings-row:focus-visible {
   align-items: stretch;
   text-align: left;
 }
-.complete-export-btn {
-  appearance: none;
-  background: var(--ink);
-  color: var(--yuzu-white);
-  border: 0;
-  border-radius: 4px;
-  padding: 14px 18px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  font-size: var(--text-sm);
-  cursor: pointer;
-  text-align: left;
-}
-.complete-export-btn:disabled { opacity: 0.5; cursor: default; }
 /* ===== Login modal ===== */
 .login-modal {
   position: fixed;
