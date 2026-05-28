@@ -3,6 +3,7 @@
 import { MIN_POSTS_FOR_THEMES, MOCK_THEMES, type Theme } from "@/lib/themes";
 import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
+import InsightFallback from "./InsightFallback";
 
 type ThemesResult = { themes: Theme[]; notEnough: boolean };
 
@@ -24,14 +25,10 @@ export default function RecurringThemes({ posts }: { posts: Post[] }) {
     parse: parseThemes,
   });
 
-  if (error) return <p className="reports-empty-body">{error}</p>;
-  if (data === null) return <p className="reports-empty-body" aria-busy="true">解読中</p>;
-  if (data.notEnough) {
-    return <p className="reports-empty-body">もっと話せ、パターンが見えてくる</p>;
-  }
-  if (data.themes.length === 0) {
-    return <p className="reports-empty-body">まだパターンがない</p>;
-  }
+  if (error) return <InsightFallback state="error" message={error} />;
+  if (data === null) return <InsightFallback state="loading" message="解読中" />;
+  if (data.notEnough) return <InsightFallback state="empty" message="もっと話せ、パターンが見えてくる" />;
+  if (data.themes.length === 0) return <InsightFallback state="empty" message="まだパターンがない" />;
 
   // count 降順で並べる + 総和でシェア率算出
   const ranked = [...data.themes].sort((a, b) => b.count - a.count);

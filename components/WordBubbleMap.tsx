@@ -5,6 +5,7 @@ import { hierarchy, pack, type HierarchyCircularNode } from "d3-hierarchy";
 import { extractWordFrequencies } from "@/lib/wordAnalysis";
 import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
+import InsightFallback from "./InsightFallback";
 
 type WordFreq = { word: string; count: number };
 type Datum = { word: string; count: number; value: number };
@@ -50,17 +51,9 @@ export default function WordBubbleMap({ posts }: { posts: Post[] }) {
     return { min: Math.min(...counts), max: Math.max(...counts) };
   }, [nodes]);
 
-  if (error) {
-    return <p className="reports-empty-body">{error}</p>;
-  }
-
-  if (words === null) {
-    return <p className="reports-empty-body" aria-busy="true">解読中</p>;
-  }
-
-  if (words.length === 0) {
-    return <p className="reports-empty-body">まだ声がない</p>;
-  }
+  if (error) return <InsightFallback state="error" message={error} />;
+  if (words === null) return <InsightFallback state="loading" message="解読中" />;
+  if (words.length === 0) return <InsightFallback state="empty" message="まだ声がない" />;
 
   return (
     <svg

@@ -265,11 +265,13 @@ YUZU の世界観・UI で用いる用語の定義表。詳細は [DESIGN.md §1
 | 用語 | 定義 | NG言い換え |
 |---|---|---|
 | LOG | **ユーザー自身が出した**記録の集約面（STATS・RECORDS）。デフォルトタブ。 | 「ME」「マイページ」「PROFILE」「INDEX」（旧称） |
-| INSIGHT | **AI** がユーザーの声を解釈して返す面（SENTIMENT・REPORTS）。 | 「READ」「REPORT」（旧称） |
+| INSIGHT | **AI と集計**がユーザーの声を解釈して返す面（SENTIMENT / WORDS / SIGNAL / PATTERN / REPORTS）。 | 「READ」「REPORT」（旧称） |
+| WORDS | INSIGHT のサブセクション。全投稿の頻出語バブルマップ。「言ったこと」の集計。 | 「キーワード」「タグ」 |
+| SIGNAL | 声を出した瞬間の信号（世界観語）。INSIGHT のサブセクション名としても使用（30日 × 24時間の時間帯ヒートマップ）。 | — |
+| PATTERN | INSIGHT のサブセクション。Claude が抽出した「無意識に繰り返し語っているテーマ」をマインドシェア型ランキングで表示。 | 「テーマ」「トピック」 |
 | RECORD FAB | 録音アクション。タブバー右に常時並ぶ正円ボタン。タップで RecordModal を開く（state を持たない） | 「TALK」（旧タブ名・廃止） |
 | `#NNN` | ユーザーの **identity 兼通し番号**。名前・アイコンの代替。 | 「名前は無い。お前は #020 だ」 |
 | RECORD / RECORDS | 1件の声の記録 / その一覧。 | 「投稿」「日記」「テキスト」 |
-| SIGNAL | 声を出した瞬間の信号。RECORD の前段（世界観語）。 | — |
 | MARK | RECORD に刻印を打つ唯一の能動操作。常時トグル（v2）。 | 「お気に入り」「いいね」「ブックマーク」 |
 | PINNED | MARK 済み RECORD のみのフィルタ。 | 独立タブにしない |
 | COPY | 本文をクリップボードへコピーする **一時機能**。Notion 保存用。 | ⚠️ 将来削除予定。恒久 UI ではない |
@@ -294,7 +296,7 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 
 ### 基本構成
 
-- **2タブ + FAB 構成（順序固定）**：左から `LOG`（**デフォルト**・自分が出した記録）/ `INSIGHT`（AI 解釈：SENTIMENT・REPORTS）。LOG と INSIGHT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。録音は **独立した RECORD FAB**（タブバー右に並ぶ正円ボタン）で起動し、タブの state を持たない。旧「ホーム」「マイページ（ME）」「PROFILE」「TALK タブ（旧 3 タブ中央のマイク）」は廃止。下部のドックは iOS 26 Liquid Glass 風のフローティング pill（タブ）と FAB が横並び。
+- **2タブ + FAB 構成（順序固定）**：左から `LOG`（**デフォルト**・自分が出した記録）/ `INSIGHT`（AI 解釈：SENTIMENT / WORDS / SIGNAL / PATTERN / REPORTS）。LOG と INSIGHT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。録音は **独立した RECORD FAB**（タブバー右に並ぶ正円ボタン）で起動し、タブの state を持たない。旧「ホーム」「マイページ（ME）」「PROFILE」「TALK タブ（旧 3 タブ中央のマイク）」は廃止。下部のドックは iOS 26 Liquid Glass 風のフローティング pill（タブ）と FAB が横並び。
 - **ユーザー identity は通し番号 `#NNN` のみ**。SNS 機能を持たないため、自己を他人に示すアイコン・名前は不要。ニックネーム登録 / 果物絵文字アイコンは v2 で全廃止。
 - **認証必須**（MVP v1 から）：Apple Sign In / Google OAuth / Magic Link（メール OTP）の 3 種。パスワード認証は **作らない**。未ログインユーザーには `/` でオンボーディング（録音 → STT → 「記録する」で LoginModal）を見せ、初投稿はログイン後にコミットされる。
 - **未ログイン STT 上限：1 日 1 回**（cookie ベース・[app/api/transcribe/route.ts](app/api/transcribe/route.ts) 内 `ANON_DAILY_STT_LIMIT`）。2 回目以降は **429 `login_required`** を返し、クライアントは自動的に `LoginModal` を開く。cookie 改竄は可能だが「お試し体験」と「課金保護」のバランスとしては必要十分。厳密化は将来 IP rate limit（Upstash 等）で対応する余地を残す。

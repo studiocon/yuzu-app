@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { buildHeatmap, type HeatmapCell } from "@/lib/heatmap";
 import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
+import InsightFallback from "./InsightFallback";
 
 const computeCells = (posts: Post[]) =>
   buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt })));
@@ -50,9 +51,9 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
     return { maxChars: max, dates: [...dateSet], hasAny: any };
   }, [cells]);
 
-  if (error) return <p className="reports-empty-body">{error}</p>;
-  if (cells === null) return <p className="reports-empty-body" aria-busy="true">解読中</p>;
-  if (!hasAny) return <p className="reports-empty-body">まだ声がない</p>;
+  if (error) return <InsightFallback state="error" message={error} />;
+  if (cells === null) return <InsightFallback state="loading" message="解読中" />;
+  if (!hasAny) return <InsightFallback state="empty" message="まだ声がない" />;
 
   return (
     <div className="time-heatmap">
