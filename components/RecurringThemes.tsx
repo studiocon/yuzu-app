@@ -1,63 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { isMockMode } from "@/lib/mockReports";
 import { MIN_POSTS_FOR_THEMES, MOCK_THEMES, type Theme } from "@/lib/themes";
+import { useInsightData } from "@/lib/useInsightData";
 import type { Post } from "@/lib/types";
 
-type Response = { themes?: Theme[]; notEnough?: boolean; needed?: number };
+type ThemesResult = { themes: Theme[]; notEnough: boolean };
+
+const parseThemes = (r: Record<string, unknown>): ThemesResult => ({
+  themes: Array.isArray(r.themes) ? (r.themes as Theme[]) : [],
+  notEnough: r.notEnough === true,
+});
+
+const computeThemes = (posts: Post[]): ThemesResult =>
+  posts.length < MIN_POSTS_FOR_THEMES
+    ? { themes: [], notEnough: true }
+    : { themes: MOCK_THEMES, notEnough: false };
 
 export default function RecurringThemes({ posts }: { posts: Post[] }) {
-  const [themes, setThemes] = useState<Theme[] | null>(null);
-  const [notEnough, setNotEnough] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isMockMode()) {
-      if (posts.length < MIN_POSTS_FOR_THEMES) {
-        setThemes([]);
-        setNotEnough(true);
-      } else {
-        setThemes(MOCK_THEMES);
-      }
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/insights/themes");
-        if (!res.ok) {
-          if (!cancelled) setError("失敗、話せ");
-          return;
-        }
-        const data = (await res.json()) as Response;
-        if (cancelled) return;
-        if (data.notEnough) {
-          setThemes([]);
-          setNotEnough(true);
-          return;
-        }
-        setThemes(Array.isArray(data.themes) ? data.themes : []);
-      } catch (e) {
-        console.error("RecurringThemes fetch:", e);
-        if (!cancelled) setError("失敗、話せ");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [posts]);
+  const { data, error } = useInsightData<ThemesResult>({
+    endpoint: "/api/insights/themes",
+    posts,
+    compute: computeThemes,
+    parse: parseThemes,
+  });
 
   if (error) return <p className="reports-empty-body">{error}</p>;
-  if (themes === null) return <p className="reports-empty-body" aria-busy="true">解読中</p>;
-  if (notEnough) {
+  if (data === null) return <p className="reports-empty-body" aria-busy="true">解読中</p>;
+  if (data.notEnough) {
     return <p className="reports-empty-body">もっと話せ、パターンが見えてくる</p>;
   }
-  if (themes.length === 0) {
+  if (data.themes.length === 0) {
     return <p className="reports-empty-body">まだパターンがない</p>;
   }
 
   return (
     <ul className="theme-list">
-      {themes.map((t, i) => (
+      {data.themes.map((t, i) => (
         <li
           key={`${t.theme}-${i}`}
           className="theme-card"

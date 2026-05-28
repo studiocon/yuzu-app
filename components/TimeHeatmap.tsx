@@ -27,12 +27,12 @@ function fmtHour(h: number): string {
 }
 
 export default function TimeHeatmap({ posts }: { posts: Post[] }) {
-  const { data: cells, error } = useInsightData<HeatmapCell[]>(
-    "/api/insights/heatmap",
+  const { data: cells, error } = useInsightData<HeatmapCell[]>({
+    endpoint: "/api/insights/heatmap",
     posts,
-    computeCells,
-    "cells",
-  );
+    compute: computeCells,
+    parse: (r) => (Array.isArray(r.cells) ? (r.cells as HeatmapCell[]) : []),
+  });
   const [hover, setHover] = useState<HeatmapCell | null>(null);
 
   const { maxChars, dates, hasAny } = useMemo(() => {

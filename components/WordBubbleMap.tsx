@@ -17,12 +17,12 @@ const PADDING = 6;
 const LABEL_MIN_RADIUS = 18;
 
 export default function WordBubbleMap({ posts }: { posts: Post[] }) {
-  const { data: words, error } = useInsightData<WordFreq[]>(
-    "/api/insights/words",
+  const { data: words, error } = useInsightData<WordFreq[]>({
+    endpoint: "/api/insights/words",
     posts,
-    computeWords,
-    "words",
-  );
+    compute: computeWords,
+    parse: (r) => (Array.isArray(r.words) ? (r.words as WordFreq[]) : []),
+  });
   const [poppedAt, setPoppedAt] = useState<number | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
 
