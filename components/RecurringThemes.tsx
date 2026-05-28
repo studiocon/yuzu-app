@@ -33,21 +33,40 @@ export default function RecurringThemes({ posts }: { posts: Post[] }) {
     return <p className="reports-empty-body">まだパターンがない</p>;
   }
 
+  // count 降順で並べる + 総和でシェア率算出
+  const ranked = [...data.themes].sort((a, b) => b.count - a.count);
+  const total = ranked.reduce((sum, t) => sum + t.count, 0) || 1;
+
   return (
-    <ul className="theme-list">
-      {data.themes.map((t, i) => (
-        <li
-          key={`${t.theme}-${i}`}
-          className="theme-card"
-          style={{ animationDelay: `${i * 100}ms` }}
-        >
-          <header className="theme-card-head">
-            <h4 className="theme-card-title font-display">{t.theme}</h4>
-            <span className="theme-card-count font-display">×{t.count}</span>
-          </header>
-          <p className="theme-card-body">{t.description}</p>
-        </li>
-      ))}
-    </ul>
+    <ol className="theme-list">
+      {ranked.map((t, i) => {
+        const share = t.count / total;
+        const sharePct = Math.round(share * 100);
+        return (
+          <li
+            key={`${t.theme}-${i}`}
+            className={`theme-card${i === 0 ? " theme-card--lead" : ""}`}
+            style={{ animationDelay: `${i * 80}ms` }}
+          >
+            <header className="theme-card-head">
+              <span className="theme-card-rank font-display">#{i + 1}</span>
+              <h4 className="theme-card-title font-display">{t.theme}</h4>
+              <span className="theme-card-share font-display">{sharePct}%</span>
+            </header>
+            <div
+              className="theme-card-bar"
+              role="img"
+              aria-label={`${sharePct} パーセント`}
+            >
+              <div
+                className="theme-card-bar-fill"
+                style={{ width: `${sharePct}%` }}
+              />
+            </div>
+            <p className="theme-card-body">{t.description}</p>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
