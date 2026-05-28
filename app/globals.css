@@ -2362,7 +2362,7 @@ button.settings-row:focus-visible {
 .time-heatmap-grid {
   display: grid;
   grid-template-columns: repeat(30, 10px);
-  grid-template-rows: repeat(24, 10px);
+  grid-template-rows: repeat(6, 10px);
   gap: 2px;
 }
 .time-heatmap-cell {

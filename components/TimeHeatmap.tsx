@@ -9,12 +9,10 @@ import InsightFallback from "./InsightFallback";
 const computeCells = (posts: Post[]) =>
   buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt })));
 
-const DAYS = 30;
-const HOURS = 24;
 const CELL = 10;
 const GAP = 2;
 const STEP = CELL + GAP;
-const HOUR_LABELS = [0, 6, 12, 18, 23];
+const BUCKET_LABELS = [0, 1, 2, 3, 4, 5];
 const DATE_LABEL_EVERY = 7;
 
 function fmtDateLabel(date: string): string {
@@ -58,14 +56,14 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
   return (
     <div className="time-heatmap">
       <div className="time-heatmap-inner">
-        {/* 時間軸ラベル（左） */}
-        {HOUR_LABELS.map((h) => (
+        {/* 時間軸ラベル（左）— 各バケット先頭時刻 00/04/08/12/16/20 */}
+        {BUCKET_LABELS.map((b) => (
           <span
-            key={`hour-${h}`}
+            key={`bucket-${b}`}
             className="time-heatmap-hour-label font-display"
-            style={{ top: h * STEP }}
+            style={{ top: b * STEP }}
           >
-            {fmtHour(h)}
+            {fmtHour(b * 4)}
           </span>
         ))}
 
@@ -80,13 +78,13 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
             const opacity = isEmpty ? 1 : 0.2 + (c.charCount / maxChars) * 0.8;
             return (
               <button
-                key={`${c.date}-${c.hour}`}
+                key={`${c.date}-${c.bucket}`}
                 type="button"
                 className="time-heatmap-cell"
-                aria-label={`${fmtDateLabel(c.date)} ${fmtHour(c.hour)}:00 ${c.charCount} chars`}
+                aria-label={`${fmtDateLabel(c.date)} ${fmtHour(c.bucket * 4)}:00 ${c.charCount} chars`}
                 style={{
                   gridColumn: dateIndex + 1,
-                  gridRow: c.hour + 1,
+                  gridRow: c.bucket + 1,
                   background: isEmpty ? "var(--divider)" : "var(--yuzu-yellow)",
                   opacity,
                 }}
@@ -117,10 +115,10 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
             className="time-heatmap-tooltip font-display"
             style={{
               left: dates.indexOf(hover.date) * STEP + CELL / 2,
-              top: hover.hour * STEP - 6,
+              top: hover.bucket * STEP - 6,
             }}
           >
-            {fmtDateLabel(hover.date)} {fmtHour(hover.hour)}:00 / {hover.charCount} CHARS
+            {fmtDateLabel(hover.date)} {fmtHour(hover.bucket * 4)}:00 / {hover.charCount} CHARS
           </div>
         )}
       </div>

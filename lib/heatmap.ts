@@ -1,6 +1,6 @@
 import { jstDateString, jstHour, DAY_MS } from "./period";
 
-export type HeatmapCell = { date: string; hour: number; charCount: number };
+export type HeatmapCell = { date: string; bucket: number; charCount: number };
 
 export function buildHeatmap(
   posts: { text: string; createdAt: number }[],
@@ -22,15 +22,15 @@ export function buildHeatmap(
     if (p.createdAt < cutoff) continue;
     const date = jstDateString(p.createdAt);
     if (!dateSet.has(date)) continue;
-    const hour = jstHour(p.createdAt);
-    const key = `${date}|${hour}`;
+    const bucket = Math.floor(jstHour(p.createdAt) / 4);
+    const key = `${date}|${bucket}`;
     sums.set(key, (sums.get(key) ?? 0) + (p.text?.length ?? 0));
   }
 
   const cells: HeatmapCell[] = [];
   for (const date of dates) {
-    for (let hour = 0; hour < 24; hour++) {
-      cells.push({ date, hour, charCount: sums.get(`${date}|${hour}`) ?? 0 });
+    for (let bucket = 0; bucket < 6; bucket++) {
+      cells.push({ date, bucket, charCount: sums.get(`${date}|${bucket}`) ?? 0 });
     }
   }
   return cells;
