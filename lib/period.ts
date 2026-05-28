@@ -128,3 +128,9 @@ export function jstDateString(ts: number): string {
   const { y, m, d } = jstParts(ts);
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
+
+// 投稿の createdAt を JST の 0〜23 時で返す
+export function jstHour(ts: number): number {
+  const d = new Date(ts + JST_OFFSET_MS);
+  return d.getUTCHours();
+}

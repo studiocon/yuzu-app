@@ -2374,3 +2374,72 @@ button.settings-row:focus-visible {
     opacity: var(--bubble-opacity, 1);
   }
 }
+
+/* ── SIGNAL 時間帯ヒートマップ ───────────────── */
+.time-heatmap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.time-heatmap-inner {
+  position: relative;
+  padding-left: 26px;
+  padding-bottom: 20px;
+  width: max-content;
+}
+.time-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(30, 10px);
+  grid-template-rows: repeat(24, 10px);
+  gap: 2px;
+}
+.time-heatmap-cell {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.time-heatmap-cell:hover,
+.time-heatmap-cell:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+  transform: scale(1.4);
+  z-index: 1;
+}
+.time-heatmap-hour-label {
+  position: absolute;
+  left: 0;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  line-height: 10px;
+}
+.time-heatmap-date-label {
+  position: absolute;
+  bottom: 0;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  transform: translateX(26px); /* offset to align with grid (padding-left) */
+}
+.time-heatmap-tooltip {
+  position: absolute;
+  background: var(--ink);
+  color: var(--yuzu-white);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+  transform: translate(calc(-50% + 26px), -100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .time-heatmap-cell { transition: none; }
+  .time-heatmap-cell:hover,
+  .time-heatmap-cell:focus-visible { transform: none; }
+}
