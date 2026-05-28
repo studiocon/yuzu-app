@@ -37,6 +37,8 @@ export type PostsApi = {
   setPosts: React.Dispatch<React.SetStateAction<Post[] | null>>;
   totalCount: number | undefined;
   setTotalCount: React.Dispatch<React.SetStateAction<number | undefined>>;
+  totalDurationMs: number | undefined;
+  setTotalDurationMs: React.Dispatch<React.SetStateAction<number | undefined>>;
   serverStreak: number | undefined;
   firstPostAt: number | null | undefined;
   setFirstPostAt: React.Dispatch<React.SetStateAction<number | null | undefined>>;
@@ -55,6 +57,7 @@ export type PostsApi = {
 export function usePostsApi(user: User | null | undefined, initialTodayCount = 0): PostsApi {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+  const [totalDurationMs, setTotalDurationMs] = useState<number | undefined>(undefined);
   const [serverStreak, setServerStreak] = useState<number | undefined>(undefined);
   const [firstPostAt, setFirstPostAt] = useState<number | null | undefined>(undefined);
   const [todayCount, setTodayCount] = useState<number>(initialTodayCount);
@@ -74,6 +77,8 @@ export function usePostsApi(user: User | null | undefined, initialTodayCount = 0
         if (typeof tc === "number") setTodayCount(tc);
         const total = getNumber(data, "totalCount");
         if (typeof total === "number") setTotalCount(total);
+        const totalDur = getNumber(data, "totalDurationMs");
+        if (typeof totalDur === "number") setTotalDurationMs(totalDur);
         const streak = getNumber(data, "streak");
         if (typeof streak === "number") setServerStreak(streak);
         const first = getNumber(data, "firstPostAt");
@@ -123,6 +128,7 @@ export function usePostsApi(user: User | null | undefined, initialTodayCount = 0
   return {
     posts, setPosts,
     totalCount, setTotalCount,
+    totalDurationMs, setTotalDurationMs,
     serverStreak,
     firstPostAt, setFirstPostAt,
     todayCount, setTodayCount,

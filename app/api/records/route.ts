@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
 import { jstDateString } from "@/lib/period";
-import { MAX_DAILY_SESSIONS } from "@/lib/constants";
+import { MAX_DAILY_SESSIONS, MAX_RECORD_MS } from "@/lib/constants";
 
 // ── ページネーション設定 ─────────────────────────────────────
 const DEFAULT_PAGE_SIZE = 100;
@@ -54,8 +54,18 @@ async function fetchStreak(
   return typeof data === "number" ? data : 0;
 }
 
+async function fetchTotalDurationMs(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<number> {
+  // 全件 SUM（supabase/migrations/0006_records_duration.sql）。ページングを跨ぐ集計。
+  const { data } = await supabase.rpc("get_total_duration_ms");
+  const n = typeof data === "number" ? data : Number(data);
+  return Number.isFinite(n) ? n : 0;
+}
+
 interface CreateBody {
   text?: unknown;
+  durationMs?: unknown;
 }
 
 interface RecordRow {
@@ -63,6 +73,7 @@ interface RecordRow {
   user_id: string;
   text: string;
   char_count: number;
+  duration_ms: number | null;
   created_at: string;
   marked: boolean | null;
 }
@@ -93,7 +104,7 @@ export async function GET(request: NextRequest) {
 
   const { data, count, error } = await supabase
     .from("records")
-    .select("id, user_id, text, char_count, created_at, marked", { count: countMode, head: false })
+    .select("id, user_id, text, char_count, duration_ms, created_at, marked", { count: countMode, head: false })
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -109,6 +120,7 @@ export async function GET(request: NextRequest) {
     user_id: row.user_id,
     text: row.text,
     char_count: row.char_count,
+    durationMs: row.duration_ms ?? 0,
     createdAt: new Date(row.created_at).getTime(),
     // newest post has highest index。offset を考慮。
     index: total - offset - i,
@@ -124,10 +136,11 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 集計（1 ページ目のみ）── 並列化
-  const [todayCount, firstPostAt, streak] = await Promise.all([
+  const [todayCount, firstPostAt, streak, totalDurationMs] = await Promise.all([
     countTodayRecords(supabase, user.id),
     fetchFirstPostAt(supabase, user.id),
     fetchStreak(supabase),
+    fetchTotalDurationMs(supabase),
   ]);
 
   return NextResponse.json({
@@ -137,6 +150,7 @@ export async function GET(request: NextRequest) {
     totalCount: total,
     streak,
     firstPostAt,
+    totalDurationMs,
     todayCount,
     maxDaily: MAX_DAILY_SESSIONS,
     resetAt: jstNextMidnightMs(Date.now()),
@@ -162,6 +176,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "text required" }, { status: 400 });
   }
 
+  // 録音時間。不正値は 0、上限は MAX_RECORD_MS で clamp（クライアントを信頼しない）。
+  const durationMs =
+    typeof body.durationMs === "number" && Number.isFinite(body.durationMs) && body.durationMs >= 0
+      ? Math.min(Math.round(body.durationMs), MAX_RECORD_MS)
+      : 0;
+
   // ── 1日上限チェック（サーバ側 = 複数端末で同期する信頼源）──
   const todayBefore = await countTodayRecords(supabase, user.id);
   if (todayBefore >= MAX_DAILY_SESSIONS) {
@@ -178,8 +198,8 @@ export async function POST(request: NextRequest) {
 
   const { data: inserted, error: insertError } = await supabase
     .from("records")
-    .insert({ user_id: user.id, text, char_count: text.length })
-    .select("id, user_id, text, char_count, created_at, marked")
+    .insert({ user_id: user.id, text, char_count: text.length, duration_ms: durationMs })
+    .select("id, user_id, text, char_count, duration_ms, created_at, marked")
     .single();
 
   if (insertError || !inserted) {
@@ -202,6 +222,7 @@ export async function POST(request: NextRequest) {
     user_id: row.user_id,
     text: row.text,
     char_count: row.char_count,
+    durationMs: row.duration_ms ?? 0,
     createdAt: new Date(row.created_at).getTime(),
     index: count ?? 1,
     marked: row.marked ?? false,

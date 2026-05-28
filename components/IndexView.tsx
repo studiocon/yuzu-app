@@ -13,8 +13,8 @@ type Props = {
   totalCount?: number;
   /** サーバ集計の STREAK（JST 固定）。0 なら fallback。 */
   serverStreak?: number;
-  /** サーバから取得した初回投稿日時。null/undef は myPosts[last] から fallback。 */
-  firstPostAt?: number | null;
+  /** サーバ集計の総録音時間（ms）。undefined は myPosts から fallback。 */
+  totalDurationMs?: number;
   /** 初回 fetch 中（posts === null） */
   loading?: boolean;
   /** ページング: まだ取れる行があるか */
@@ -25,16 +25,11 @@ type Props = {
   onToggleMark?: (post: Post, next: boolean) => void;
 };
 
-function formatSinceShort(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
 export default function IndexView({
   myPosts,
   totalCount,
   serverStreak,
-  firstPostAt: firstPostAtProp,
+  totalDurationMs,
   loading,
   hasMore,
   loadingMore,
@@ -48,15 +43,15 @@ export default function IndexView({
   // STATS の信頼源はサーバ集計。undefined のときは client 集計に fallback（mock / 過渡期）。
   const streak = typeof serverStreak === "number" ? serverStreak : computeStreak(myPosts).streak;
   const recordsCount = typeof totalCount === "number" ? totalCount : myPosts.length;
-  const firstPostAt = typeof firstPostAtProp === "number"
-    ? firstPostAtProp
-    : (myPosts.length > 0 ? myPosts[myPosts.length - 1].createdAt : null);
+  // 総録音分数。サーバ集計が信頼源、undefined 時は読み込み済み posts の合計に fallback。
+  const totalMs = typeof totalDurationMs === "number"
+    ? totalDurationMs
+    : myPosts.reduce((sum, p) => sum + (p.durationMs ?? 0), 0);
+  const totalMinutes = Math.floor(totalMs / 60000);
   const filteredPosts = useMemo(() => {
     if (filter === "pinned") return myPosts.filter((p) => p.marked);
     return myPosts;
   }, [myPosts, filter]);
-
-  const sinceLabel = firstPostAt !== null ? formatSinceShort(firstPostAt) : "—";
 
   // ── 無限スクロール: 末尾 sentinel が見えたら onLoadMore 発火 ──
   useEffect(() => {
@@ -83,8 +78,8 @@ export default function IndexView({
           <span className="mypage-stat-value font-display">{recordsCount}</span>
         </div>
         <div className="mypage-stat-card">
-          <span className="mypage-stat-label font-display">SINCE</span>
-          <span className="mypage-stat-value font-display">{sinceLabel}</span>
+          <span className="mypage-stat-label font-display">MINUTES</span>
+          <span className="mypage-stat-value font-display">{totalMinutes}</span>
         </div>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">STREAK</span>

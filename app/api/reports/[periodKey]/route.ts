@@ -64,6 +64,7 @@ async function handle(req: NextRequest, params: { periodKey: string }, scores: R
       user_id: r.user_id,
       text: r.text,
       char_count: r.char_count,
+      durationMs: 0, // レポート生成は text のみ参照。duration 不要。
       createdAt: new Date(r.created_at).getTime(),
       index: i + 1,
       marked: false,

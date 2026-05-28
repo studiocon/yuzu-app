@@ -67,6 +67,7 @@ export default function Home() {
   const [tab, setTab] = useState<MainTab>("index");
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingText, setPendingText] = useState<string | null>(null);
+  const [pendingDurationMs, setPendingDurationMs] = useState<number>(0);
   const [signalCard, setSignalCard] = useState<{ streak: number; totalCount: number } | null>(null);
 
   const supabase = createClient();
@@ -80,7 +81,8 @@ export default function Home() {
   // ── Posts API（fetch / pagination / mark / stats） ──
   const postsApi = usePostsApi(user, getMockTodayCount());
   const {
-    posts, setPosts, totalCount, setTotalCount, serverStreak,
+    posts, setPosts, totalCount, setTotalCount,
+    totalDurationMs, setTotalDurationMs, serverStreak,
     firstPostAt, setFirstPostAt, todayCount, setTodayCount,
     nextOffset, loadingMore, loadMore, toggleMark,
   } = postsApi;
@@ -102,6 +104,7 @@ export default function Home() {
       if (!user) {
         setRecordOpen(false);
         setPendingText(text);
+        setPendingDurationMs(outcome.durationMs);
         return;
       }
 
@@ -112,12 +115,14 @@ export default function Home() {
           user_id: user.id,
           text,
           char_count: text.length,
+          durationMs: outcome.durationMs,
           createdAt: Date.now(),
           index: (posts?.length ?? 0) + 1,
           marked: false,
         };
         setPosts((prev) => [mockPost, ...(prev ?? [])]);
         setLastPost(mockPost);
+        setTotalDurationMs((d) => (d ?? 0) + outcome.durationMs);
         setTodayCount(incrementMockCount());
         recorder.setComplete();
         return;
@@ -128,7 +133,7 @@ export default function Home() {
         const res = await fetch("/api/records", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, durationMs: outcome.durationMs }),
         });
         const data = await safeJson(res);
         if (!res.ok) {
@@ -154,6 +159,7 @@ export default function Home() {
         setPosts((prev) => [newPost, ...(prev ?? [])]);
         setLastPost(newPost);
         setTotalCount((t) => Math.max(t ?? 0, newPost.index));
+        setTotalDurationMs((d) => (d ?? 0) + newPost.durationMs);
         if (!firstPostAt) setFirstPostAt(newPost.createdAt);
         const tc = getNumber(data, "todayCount");
         if (typeof tc === "number") setTodayCount(tc);
@@ -194,17 +200,33 @@ export default function Home() {
   // ── ログイン直後: sessionStorage の pendingText を /api/records に POST ──
   useEffect(() => {
     if (!user || isMockMode()) return;
-    let pending: string | null = null;
-    try { pending = sessionStorage.getItem(PENDING_TEXT_KEY); } catch {}
-    if (!pending) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem(PENDING_TEXT_KEY); } catch {}
+    if (!raw) return;
     try { sessionStorage.removeItem(PENDING_TEXT_KEY); } catch {}
+
+    // 新形式 {text, durationMs}。旧形式（プレーン文字列）は durationMs=0 で後方互換。
+    let pendingText = "";
+    let pendingDur = 0;
+    try {
+      const parsed = JSON.parse(raw);
+      if (isObj(parsed) && typeof parsed.text === "string") {
+        pendingText = parsed.text;
+        pendingDur = typeof parsed.durationMs === "number" ? parsed.durationMs : 0;
+      } else {
+        pendingText = raw;
+      }
+    } catch {
+      pendingText = raw;
+    }
+    if (!pendingText) return;
 
     (async () => {
       try {
         const res = await fetch("/api/records", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: pending }),
+          body: JSON.stringify({ text: pendingText, durationMs: pendingDur }),
         });
         const data = await safeJson(res);
         if (!res.ok) return;
@@ -213,6 +235,7 @@ export default function Home() {
         setPosts([newPost]);
         setLastPost(newPost);
         setTotalCount((t) => Math.max(t ?? 0, newPost.index));
+        setTotalDurationMs((d) => (d ?? 0) + newPost.durationMs);
         if (!firstPostAt) setFirstPostAt(newPost.createdAt);
         const tc = getNumber(data, "todayCount");
         if (typeof tc === "number") setTodayCount(tc);
@@ -246,7 +269,12 @@ export default function Home() {
 
   const handleOnboardingSave = () => {
     if (pendingText) {
-      try { sessionStorage.setItem(PENDING_TEXT_KEY, pendingText); } catch {}
+      try {
+        sessionStorage.setItem(
+          PENDING_TEXT_KEY,
+          JSON.stringify({ text: pendingText, durationMs: pendingDurationMs }),
+        );
+      } catch {}
     }
     setLoginOpen(true);
   };
@@ -292,8 +320,8 @@ export default function Home() {
         <IndexView
           myPosts={myPosts}
           totalCount={totalCount}
+          totalDurationMs={totalDurationMs}
           serverStreak={serverStreak}
-          firstPostAt={firstPostAt}
           loading={posts === null}
           hasMore={nextOffset !== null}
           loadingMore={loadingMore}

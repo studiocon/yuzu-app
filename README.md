@@ -105,6 +105,7 @@ SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順*
 0003_streak.sql                   — get_streak() RPC（JST 連続日数）
 0004_mark.sql                     — records.marked カラム + UPDATE RLS
 0005_records_column_grants.sql    — INSERT/UPDATE のカラム単位 GRANT（編集禁止思想を担保）
+0006_records_duration.sql         — records.duration_ms カラム + INSERT GRANT + get_total_duration_ms() RPC（総録音分数）
 ```
 
 #### マイグレーション適用後の検証

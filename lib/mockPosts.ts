@@ -52,6 +52,7 @@ export function buildMockPosts(
     text: seed.text,
     createdAt: timestampFor(seed, now),
     char_count: seed.text.length,
+    durationMs: seed.text.length * 1200,
     index: i + 1,
     marked: false,
   }));

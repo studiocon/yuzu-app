@@ -25,7 +25,7 @@ async function safeJson(res: Response): Promise<unknown> {
 }
 
 export type TranscribeOutcome =
-  | { kind: "text"; text: string }
+  | { kind: "text"; text: string; durationMs: number }
   | { kind: "login_required" }
   | { kind: "daily_limit" }
   | { kind: "error"; message: string }
@@ -196,7 +196,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     teardownAnalyser();
   };
 
-  const transcribe = async (blob: Blob) => {
+  const transcribe = async (blob: Blob, durationMs: number) => {
     setStatusMsg("DECODING.");
     try {
       const ext = blob.type.includes("mp4") ? "mp4"
@@ -227,7 +227,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
 
       // 成功 — phase は呼び出し側が save 結果に応じて complete / idle を決める
       setStatusMsg(null);
-      await onTranscribedRef.current({ kind: "text", text });
+      await onTranscribedRef.current({ kind: "text", text, durationMs });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "エラーが発生しました";
       setError(msg);
@@ -277,7 +277,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     setPhaseSync("busy");
     const blob = await stopAndGetBlob();
     if (blob.size === 0) { setPhaseSync("idle"); return; }
-    await transcribeRef.current(blob);
+    await transcribeRef.current(blob, held);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
