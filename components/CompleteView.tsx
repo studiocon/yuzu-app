@@ -2,6 +2,7 @@
 
 import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
+import { totalRecordedMinutes } from "@/lib/stats";
 import { useCountUp } from "@/lib/useCountUp";
 
 type Props = {
@@ -15,12 +16,8 @@ type Props = {
 export default function CompleteView({ post, posts, totalDurationMs, onBack }: Props) {
   const { streak, week } = computeStreak(posts);
 
-  // 総録音分数。サーバ集計が信頼源、undefined 時は読み込み済み posts の合計に fallback（IndexView と同ロジック）。
-  const totalMs =
-    typeof totalDurationMs === "number"
-      ? totalDurationMs
-      : posts.reduce((sum, p) => sum + (p.durationMs ?? 0), 0);
-  const totalMinutes = Math.floor(totalMs / 60000);
+  // 累計録音分数（サーバ集計が信頼源、未取得時は posts から fallback）。IndexView と共有。
+  const totalMinutes = totalRecordedMinutes(totalDurationMs, posts);
 
   // 入場アニメ（streak 帯 ≈ 1.2s）の後に着地させる。
   const minutesView = useCountUp(totalMinutes, { delayMs: 1200 });
