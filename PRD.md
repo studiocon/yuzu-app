@@ -444,7 +444,7 @@ index = total_count - position   // 最新（position=0）が最大値
 |---|---|
 | 待機（マイクボタン下） | 長押し。話せ |
 | 録音中 | RECORDING. |
-| 変換中 | DECODING. |
+| 変換中 | CARVING. |
 | 投稿完了 | RECORDED. |
 | タイムライン空 | 最初の一声を / はじまりを、語って / ここから始まる（ランダム） |
 | 投稿数 | ○ RECORDS |

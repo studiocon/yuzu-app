@@ -46,7 +46,7 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
   }, [cells]);
 
   if (error) return <InsightFallback state="error" message={error} />;
-  if (cells === null) return <InsightFallback state="loading" message="解読中" />;
+  if (cells === null) return <InsightFallback state="loading" message="読み取り中" />;
   if (!hasAny) return <InsightFallback state="empty" message="まだ声がない" />;
 
   const cols = dates.length;

@@ -19,7 +19,7 @@ export type { SentimentPoint };
 type Props = { data: SentimentPoint[] };
 
 const POS_COLOR = "#E8A020"; // --yuzu-zest
-const NEG_COLOR = "#1A1A2E"; // --ink
+const NEG_COLOR = "#6F84A6"; // --mood-low
 
 // Mirror 原則: 感情を judging せず、状態を描写する短い言葉だけ返す。
 // 「ポジティブ／ネガティブ」のような評価語は使わない。

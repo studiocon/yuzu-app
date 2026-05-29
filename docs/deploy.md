@@ -106,7 +106,7 @@ main を Vercel にデプロイ後、本番 URL で実機チェック。
 
 - [ ] 中央 TALK FAB タップ → RecordModal が flyout アニメで開く
 - [ ] マイク長押し → `RECORDING.` 表示・波形が動く
-- [ ] 離す → `DECODING.` → CompleteView の `RECORDED.` + `#NNN`
+- [ ] 離す → `CARVING.` → CompleteView の `RECORDED.` + `#NNN`
 - [ ] 「戻る」で閉じる → INDEX 先頭に新 record + `#NNN` がインクリメント
 
 ### 4-3. MARK / COPY

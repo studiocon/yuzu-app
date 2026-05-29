@@ -13,7 +13,7 @@ export default function OnboardingView({ onStart, pendingText, onSave }: Props) 
     return (
       <section className="onboarding-view onboarding-view--preview">
         <div className="onboarding-preview-card">
-          <p className="onboarding-preview-label font-display">DECODED.</p>
+          <p className="onboarding-preview-label font-display">CARVED.</p>
           <p className="onboarding-preview-text">{pendingText}</p>
         </div>
         <div className="onboarding-preview-actions">
@@ -22,7 +22,7 @@ export default function OnboardingView({ onStart, pendingText, onSave }: Props) 
             className="onboarding-save-btn font-display"
             onClick={onSave}
           >
-            記録する
+            刻む
           </button>
           <button
             type="button"

@@ -112,7 +112,7 @@ export default function ReadView({ myPosts }: Props) {
       <section className="mypage-section">
         <h3 className="mypage-section-title font-display">REPORTS</h3>
         {loading && (
-          <div className="reports-index-list" aria-busy="true" aria-label="解読中">
+          <div className="reports-index-list" aria-busy="true" aria-label="読み取り中">
             {[0, 1, 2].map((i) => (
               <div key={i} className="report-card-skeleton">
                 <div className="skeleton-block skeleton-block--kind" />

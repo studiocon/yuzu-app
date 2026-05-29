@@ -61,7 +61,7 @@ export default function SpeakView({
   const status =
     permissionDenied ? "マイクを許可しろ" :
     error ? error :
-    isBusy ? (statusMsg ?? "DECODING.") :
+    isBusy ? (statusMsg ?? "CARVING.") :
     isRecording ? "RECORDING." :
     shortTap ? "短い、話せ" : "";
 

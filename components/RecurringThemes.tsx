@@ -26,7 +26,7 @@ export default function RecurringThemes({ posts }: { posts: Post[] }) {
   });
 
   if (error) return <InsightFallback state="error" message={error} />;
-  if (data === null) return <InsightFallback state="loading" message="解読中" />;
+  if (data === null) return <InsightFallback state="loading" message="読み取り中" />;
   if (data.notEnough) return <InsightFallback state="empty" message="もっと話せ、パターンが見えてくる" />;
   if (data.themes.length === 0) return <InsightFallback state="empty" message="まだパターンがない" />;
 

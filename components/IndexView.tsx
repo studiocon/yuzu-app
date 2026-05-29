@@ -111,7 +111,7 @@ export default function IndexView({
         </div>
         <div className="mypage-post-list">
           {loading ? (
-            <div aria-busy="true" aria-label="解読中" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div aria-busy="true" aria-label="読み取り中" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="record-card-skeleton">
                   <div className="skeleton-row">

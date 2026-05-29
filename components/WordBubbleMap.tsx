@@ -52,7 +52,7 @@ export default function WordBubbleMap({ posts }: { posts: Post[] }) {
   }, [nodes]);
 
   if (error) return <InsightFallback state="error" message={error} />;
-  if (words === null) return <InsightFallback state="loading" message="解読中" />;
+  if (words === null) return <InsightFallback state="loading" message="読み取り中" />;
   if (words.length === 0) return <InsightFallback state="empty" message="まだ声がない" />;
 
   return (

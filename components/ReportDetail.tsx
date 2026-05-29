@@ -56,7 +56,7 @@ export default function ReportDetail({ periodKey }: Props) {
       <PageHeader backHref="/reports" backLabel="REPORTS" />
 
       {status === "loading" && (
-        <div className="report-detail-skeleton" aria-busy="true" aria-label="解読中">
+        <div className="report-detail-skeleton" aria-busy="true" aria-label="読み取り中">
           <div className="skeleton-block skeleton-block--title" />
           <div className="skeleton-block skeleton-block--headline" />
           <div className="skeleton-block skeleton-block--chart" />
