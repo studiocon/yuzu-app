@@ -150,7 +150,8 @@ npm run dev            # ローカル起動（http://localhost:3000）
 ## 既知の注意
 
 - `lib/streak.ts` の `dayKey` は **ローカルタイム**、`lib/period.ts` の `jstDateString` は **JST 固定**。連続日数はユーザー体感（端末ローカル）、レポート集計は JST 固定。混同しない
-- ただしサーバ側ストリークは `supabase.rpc('get_streak')`（`supabase/migrations/0003_streak.sql`、JST 固定）。クライアント `lib/streak.ts` は SILENCE 描画用の補助
+- ただしサーバ側ストリークは `supabase.rpc('get_streak')`（**現行は `supabase/migrations/0007_fix_get_streak.sql`**、JST 固定・引数なし・`auth.uid()` ベース）。クライアント `lib/streak.ts` は SILENCE 描画 + 投稿直後の即時反映用の補助
+- **ストリークは「今日 or 昨日まで続いていれば切れない」が正**（今日まだ未投稿でも維持）。`lib/streak.ts` の `computeStreak` は今日が無投稿なら昨日起点で数え直す。サーバ `get_streak` も同じ挙動。**過去に 0003 の RPC が壊れていた**（連続判定式が `d - rn(desc)` で連続日でもグループが割れる + `get_streak(uid uuid)` を引数なし呼び出しで解決できず常に 0、+ クライアントも今日未投稿で 0）。3層の silent fail が重なって「昨日投稿したのに STREAK 0」を起こしていた。0007 で式を `d + rn(desc)` に修正・引数なし化・`security definer`+`grant` を付与。**0007 は本番 Supabase に手動適用が必要**
 - `app/page.tsx` で `phase` state と `phaseRef` を二重管理しているのは、ポインタイベントハンドラ内で同期的に最新値を読む必要があるため。`setPhaseSync` を必ず通す
 - `app/page.tsx` の `user` state は **三値**（`undefined` = ロード中 / `null` = 未ログイン / `User` = ログイン済み）。`isLoaded = user !== undefined` / `isOnboarding = user === null` の判定を維持
 - Supabase テーブルに新規テーブルを足したら **RLS ポリシーと別に `GRANT` も必要**。「Automatically expose new tables」OFF の場合は `grant select, insert on public.<table> to authenticated;` を手で打つ（過去にこれで `permission denied for table records` を踏んだ）

@@ -34,6 +34,7 @@ type Props = {
   lastPost: Post | null;
   posts: Post[];
   totalDurationMs?: number;
+  serverStreak?: number;
   limitReached: boolean;
   remainingSessions: number;
   recordingElapsed: number;
@@ -56,6 +57,7 @@ export default function RecordModal({
   lastPost,
   posts,
   totalDurationMs,
+  serverStreak,
   limitReached,
   remainingSessions,
   recordingElapsed,
@@ -142,7 +144,7 @@ export default function RecordModal({
       </button>
 
       {isComplete && lastPost ? (
-        <CompleteView post={lastPost} posts={posts} totalDurationMs={totalDurationMs} onBack={onClose} />
+        <CompleteView post={lastPost} posts={posts} totalDurationMs={totalDurationMs} serverStreak={serverStreak} onBack={onClose} />
       ) : limitReached ? (
         <LimitView />
       ) : (

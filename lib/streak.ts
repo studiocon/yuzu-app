@@ -15,6 +15,11 @@ export function computeStreak(posts: Post[], now: Date = new Date()): { streak: 
 
   let streak = 0;
   const cursor = new Date(today);
+  // 今日まだ投稿していなくてもストリークは切れない（昨日まで続いていれば維持）。
+  // サーバ側 get_streak（JST 固定）の「今日 or 昨日まで続けばOK」と挙動を揃える。
+  if (!days.has(dayKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
   while (days.has(dayKey(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);

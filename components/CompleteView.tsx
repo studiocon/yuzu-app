@@ -10,11 +10,17 @@ type Props = {
   posts: Post[];
   /** サーバ集計の総録音時間（ms）。undefined は posts から fallback。 */
   totalDurationMs?: number;
+  /** サーバ集計の STREAK（JST 固定）。LOG タブと信頼源を揃える。 */
+  serverStreak?: number;
   onBack: () => void;
 };
 
-export default function CompleteView({ post, posts, totalDurationMs, onBack }: Props) {
-  const { streak, week } = computeStreak(posts);
+export default function CompleteView({ post, posts, totalDurationMs, serverStreak, onBack }: Props) {
+  // 7日帯はローカル日付で描画（clientStreak も SILENCE 表現と整合）。
+  const { streak: clientStreak, week } = computeStreak(posts);
+  // STREAK 数字はサーバ集計を信頼源にしつつ、投稿直後でサーバ値が未更新のケースを
+  // クライアント計算（今投稿した分を含む）でカバーするため大きい方を採用。
+  const streak = Math.max(serverStreak ?? 0, clientStreak);
 
   // 累計録音分数（サーバ集計が信頼源、未取得時は posts から fallback）。IndexView と共有。
   const totalMinutes = totalRecordedMinutes(totalDurationMs, posts);
