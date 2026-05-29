@@ -346,7 +346,7 @@ export default function Home() {
         </>
       )}
 
-      <IndexDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
+      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} onClose={() => setDetailPost(null)} />
 
       <RecordModal
         open={recordOpen}

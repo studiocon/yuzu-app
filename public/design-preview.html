@@ -219,6 +219,16 @@
   .reports-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
   .reports-head .more { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.16em; color: var(--ink-secondary); text-decoration: none; text-transform: uppercase; }
 
+  /* index detail mock (#番号タップ後) */
+  .index-detail-mock { background: var(--ink); color: var(--yuzu-white); padding: 40px 24px; width: 100%; text-align: left; }
+  .index-detail-mock .num { font-family: var(--font-display); font-weight: 900; font-size: clamp(64px, 18vw, 120px); letter-spacing: -0.04em; line-height: 0.9; color: var(--yuzu-yellow); margin: 0 0 28px; }
+  .index-detail-mock .stats { display: flex; gap: 12px; margin: 0 0 24px; }
+  .index-detail-mock .stat-card { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sharp); }
+  .index-detail-mock .label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+  .index-detail-mock .value { font-family: var(--font-display); font-weight: 900; font-size: 36px; line-height: 1; letter-spacing: -0.02em; color: #fff; font-variant-numeric: tabular-nums; }
+  .index-detail-mock .stamp { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.16em; color: var(--ink-muted); margin: 0 0 20px; }
+  .index-detail-mock .body { font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); line-height: 1.7; color: rgba(255,255,255,0.6); margin: 0; white-space: pre-wrap; }
+
   /* prompts */
   .prompts { display: flex; flex-wrap: wrap; gap: 10px; }
   .prompt-chip { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-sharp); font-family: var(--font-body); font-weight: 700; font-size: var(--text-sm); background: #fff; }
@@ -377,6 +387,7 @@
         <a href="#c-status"><span class="num">05</span><span class="name">STATUS PILL</span><span class="desc">RECORDING. / DECODING. / RECORDED.</span></a>
         <a href="#c-stat"><span class="num">06</span><span class="name">STAT CARD</span><span class="desc">DAY / RECORDS / STREAK の数値表示。</span></a>
         <a href="#c-post"><span class="num">07</span><span class="name">POST CARD</span><span class="desc">投稿の最小単位。連番＋タイムスタンプ。</span></a>
+        <a href="#c-index-detail"><span class="num">07b</span><span class="name">INDEX DETAIL</span><span class="desc">#番号タップ後。事実 STATS（LENGTH / DAY）。</span></a>
         <a href="#c-sentiment"><span class="num">08</span><span class="name">SENTIMENT CHART</span><span class="desc">ポジ＝黄／ネガ＝墨の面グラフ。</span></a>
         <a href="#c-reports"><span class="num">09</span><span class="name">REPORT TAB</span><span class="desc">独立タブ。AI 解釈の週次レポート。</span></a>
         <a href="#c-report-detail"><span class="num">10</span><span class="name">REPORT DETAIL</span><span class="desc">SENTIMENT / TOPICS / SURFACE / DEPTH / ADVICE。</span></a>
@@ -493,6 +504,22 @@
             </div>
           </div>
           <p class="note">v2: アイコン・名前なし（identity は <code>#NNN</code> のみ）。右端に低主張の MARK / COPY のみ。COPY は <strong>Notion 移行期間限定の一時機能</strong>。</p>
+        </div>
+
+        <div class="comp" id="c-index-detail" style="grid-column: 1 / -1">
+          <h4>INDEX DETAIL (v2)</h4>
+          <div class="stage" style="padding:0;align-items:stretch">
+            <div class="index-detail-mock">
+              <p class="num">#042</p>
+              <div class="stats">
+                <div class="stat-card"><span class="label">LENGTH</span><span class="value">1:24</span></div>
+                <div class="stat-card"><span class="label">DAY</span><span class="value">14</span></div>
+              </div>
+              <p class="stamp">2026.05.29 (木) 23:11</p>
+              <p class="body">今日はずっと機嫌が良かった。理由はわからない。</p>
+            </div>
+          </div>
+          <p class="note">#番号タップ後の詳細。主役は <strong>その1件の事実</strong>（<code>LENGTH</code>＝録音時間 / <code>DAY</code>＝登録から何日目）。本文は再読用の二次情報に格下げ。シェア導線は持たない（最新 STREAK の SIGNAL カードに委ねる）。<code>--ink</code> 背景・白文字・罫線のみで階層化（box-shadow なし）。</p>
         </div>
 
         <div class="comp" id="c-sentiment" style="grid-column: 1 / -1">

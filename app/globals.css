@@ -1687,28 +1687,60 @@ button.settings-row:focus-visible {
 }
 .index-detail-num {
   font-weight: 900;
-  font-size: clamp(96px, 28vw, 200px);
+  font-size: clamp(64px, 18vw, 120px);
   letter-spacing: -0.04em;
   line-height: 0.9;
   color: var(--yuzu-yellow);
-  margin: 0 0 32px;
+  margin: 0 0 28px;
 }
-.index-detail-text {
-  font-family: var(--font-body);
+/* その1件の RECORD の事実 STATS。CompleteView の .complete-stat-* と同じダーク表現。 */
+.index-detail-stats {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.index-detail-stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sharp);
+}
+.index-detail-stat-label {
+  font-size: var(--text-xs);
   font-weight: 700;
-  font-size: var(--text-xl);
-  line-height: 1.55;
-  color: var(--yuzu-white);
-  margin: 0 0 40px;
-  white-space: pre-wrap;
-  word-break: break-word;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.index-detail-stat-value {
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
 }
 .index-detail-stamp {
   font-weight: 700;
   font-size: var(--text-xs);
   letter-spacing: 0.16em;
   color: var(--ink-muted);
+  margin: 0 0 20px;
+}
+/* 本文は再読用の二次情報。主役（#index・事実 STATS）から一段落とす。 */
+.index-detail-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .post-index--btn {
   appearance: none;
