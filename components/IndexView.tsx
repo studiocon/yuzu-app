@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import RecordCard from "./RecordCard";
 import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
+import { totalRecordedMinutes } from "@/lib/stats";
 
 type Filter = "all" | "pinned";
 
@@ -43,11 +44,8 @@ export default function IndexView({
   // STATS の信頼源はサーバ集計。undefined のときは client 集計に fallback（mock / 過渡期）。
   const streak = typeof serverStreak === "number" ? serverStreak : computeStreak(myPosts).streak;
   const recordsCount = typeof totalCount === "number" ? totalCount : myPosts.length;
-  // 総録音分数。サーバ集計が信頼源、undefined 時は読み込み済み posts の合計に fallback。
-  const totalMs = typeof totalDurationMs === "number"
-    ? totalDurationMs
-    : myPosts.reduce((sum, p) => sum + (p.durationMs ?? 0), 0);
-  const totalMinutes = Math.floor(totalMs / 60000);
+  // 総録音分数（サーバ集計が信頼源、未取得時は posts から fallback）。CompleteView と共有。
+  const totalMinutes = totalRecordedMinutes(totalDurationMs, myPosts);
   const filteredPosts = useMemo(() => {
     if (filter === "pinned") return myPosts.filter((p) => p.marked);
     return myPosts;
