@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { WEEKDAY_JA } from "@/lib/streak";
+import { formatDuration, dayNumberSince } from "@/lib/stats";
 
 type AnimState = "opening" | "open" | "closing";
 
@@ -12,16 +14,19 @@ const CLOSE_MS = 220;
 
 type Props = {
   post: Post | null;
+  /** 最初の投稿時刻。DAY（登録から何日目か）の算出に使う。未取得なら DAY は出さない。 */
+  firstPostAt?: number | null;
   onClose: () => void;
 };
 
 const formatStamp = (ts: number): string => {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const wd = WEEKDAY_JA[d.getDay()];
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} (${wd}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-export default function IndexDetailModal({ post, onClose }: Props) {
+export default function IndexDetailModal({ post, firstPostAt, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("opening");
 
@@ -85,6 +90,13 @@ export default function IndexDetailModal({ post, onClose }: Props) {
 
   if (!mounted || !post) return null;
 
+  // その1件の RECORD の「事実」だけを刻む。算出不能な項目はカードごと出さない。
+  const lengthLabel = post.durationMs > 0 ? formatDuration(post.durationMs) : null;
+  const dayNumber =
+    typeof firstPostAt === "number" ? dayNumberSince(post.createdAt, firstPostAt) : 0;
+  const dayLabel = dayNumber > 0 ? String(dayNumber) : null;
+  const hasStats = lengthLabel !== null || dayLabel !== null;
+
   return (
     <div
       className="index-detail-modal"
@@ -104,8 +116,26 @@ export default function IndexDetailModal({ post, onClose }: Props) {
 
       <div className="index-detail-body">
         <p className="index-detail-num font-display">#{post.index}</p>
-        <p className="index-detail-text">{post.text}</p>
+
+        {hasStats && (
+          <div className="index-detail-stats">
+            {lengthLabel !== null && (
+              <div className="index-detail-stat-card">
+                <span className="index-detail-stat-label font-display">LENGTH</span>
+                <span className="index-detail-stat-value font-display">{lengthLabel}</span>
+              </div>
+            )}
+            {dayLabel !== null && (
+              <div className="index-detail-stat-card">
+                <span className="index-detail-stat-label font-display">DAY</span>
+                <span className="index-detail-stat-value font-display">{dayLabel}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="index-detail-stamp font-display">{formatStamp(post.createdAt)}</p>
+        <p className="index-detail-text">{post.text}</p>
       </div>
     </div>
   );
