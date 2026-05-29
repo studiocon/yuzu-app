@@ -361,6 +361,7 @@ export default function Home() {
         lastPost={lastPost}
         posts={myPosts}
         totalDurationMs={totalDurationMs}
+        serverStreak={serverStreak}
         limitReached={limitReached}
         remainingSessions={remainingSessions}
         recordingElapsed={recorder.recordingElapsed}
