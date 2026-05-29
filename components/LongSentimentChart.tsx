@@ -31,7 +31,7 @@ export default function LongSentimentChart({ posts, scores }: Props) {
   return (
     <section className="mypage-section">
       <header className="long-sentiment-header">
-        <h3 className="mypage-section-title font-display">SENTIMENT</h3>
+        <h3 className="mypage-section-title font-display">EMOTION</h3>
         <div className="section-filter" role="tablist" aria-label="期間切替">
           <button
             type="button"

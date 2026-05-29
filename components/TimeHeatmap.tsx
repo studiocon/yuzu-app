@@ -9,10 +9,6 @@ import InsightFallback from "./InsightFallback";
 const computeCells = (posts: Post[]) =>
   buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt })));
 
-const CELL = 10;
-const GAP = 2;
-const STEP = CELL + GAP;
-const BUCKET_LABELS = [0, 1, 2, 3, 4, 5];
 const DATE_LABEL_EVERY = 7;
 
 function fmtDateLabel(date: string): string {
@@ -53,20 +49,14 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
   if (cells === null) return <InsightFallback state="loading" message="解読中" />;
   if (!hasAny) return <InsightFallback state="empty" message="まだ声がない" />;
 
+  const cols = dates.length;
+
   return (
     <div className="time-heatmap">
-      <div className="time-heatmap-inner">
-        {/* 時間軸ラベル（左）— 各バケット先頭時刻 00/04/08/12/16/20 */}
-        {BUCKET_LABELS.map((b) => (
-          <span
-            key={`bucket-${b}`}
-            className="time-heatmap-hour-label font-display"
-            style={{ top: b * STEP }}
-          >
-            {fmtHour(b * 4)}
-          </span>
-        ))}
-
+      <div
+        className="time-heatmap-inner"
+        style={{ ["--heatmap-cols" as string]: cols }}
+      >
         {/* セルグリッド */}
         <div
           className="time-heatmap-grid"
@@ -102,7 +92,7 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
             <span
               key={`date-${date}`}
               className="time-heatmap-date-label font-display"
-              style={{ left: i * STEP }}
+              style={{ left: `calc(${i} / ${cols} * 100%)` }}
             >
               {fmtDateLabel(date)}
             </span>
@@ -114,8 +104,8 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
           <div
             className="time-heatmap-tooltip font-display"
             style={{
-              left: dates.indexOf(hover.date) * STEP + CELL / 2,
-              top: hover.bucket * STEP - 6,
+              left: `calc(${dates.indexOf(hover.date) + 0.5} / ${cols} * 100%)`,
+              top: `calc(${hover.bucket} / 6 * 100% - 6px)`,
             }}
           >
             {fmtDateLabel(hover.date)} {fmtHour(hover.bucket * 4)}:00 / {hover.charCount} CHARS

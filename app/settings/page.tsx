@@ -5,7 +5,9 @@ import { CaretRight, SignOut } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/client";
 
-const VERSION = "0.1.0";
+const MAJOR_MINOR = "0.1";
+const BUILD = process.env.NEXT_PUBLIC_BUILD_NUMBER ?? "0";
+const VERSION = `${MAJOR_MINOR}.${BUILD}`;
 
 export default function SettingsPage() {
   const [email, setEmail] = useState<string | null>(null);

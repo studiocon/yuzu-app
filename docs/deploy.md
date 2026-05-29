@@ -98,7 +98,7 @@ main を Vercel にデプロイ後、本番 URL で実機チェック。
 
 ### 4-1. INDEX 表示
 
-- [ ] ログイン → `#NNN` ヘッダー / STATS (DAY / RECORDS / STREAK) / SENTIMENT が表示
+- [ ] ログイン → `#NNN` ヘッダー / STATS (DAY / RECORDS / STREAK) / EMOTION が表示
 - [ ] スクロールして RECORD カードが順に出る
 - [ ] 100 件以上ある場合: 末尾までスクロールで追加読み込み (`LOADING.` フラッシュ → 続きが出る)
 

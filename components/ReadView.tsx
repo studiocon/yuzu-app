@@ -95,13 +95,13 @@ export default function ReadView({ myPosts }: Props) {
       <LongSentimentChart posts={myPosts} scores={scores} />
 
       <section className="mypage-section">
-        <h3 className="mypage-section-title font-display">WORDS</h3>
-        <WordBubbleMap posts={myPosts} />
+        <h3 className="mypage-section-title font-display">SIGNAL</h3>
+        <TimeHeatmap posts={myPosts} />
       </section>
 
       <section className="mypage-section">
-        <h3 className="mypage-section-title font-display">SIGNAL</h3>
-        <TimeHeatmap posts={myPosts} />
+        <h3 className="mypage-section-title font-display">WORDS</h3>
+        <WordBubbleMap posts={myPosts} />
       </section>
 
       <section className="mypage-section">

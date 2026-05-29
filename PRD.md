@@ -265,7 +265,7 @@ YUZU の世界観・UI で用いる用語の定義表。詳細は [DESIGN.md §1
 | 用語 | 定義 | NG言い換え |
 |---|---|---|
 | LOG | **ユーザー自身が出した**記録の集約面（STATS・RECORDS）。デフォルトタブ。 | 「ME」「マイページ」「PROFILE」「INDEX」（旧称） |
-| INSIGHT | **AI と集計**がユーザーの声を解釈して返す面（SENTIMENT / WORDS / SIGNAL / PATTERN / REPORTS）。 | 「READ」「REPORT」（旧称） |
+| INSIGHT | **AI と集計**がユーザーの声を解釈して返す面（EMOTION / SIGNAL / WORDS / PATTERN / REPORTS）。 | 「READ」「REPORT」（旧称） |
 | WORDS | INSIGHT のサブセクション。全投稿の頻出語バブルマップ。「言ったこと」の集計。 | 「キーワード」「タグ」 |
 | SIGNAL | 声を出した瞬間の信号（世界観語）。INSIGHT のサブセクション名としても使用（30日 × 24時間の時間帯ヒートマップ）。 | — |
 | PATTERN | INSIGHT のサブセクション。Claude が抽出した「無意識に繰り返し語っているテーマ」をマインドシェア型ランキングで表示。 | 「テーマ」「トピック」 |
@@ -276,7 +276,7 @@ YUZU の世界観・UI で用いる用語の定義表。詳細は [DESIGN.md §1
 | PINNED | MARK 済み RECORD のみのフィルタ。 | 独立タブにしない |
 | COPY | 本文をクリップボードへコピーする **一時機能**。Notion 保存用。 | ⚠️ 将来削除予定。恒久 UI ではない |
 | STATS / DAY / RECORDS / STREAK | INDEX 上部の3スタッツ。 | 「DAYS. NO SKIP.」は使わない |
-| SENTIMENT | 感情推移の折れ線チャート。 | 「気づき」「自分を知ろう」 |
+| EMOTION | 感情推移の折れ線チャート。旧称「SENTIMENT」。 | 「気づき」「自分を知ろう」 |
 
 **v2 で廃止**: `PROFILE`（INDEX セクション）、ニックネーム / 果物絵文字 / `AvatarMark`。identity は `#NNN` のみに統一。
 
@@ -296,7 +296,7 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 
 ### 基本構成
 
-- **2タブ + FAB 構成（順序固定）**：左から `LOG`（**デフォルト**・自分が出した記録）/ `INSIGHT`（AI 解釈：SENTIMENT / WORDS / SIGNAL / PATTERN / REPORTS）。LOG と INSIGHT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。録音は **独立した RECORD FAB**（タブバー右に並ぶ正円ボタン）で起動し、タブの state を持たない。旧「ホーム」「マイページ（ME）」「PROFILE」「TALK タブ（旧 3 タブ中央のマイク）」は廃止。下部のドックは iOS 26 Liquid Glass 風のフローティング pill（タブ）と FAB が横並び。
+- **2タブ + FAB 構成（順序固定）**：左から `LOG`（**デフォルト**・自分が出した記録）/ `INSIGHT`（AI 解釈：EMOTION / SIGNAL / WORDS / PATTERN / REPORTS）。LOG と INSIGHT は **情報の出どころが違う**ため分離（バランス目的の追加ではない）。録音は **独立した RECORD FAB**（タブバー右に並ぶ正円ボタン）で起動し、タブの state を持たない。旧「ホーム」「マイページ（ME）」「PROFILE」「TALK タブ（旧 3 タブ中央のマイク）」は廃止。下部のドックは iOS 26 Liquid Glass 風のフローティング pill（タブ）と FAB が横並び。
 - **ユーザー identity は通し番号 `#NNN` のみ**。SNS 機能を持たないため、自己を他人に示すアイコン・名前は不要。ニックネーム登録 / 果物絵文字アイコンは v2 で全廃止。
 - **認証必須**（MVP v1 から）：Apple Sign In / Google OAuth / Magic Link（メール OTP）の 3 種。パスワード認証は **作らない**。未ログインユーザーには `/` でオンボーディング（録音 → STT → 「記録する」で LoginModal）を見せ、初投稿はログイン後にコミットされる。
 - **未ログイン STT 上限：1 日 1 回**（cookie ベース・[app/api/transcribe/route.ts](app/api/transcribe/route.ts) 内 `ANON_DAILY_STT_LIMIT`）。2 回目以降は **429 `login_required`** を返し、クライアントは自動的に `LoginModal` を開く。cookie 改竄は可能だが「お試し体験」と「課金保護」のバランスとしては必要十分。厳密化は将来 IP rate limit（Upstash 等）で対応する余地を残す。
@@ -327,7 +327,7 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 
 LOG とは情報の出どころが違うため別タブ。ヘッダー左上は **`INSIGHT.`**。上から「短期 → 長期」で 4 ブロックを縦に積む。
 
-- **SENTIMENT** — Claude API のセンチメントスコアを折れ線グラフで表示（[components/LongSentimentChart.tsx](components/LongSentimentChart.tsx)）
+- **EMOTION** — Claude API のセンチメントスコアを折れ線グラフで表示（[components/LongSentimentChart.tsx](components/LongSentimentChart.tsx)）
 - **WORDS** — 全投稿から頻出語 20 個を抽出してバブルマップ化（[components/WordBubbleMap.tsx](components/WordBubbleMap.tsx)）。形態素解析は TinySegmenter、配置は d3-hierarchy の pack。タップで弾性バウンス（自バブル + 隣接バブルが距離 delay で連動）。「自分がこんな言葉ばっか使ってたのか」という気づきを与える
 - **SIGNAL** — 過去 30 日 × 24 時間 = 720 セルの時間帯ヒートマップ（[components/TimeHeatmap.tsx](components/TimeHeatmap.tsx)）。各セルはその時間帯の投稿文字数合計に応じて opacity 0.2〜1.0 で濃淡。ホバー/フォーカスで `MM/DD HH:00 / N CHARS` tooltip。「俺、夜11時に吐き出しがち」のような自分のリズム発見が狙い
 - **PATTERN** — Claude が全投稿を読んで「無意識に繰り返し語っているテーマ」を最大 5 つ抽出・**マインドシェア型ランキング** で表示（[components/RecurringThemes.tsx](components/RecurringThemes.tsx)）。各テーマが「あなたの声のうち何%を占めるか」を黄色の横バーで可視化。バブルマップが「生の単語」なら PATTERN は「意味の塊」。WORDS は浅い・即時、PATTERN は深い・じわじわ

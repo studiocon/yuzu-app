@@ -4,7 +4,7 @@ export type HeatmapCell = { date: string; bucket: number; charCount: number };
 
 export function buildHeatmap(
   posts: { text: string; createdAt: number }[],
-  days = 30,
+  days = 42,
   now: number = Date.now(),
 ): HeatmapCell[] {
   // 過去 days 日分の date を JST で列挙（古い → 新しい）

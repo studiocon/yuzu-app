@@ -95,7 +95,7 @@ export default function ReportDetail({ periodKey }: Props) {
           </header>
 
           <section className="report-detail-block">
-            <h2 className="report-detail-h font-display">SENTIMENT</h2>
+            <h2 className="report-detail-h font-display">EMOTION</h2>
             <div className="mypage-chart-card">
               <SentimentChart data={report.payload.sentimentSeries} />
             </div>

@@ -14,6 +14,7 @@
   --surface-border:   #E8E0C8;  /* ボーダー */
   --surface-hover:    #FFF5CC;  /* ホバー */
   --divider:          #EDEAE0;  /* リスト・カード区切りの最弱罫線 */
+  --icon-bg:          rgba(26, 26, 46, 0.06); /* iconbtn 常時ディスク */
 
   /* Easing */
   --ease-organic: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1322,9 +1323,9 @@ button.settings-row:focus-visible {
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 4px;
+  border-radius: 9999px;
   border: 1px solid transparent;
-  background: transparent;
+  background: var(--icon-bg);
   cursor: pointer;
   transition: transform 0.12s var(--ease-soft), background 0.15s var(--ease-soft), color 0.15s var(--ease-soft), border-color 0.15s var(--ease-soft);
   -webkit-tap-highlight-color: transparent;
@@ -1340,9 +1341,9 @@ button.settings-row:focus-visible {
 .iconbtn--secondary:hover { background: var(--ink); color: var(--yuzu-white); }
 .iconbtn--accent { background: var(--yuzu-yellow); color: var(--ink); border-color: var(--yuzu-yellow); }
 .iconbtn--accent:hover { background: var(--yuzu-zest); border-color: var(--yuzu-zest); }
-.iconbtn--ghost { color: var(--ink-secondary); }
+.iconbtn--ghost { color: var(--ink-secondary); background: var(--icon-bg); }
 .iconbtn--ghost:hover { background: var(--surface-hover); color: var(--ink); }
-.iconbtn--round { border-radius: 9999px; }
+.iconbtn--round { border-radius: 9999px; } /* v3 で base が常時 round になり no-op。後方互換のため残置 */
 .iconbtn--lg { width: 56px; height: 56px; }
 .iconbtn--lg svg { width: 24px; height: 24px; }
 
@@ -2378,24 +2379,22 @@ button.settings-row:focus-visible {
 
 /* ── SIGNAL 時間帯ヒートマップ ───────────────── */
 .time-heatmap {
-  overflow-x: auto;
-  overflow-y: hidden;
+  width: 100%;
 }
 .time-heatmap-inner {
   position: relative;
-  padding-left: 26px;
   padding-bottom: 20px;
-  width: max-content;
+  width: 100%;
 }
 .time-heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(30, 10px);
-  grid-template-rows: repeat(6, 10px);
+  grid-template-columns: repeat(var(--heatmap-cols, 42), minmax(0, 1fr));
   gap: 2px;
+  width: 100%;
 }
 .time-heatmap-cell {
-  width: 10px;
-  height: 10px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border: 0;
   padding: 0;
   margin: 0;
@@ -2410,21 +2409,12 @@ button.settings-row:focus-visible {
   transform: scale(1.4);
   z-index: 1;
 }
-.time-heatmap-hour-label {
-  position: absolute;
-  left: 0;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
-  line-height: 10px;
-}
 .time-heatmap-date-label {
   position: absolute;
   bottom: 0;
   font-size: 9px;
   letter-spacing: 0.08em;
   color: var(--ink-muted);
-  transform: translateX(26px); /* offset to align with grid (padding-left) */
 }
 .time-heatmap-tooltip {
   position: absolute;
@@ -2437,7 +2427,7 @@ button.settings-row:focus-visible {
   pointer-events: none;
   white-space: nowrap;
   z-index: 2;
-  transform: translate(calc(-50% + 26px), -100%);
+  transform: translate(-50%, -100%);
 }
 @media (prefers-reduced-motion: reduce) {
   .time-heatmap-cell { transition: none; }
