@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { postSlack } from "@/lib/slack";
+import {
+  INQUIRY_SUBJECT_MAX,
+  INQUIRY_BODY_MAX,
+  INQUIRY_RATE_WINDOW_MS,
+  INQUIRY_RATE_MAX,
+  isLooselyValidEmail,
+} from "@/lib/inquiries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-// 入力上限（migration の CHECK 制約と一致させる）
-const SUBJECT_MAX = 200;
-const BODY_MAX = 4000;
-
-// レート制限：直近 1 時間に同一 user_id (or IP) で N 件まで
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const RATE_LIMIT_MAX = 5;
 
 interface CreateBody {
   subject?: unknown;
@@ -19,41 +19,42 @@ interface CreateBody {
   email?: unknown;
 }
 
-function clientIp(req: NextRequest): string | null {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]?.trim() ?? null;
-  const real = req.headers.get("x-real-ip");
-  return real ?? null;
-}
-
-async function notifySlack(payload: {
+function buildSlackText(p: {
   id: string;
   subject: string;
   body: string;
   email: string | null;
   userId: string | null;
-}): Promise<void> {
-  const url = process.env.SLACK_WEBHOOK_URL;
-  if (!url) return; // 未設定なら通知スキップ（dev 環境想定）
-  const text =
+}): string {
+  const bodyPreview =
+    p.body.slice(0, 1000) + (p.body.length > 1000 ? "\n...(truncated)" : "");
+  return (
     `<!here> :lemon: *YUZU からの問い合わせ*\n` +
-    `*Subject*: ${payload.subject}\n` +
-    `*From*: ${payload.email ?? "(no email)"} / user_id: ${payload.userId ?? "(anon)"}\n` +
-    `*ID*: \`${payload.id}\`\n` +
+    `*Subject*: ${p.subject}\n` +
+    `*From*: ${p.email ?? "(no email)"} / user_id: ${p.userId ?? "(anon)"}\n` +
+    `*ID*: \`${p.id}\`\n` +
     "```\n" +
-    payload.body.slice(0, 1000) +
-    (payload.body.length > 1000 ? "\n...(truncated)" : "") +
-    "\n```";
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-  } catch (e) {
-    // Slack 失敗で保存自体は壊さない。ログだけ残す（silent でなく明示的にログ）。
-    console.error("Slack webhook failed:", e);
-  }
+    bodyPreview +
+    "\n```"
+  );
+}
+
+// 直近 INQUIRY_RATE_WINDOW_MS 内の件数を user_id か email で数える。
+// IP のみのケースはテーブルに列がないので未対応（abuse 完全阻止は Vercel WAF 等の外側で）。
+async function countRecent(
+  admin: ReturnType<typeof createAdminClient>,
+  key: { userId?: string | null; email?: string | null },
+): Promise<number> {
+  if (!key.userId && !key.email) return 0;
+  const since = new Date(Date.now() - INQUIRY_RATE_WINDOW_MS).toISOString();
+  let q = admin
+    .from("inquiries")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", since);
+  if (key.userId) q = q.eq("user_id", key.userId);
+  else if (key.email) q = q.eq("email", key.email);
+  const { count } = await q;
+  return count ?? 0;
 }
 
 export async function POST(request: NextRequest) {
@@ -71,46 +72,30 @@ export async function POST(request: NextRequest) {
   const subject = typeof payload.subject === "string" ? payload.subject.trim() : "";
   const body = typeof payload.body === "string" ? payload.body.trim() : "";
   const emailRaw = typeof payload.email === "string" ? payload.email.trim() : "";
-  // 簡易 email 形式チェック（厳密でなくて良い・最終確認は kyota が目視）
-  const email = emailRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw) ? emailRaw : null;
+  const email = emailRaw && isLooselyValidEmail(emailRaw) ? emailRaw : null;
 
   if (!subject || !body) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
-  if (subject.length > SUBJECT_MAX || body.length > BODY_MAX) {
+  if (subject.length > INQUIRY_SUBJECT_MAX || body.length > INQUIRY_BODY_MAX) {
     return NextResponse.json({ error: "too_long" }, { status: 400 });
   }
 
-  // ── レート制限（service_role で全件参照、user_id / email で過去 1h を数える）──
   const admin = createAdminClient();
-  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-  const rateKey = user?.id ?? email ?? clientIp(request);
-  if (rateKey) {
-    let query = admin
-      .from("inquiries")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since);
-    if (user?.id) {
-      query = query.eq("user_id", user.id);
-    } else if (email) {
-      query = query.eq("email", email);
-    }
-    // IP のみのケースはテーブルに列がないのでスキップ（abuse 完全阻止は別途 Vercel WAF 等）
-    if (user?.id || email) {
-      const { count } = await query;
-      if ((count ?? 0) >= RATE_LIMIT_MAX) {
-        return NextResponse.json(
-          { error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS },
-          { status: 429 },
-        );
-      }
-    }
+
+  // ── レート制限 ──
+  const recent = await countRecent(admin, { userId: user?.id, email });
+  if (recent >= INQUIRY_RATE_MAX) {
+    return NextResponse.json(
+      { error: "rate_limited", retryAfterMs: INQUIRY_RATE_WINDOW_MS },
+      { status: 429 },
+    );
   }
 
   // ── 保存 ──
   // 注意：anon ロールは INSERT 列レベル grant のみで table SELECT 権限がないため、
   // `.insert().select()` の chained SELECT が permission denied で落ちる。
-  // ここは RLS バイパスして admin で書き込み、user_id はサーバ側で getUser() の結果から付ける。
+  // ここは admin（service_role）で書き込み、user_id はサーバ側 getUser() の結果から付ける。
   const { data: inserted, error: insertError } = await admin
     .from("inquiries")
     .insert({
@@ -131,13 +116,15 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Slack 通知（失敗しても 201 を返す）──
-  await notifySlack({
-    id: inserted.id as string,
-    subject,
-    body,
-    email: email ?? user?.email ?? null,
-    userId: user?.id ?? null,
-  });
+  await postSlack(
+    buildSlackText({
+      id: inserted.id as string,
+      subject,
+      body,
+      email: email ?? user?.email ?? null,
+      userId: user?.id ?? null,
+    }),
+  );
 
   return NextResponse.json({ id: inserted.id, ok: true }, { status: 201 });
 }

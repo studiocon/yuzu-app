@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { INQUIRY_SUBJECT_MAX, INQUIRY_BODY_MAX } from "@/lib/inquiries";
 
 type AnimState = "opening" | "open" | "closing";
 type Step = "input" | "sent";
@@ -15,8 +16,6 @@ type Props = {
 
 const OPEN_MS = 220;
 const CLOSE_MS = 220;
-const SUBJECT_MAX = 200;
-const BODY_MAX = 4000;
 
 export default function ContactModal({ open, onClose, defaultEmail }: Props) {
   const [mounted, setMounted] = useState(false);
@@ -54,8 +53,8 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
   const submittable =
     subject.trim().length > 0 &&
     body.trim().length > 0 &&
-    subject.trim().length <= SUBJECT_MAX &&
-    body.trim().length <= BODY_MAX;
+    subject.trim().length <= INQUIRY_SUBJECT_MAX &&
+    body.trim().length <= INQUIRY_BODY_MAX;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +138,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
                   placeholder="例: ◯◯がうまく動かない"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  maxLength={SUBJECT_MAX}
+                  maxLength={INQUIRY_SUBJECT_MAX}
                   autoFocus
                   disabled={loading}
                   required
@@ -156,7 +155,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
                   placeholder="気づいたこと、こうだったらいいのに、を自由に。"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  maxLength={BODY_MAX}
+                  maxLength={INQUIRY_BODY_MAX}
                   rows={6}
                   disabled={loading}
                   required
