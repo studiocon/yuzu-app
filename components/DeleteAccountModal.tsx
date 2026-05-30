@@ -19,6 +19,7 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
   const [animState, setAnimState] = useState<AnimState>("opening");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmText, setConfirmText] = useState("");
 
   useBodyScrollLock(open);
 
@@ -27,6 +28,7 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
       setMounted(true);
       setDeleting(false);
       setError(null);
+      setConfirmText("");
       setAnimState("opening");
       const t = setTimeout(() => setAnimState("open"), OPEN_MS);
       return () => clearTimeout(t);
@@ -40,7 +42,10 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
 
   if (!mounted) return null;
 
+  const canDelete = confirmText.trim().toUpperCase() === "YUZU";
+
   const handleConfirm = async () => {
+    if (!canDelete) return;
     setDeleting(true);
     setError(null);
     try {
@@ -68,6 +73,20 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
         <h2 className="confirm-modal-title font-display">全部消す。</h2>
         <p className="confirm-modal-body">記録も、番号も、戻らない。</p>
 
+        <p className="confirm-modal-prompt font-display">YUZU と打て。</p>
+        <input
+          type="text"
+          className="confirm-modal-input"
+          value={confirmText}
+          onChange={(e) => setConfirmText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && canDelete) handleConfirm(); }}
+          disabled={deleting}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label="確認のため YUZU と入力"
+        />
+
         {error && <p className="confirm-modal-error">{error}</p>}
 
         <div className="confirm-modal-actions">
@@ -83,7 +102,7 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
             type="button"
             className="confirm-modal-confirm font-display"
             onClick={handleConfirm}
-            disabled={deleting}
+            disabled={deleting || !canDelete}
           >
             {deleting ? "削除中…" : "消す"}
           </button>

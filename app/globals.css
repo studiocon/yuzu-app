@@ -1840,6 +1840,30 @@ button.settings-row:focus-visible {
   color: var(--ink-secondary);
   margin: 0 0 20px;
 }
+.confirm-modal-prompt {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  margin: 0 0 8px;
+}
+.confirm-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  margin: 0 0 20px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sharp);
+  background: var(--yuzu-white);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  letter-spacing: 0.08em;
+  outline: none;
+  transition: border-color 0.15s var(--ease-soft);
+  -webkit-appearance: none;
+}
+.confirm-modal-input:focus { border-color: var(--ink); }
+.confirm-modal-input:disabled { opacity: 0.5; }
 .confirm-modal-error {
   font-size: var(--text-sm);
   color: var(--yuzu-zest);
