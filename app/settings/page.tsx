@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CaretRight, SignOut } from "@phosphor-icons/react";
+import { CaretRight, SignOut, Trash } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { createClient } from "@/lib/supabase/client";
+import { isMockMode } from "@/lib/mockReports";
+import { SENTIMENT_CACHE_KEY } from "@/lib/userClient";
 
 const MAJOR_MINOR = "0.1";
 const BUILD = process.env.NEXT_PUBLIC_BUILD_NUMBER ?? "0";
@@ -12,8 +15,12 @@ const VERSION = `${MAJOR_MINOR}.${BUILD}`;
 export default function SettingsPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [mock, setMock] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => { setMock(isMockMode()); }, []);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +34,21 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const handleDeleteAccount = async () => {
+    const res = await fetch("/api/account", { method: "DELETE" });
+    if (!res.ok) {
+      // 呼び出し元（モーダル）でエラー表示するため throw
+      throw new Error(`delete failed: ${res.status}`);
+    }
+    await supabase.auth.signOut();
+    try {
+      localStorage.removeItem(SENTIMENT_CACHE_KEY);
+      localStorage.removeItem("yuzu-daily-sessions");
+      sessionStorage.removeItem("yuzu_pending_text");
+    } catch { /* storage 不可環境は無視 */ }
     window.location.href = "/";
   };
 
@@ -99,10 +121,27 @@ export default function SettingsPage() {
             <SignOut size={16} weight="bold" />
             <span className="settings-row-label">ログアウト</span>
           </button>
+
+          {!mock && (
+            <button
+              type="button"
+              className="settings-row settings-row--danger"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash size={16} weight="bold" />
+              <span className="settings-row-label">アカウントを削除</span>
+            </button>
+          )}
         </section>
       </div>
 
       <p className="settings-version font-display">VERSION {VERSION}</p>
+
+      <DeleteAccountModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteAccount}
+      />
     </main>
   );
 }

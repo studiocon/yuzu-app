@@ -1795,6 +1795,89 @@ button.settings-row:focus-visible {
 .login-modal[data-anim="opening"] { opacity: 0; }
 .login-modal[data-anim="closing"] { opacity: 0; }
 
+/* ── 確認ダイアログ（アカウント削除など） ───────────── */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.confirm-modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.55);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-soft);
+}
+.confirm-modal[data-anim="open"] .confirm-modal-scrim { opacity: 1; }
+.confirm-modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sharp);
+  padding: 28px 24px 20px;
+  transform: translateY(8px);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-soft), transform 220ms var(--ease-soft);
+}
+.confirm-modal[data-anim="open"] .confirm-modal-panel {
+  opacity: 1;
+  transform: translateY(0);
+}
+.confirm-modal-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.confirm-modal-body {
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+  margin: 0 0 20px;
+}
+.confirm-modal-error {
+  font-size: var(--text-sm);
+  color: var(--yuzu-zest);
+  margin: 0 0 16px;
+}
+.confirm-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.confirm-modal-cancel,
+.confirm-modal-confirm {
+  border: 0;
+  cursor: pointer;
+  padding: 12px 20px;
+  border-radius: var(--radius-sharp);
+  font-size: var(--text-sm);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s var(--ease-soft), opacity 0.15s var(--ease-soft);
+}
+.confirm-modal-cancel {
+  background: transparent;
+  color: var(--ink-secondary);
+}
+.confirm-modal-cancel:hover { background: var(--surface-hover); color: var(--ink); }
+.confirm-modal-confirm {
+  background: var(--ink);
+  color: var(--yuzu-white);
+  letter-spacing: 0.04em;
+}
+.confirm-modal-confirm:hover { background: #000; }
+.confirm-modal-cancel:disabled,
+.confirm-modal-confirm:disabled { opacity: 0.4; cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .confirm-modal-scrim,
+  .confirm-modal-panel { transition: none; }
+}
+
 .login-modal-close {
   position: absolute;
   top: max(16px, env(safe-area-inset-top));
