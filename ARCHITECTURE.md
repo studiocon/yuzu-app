@@ -90,6 +90,7 @@ SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順*
 0006_records_duration.sql         — records.duration_ms カラム + INSERT GRANT + get_total_duration_ms() RPC（総録音分数）
 0007_fix_get_streak.sql           — get_streak() の修正
 0008_theme_cache.sql              — theme_cache テーブル（PATTERN テーマの永続キャッシュ）+ RLS SELECT + GRANT
+0009_plan.sql                     — profiles に plan 列（Free/Light/Premium）+ check + authenticated UPDATE 剥奪（自己昇格防止）
 ```
 
 #### マイグレーション適用後の検証

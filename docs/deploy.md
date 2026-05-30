@@ -43,6 +43,7 @@ npm run build           # production build
 | 0006 | records_duration.sql | duration_ms + get_total_duration_ms() RPC | ✅ |
 | 0007 | fix_get_streak.sql | get_streak() 修正 | ✅ |
 | 0008 | theme_cache.sql | theme_cache テーブル + RLS SELECT + GRANT（#79） | ✅（MCP 適用・migration 追跡済） |
+| 0009 | plan.sql | profiles に plan 列（Free/Light/Premium）+ check + authenticated UPDATE 剥奪（#102） | ✅（MCP 適用済） |
 
 > 既適用状態は本番 Supabase の `select * from supabase_migrations.schema_migrations;` で確認（無ければ手動運用のため適用ログを README にメモする）。
 
