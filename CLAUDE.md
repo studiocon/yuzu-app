@@ -17,16 +17,17 @@ YUZU は「声を加工せずに記録する」音声ジャーナル。世界観
 
 ```
 app/                    Next.js App Router
-  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account）
+  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account, inquiries）
   auth/callback/        Supabase OAuth/Magic Link コールバック
   page.tsx              ルート（録音 + タブ。未ログインなら OnboardingView）
   reports/              レポート一覧 / 詳細（middleware で保護）
-  settings/             設定（プラン表示 / 通知 / アカウント / 規約 / ログアウト / アカウント削除。middleware で保護）
+  settings/             設定（プラン表示 / 通知 / アカウント / 問い合わせ / 規約 / ログアウト / アカウント削除。middleware で保護）
   icon.svg              ファビコン（Next が自動でファビコン化。旧 icon.tsx は撤去）
   globals.css           デザイントークンと全 CSS（:root は DESIGN.md と CI で突合）
 components/             "use client" コンポーネント
   LoginModal.tsx        Apple / Google / Magic Link（パスワード認証なし）
   DeleteAccountModal.tsx アカウント削除の確認ダイアログ（type-to-confirm「YUZU」）
+  ContactModal.tsx      問い合わせフォーム（件名/本文/任意メール → POST /api/inquiries）
 lib/                    型・ユーティリティ・サーバ呼び出し
   types.ts              共通型（Post, Phase）。Post は user_id / char_count / index を持つ
   period.ts             JST 固定の週/月境界
@@ -46,7 +47,7 @@ lib/                    型・ユーティリティ・サーバ呼び出し
   useBodyScrollLock.ts  モーダル open 時の body overflow 制御
 middleware.ts           Supabase セッション更新 + /reports・/settings 保護
 next.config.js          VERSION ビルド番号（git rev-list --count）を NEXT_PUBLIC_BUILD_NUMBER に注入
-supabase/migrations/    0001〜0009（init/reports/streak/mark/grants/duration/fix_streak/theme_cache/plan）
+supabase/migrations/    0001〜0010（init/reports/streak/mark/grants/duration/fix_streak/theme_cache/plan/inquiries）
 public/
   design-preview.html   デザインの実体プレビュー（source-of-truth）
 scripts/
@@ -144,6 +145,7 @@ npm run dev            # ローカル起動（http://localhost:3000）
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase プロジェクト URL（クライアント露出可）
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — anon キー（RLS で保護される）
 - `SUPABASE_SERVICE_ROLE_KEY` — service_role キー。**サーバ専用**、`NEXT_PUBLIC_` を絶対付けない（[lib/supabase/admin.ts](lib/supabase/admin.ts) からのみ参照）
+- `SLACK_WEBHOOK_URL` — 問い合わせ受信通知（[app/api/inquiries/route.ts](app/api/inquiries/route.ts)）。未設定なら通知スキップ。サーバ専用
 
 `.env.local` は gitignore 済み。本番値は Vercel で設定。Supabase ダッシュボード手動設定（プロバイダ有効化・Redirect URL 登録）は [README.md](README.md) を参照。
 

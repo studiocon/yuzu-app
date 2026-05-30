@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CaretRight, SignOut, Trash } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
+import ContactModal from "@/components/ContactModal";
 import { createClient } from "@/lib/supabase/client";
 import { isMockMode, clearMockMode } from "@/lib/mockReports";
 import { STORAGE_KEYS } from "@/lib/storageKeys";
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [mock, setMock] = useState(false);
 
   const supabase = createClient();
@@ -111,6 +113,19 @@ export default function SettingsPage() {
         </section>
 
         <section className="settings-section">
+          <p className="settings-section-title font-display">SUPPORT</p>
+
+          <button
+            type="button"
+            className="settings-row"
+            onClick={() => setContactOpen(true)}
+          >
+            <span className="settings-row-label">問い合わせ</span>
+            <CaretRight size={14} className="settings-row-chevron" />
+          </button>
+        </section>
+
+        <section className="settings-section">
           <p className="settings-section-title font-display">LEGAL</p>
 
           <div className="settings-row settings-row--disabled" aria-disabled="true">
@@ -151,6 +166,12 @@ export default function SettingsPage() {
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDeleteAccount}
+      />
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        defaultEmail={email}
       />
     </main>
   );

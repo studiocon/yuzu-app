@@ -1994,6 +1994,30 @@ button.settings-row:focus-visible {
 .login-modal-email-input::placeholder { color: rgba(255,255,255,0.35); }
 .login-modal-email-input:focus { border-color: var(--yuzu-yellow); }
 
+/* ContactModal: textarea variant（高さと resize 制御。それ以外は input を継承） */
+textarea.login-modal-email-input.contact-modal-textarea {
+  height: auto;
+  min-height: 140px;
+  padding: 14px 16px;
+  resize: vertical;
+  line-height: 1.5;
+  font-family: var(--font-body);
+}
+
+/* ContactModal: 入力欄ごとのラベル + 入力をまとめるグループ */
+.contact-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-modal-label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--yuzu-white);
+  opacity: 0.55;
+  text-transform: none;
+}
+
 .login-modal-error {
   font-size: var(--text-sm);
   color: #ff6b6b;
