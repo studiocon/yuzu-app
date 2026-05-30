@@ -83,7 +83,7 @@ export default function Home() {
   const postsApi = usePostsApi(user, getMockTodayCount());
   const {
     posts, setPosts, totalCount, setTotalCount,
-    totalDurationMs, setTotalDurationMs, serverStreak,
+    totalDurationMs, setTotalDurationMs, serverStreak, setServerStreak,
     firstPostAt, setFirstPostAt, todayCount, setTodayCount,
     nextOffset, loadingMore, loadMore, toggleMark,
   } = postsApi;
@@ -164,6 +164,8 @@ export default function Home() {
         if (!firstPostAt) setFirstPostAt(newPost.createdAt);
         const tc = getNumber(data, "todayCount");
         if (typeof tc === "number") setTodayCount(tc);
+        const streak = getNumber(data, "streak");
+        if (typeof streak === "number") setServerStreak(streak);
         recorder.setComplete();
       } catch (e) {
         const msg = e instanceof Error ? e.message : "通信失敗";
@@ -240,6 +242,8 @@ export default function Home() {
         if (!firstPostAt) setFirstPostAt(newPost.createdAt);
         const tc = getNumber(data, "todayCount");
         if (typeof tc === "number") setTodayCount(tc);
+        const streak = getNumber(data, "streak");
+        if (typeof streak === "number") setServerStreak(streak);
         setPendingText(null);
         recorder.setComplete();
         setRecordOpen(true);

@@ -210,11 +210,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // index = total post count after insert
-  const { count } = await supabase
-    .from("records")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id);
+  // index = total post count after insert。streak は STATS 同期用にサーバ集計を返す。
+  const [{ count }, streak] = await Promise.all([
+    supabase
+      .from("records")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    fetchStreak(supabase),
+  ]);
 
   const row = inserted as RecordRow;
   const post: Post = {
@@ -231,6 +234,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       post,
+      streak,
       todayCount: todayBefore + 1,
       maxDaily: MAX_DAILY_SESSIONS,
       resetAt: jstNextMidnightMs(Date.now()),

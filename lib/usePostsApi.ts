@@ -40,6 +40,7 @@ export type PostsApi = {
   totalDurationMs: number | undefined;
   setTotalDurationMs: React.Dispatch<React.SetStateAction<number | undefined>>;
   serverStreak: number | undefined;
+  setServerStreak: React.Dispatch<React.SetStateAction<number | undefined>>;
   firstPostAt: number | null | undefined;
   setFirstPostAt: React.Dispatch<React.SetStateAction<number | null | undefined>>;
   todayCount: number;
@@ -129,7 +130,7 @@ export function usePostsApi(user: User | null | undefined, initialTodayCount = 0
     posts, setPosts,
     totalCount, setTotalCount,
     totalDurationMs, setTotalDurationMs,
-    serverStreak,
+    serverStreak, setServerStreak,
     firstPostAt, setFirstPostAt,
     todayCount, setTodayCount,
     nextOffset, loadingMore, loadMore,
