@@ -170,7 +170,7 @@ grant insert on public.records to authenticated;
 grant update on public.records to authenticated;
 ```
 
-> このロールバックを実行すると **編集禁止思想（PRD §13）のガードが外れる**。
+> このロールバックを実行すると **編集禁止思想（PRD §8）のガードが外れる**。
 > 一時的な緊急回避としてのみ使用し、原因究明後に必ず 0005 を再適用すること。
 
 ### 5-3. 0004 のロールバック（推奨しない）

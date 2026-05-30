@@ -7,8 +7,9 @@
 YUZU は「声を加工せずに記録する」音声ジャーナル。世界観は **THE RECORD**、トーンは命令形・断定形（NIKE 寄り）。
 詳細は次のドキュメントを参照：
 
-- [README.md](README.md) — 技術スタック、ローカル開発の手順
-- [PRD.md](PRD.md) — プロダクト要件・機能仕様・品質基準
+- [README.md](README.md) — 思想・コンセプト・世界観（公開フロント）
+- [ARCHITECTURE.md](ARCHITECTURE.md) — 技術スタック・ディレクトリ構成・ローカル開発・Supabase セットアップ・検証フロー
+- [PRD.md](PRD.md) — プロダクト要件・機能仕様・品質基準（事業/価格/GTM はリポジトリに含めない）
 - [DESIGN.md](DESIGN.md) — 世界観・カラー・タイポ・コンポーネント仕様・VOICE & TONE
 - [public/design-preview.html](public/design-preview.html) — デザインの **source-of-truth**（後述）
 
