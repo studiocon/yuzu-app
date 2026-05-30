@@ -1,7 +1,8 @@
 import { parsePeriodKey, recentClosedPeriods } from "./period";
 import type { Report, ReportMeta } from "./reportTypes";
+import { STORAGE_KEYS } from "./storageKeys";
 
-const MOCK_KEY = "yuzu-mock-mode";
+const MOCK_KEY = STORAGE_KEYS.mockMode;
 
 // mock mode は sessionStorage（タブ寿命）に加えて cookie でもマークし、
 // middleware（サーバ側）が /reports や /settings の保護をスキップできるようにする。
@@ -28,6 +29,12 @@ export function isMockMode(): boolean {
     }
   } catch {}
   return false;
+}
+
+// mock-mode を抜ける（sessionStorage + cookie をクリア）。
+export function clearMockMode(): void {
+  try { sessionStorage.removeItem(MOCK_KEY); } catch {}
+  try { document.cookie = `${MOCK_KEY}=; path=/; Max-Age=0; SameSite=Lax`; } catch {}
 }
 
 const SAMPLES: Array<{

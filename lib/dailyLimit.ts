@@ -6,11 +6,12 @@
 //   - POST /api/records → 上限超過時に 429 + { error:"daily_limit", todayCount, maxDaily, resetAt }
 
 import { jstDateString } from "./period";
+import { STORAGE_KEYS } from "./storageKeys";
 
 export { MAX_DAILY_SESSIONS, MAX_RECORD_MS } from "./constants";
 
 // ── mock-mode フォールバック（Supabase に書かない検証フロー専用）──
-const MOCK_STORAGE_KEY = "yuzu-daily-sessions";
+const MOCK_STORAGE_KEY = STORAGE_KEYS.dailySessions;
 type MockRecord = { date: string; count: number };
 
 function getMockRecord(): MockRecord {

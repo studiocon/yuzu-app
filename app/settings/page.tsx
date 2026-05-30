@@ -5,8 +5,8 @@ import { CaretRight, SignOut, Trash } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { createClient } from "@/lib/supabase/client";
-import { isMockMode } from "@/lib/mockReports";
-import { SENTIMENT_CACHE_KEY } from "@/lib/userClient";
+import { isMockMode, clearMockMode } from "@/lib/mockReports";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
 
 const MAJOR_MINOR = "0.1";
 const BUILD = process.env.NEXT_PUBLIC_BUILD_NUMBER ?? "0";
@@ -39,19 +39,17 @@ export default function SettingsPage() {
 
   const clearLocalCaches = () => {
     try {
-      localStorage.removeItem(SENTIMENT_CACHE_KEY);
-      localStorage.removeItem("yuzu-daily-sessions");
-      sessionStorage.removeItem("yuzu_pending_text");
+      localStorage.removeItem(STORAGE_KEYS.sentimentCache);
+      localStorage.removeItem(STORAGE_KEYS.dailySessions);
+      localStorage.removeItem(STORAGE_KEYS.signalShown);
+      sessionStorage.removeItem(STORAGE_KEYS.pendingText);
     } catch { /* storage 不可環境は無視 */ }
   };
 
   const handleDeleteAccount = async () => {
     // mock-mode は実セッションが無いため API を叩かず擬似削除。mock を抜けて / へ。
     if (mock) {
-      try {
-        sessionStorage.removeItem("yuzu-mock-mode");
-        document.cookie = "yuzu-mock-mode=; path=/; Max-Age=0; SameSite=Lax";
-      } catch { /* 無視 */ }
+      clearMockMode();
       clearLocalCaches();
       window.location.href = "/";
       return;

@@ -17,7 +17,7 @@ YUZU の VOICE & TONE 規約に対する UI コピーの監査。
 
 ### 英日使い分け
 
-- **英語＝Unbounded＝挑発・状態**：`RECORDING.` / `DECODING.` / `RECORDED.` / `SILENCE.` / `DAY` / `RECORDS` / `STREAK`
+- **英語＝Unbounded＝挑発・状態**：`RECORDING.` / `CARVING.` / `RECORDED.` / `SILENCE.` / `DAY` / `RECORDS` / `STREAK`（旧 `DECODING.` は `CARVING.` に改称済）
 - **日本語＝LINE Seed JP＝事実・本文・プロンプト**：プロンプト群・エラー・タグライン・本文 UI
 
 ### NG ワード（即 reject）
@@ -34,7 +34,7 @@ YUZU の VOICE & TONE 規約に対する UI コピーの監査。
 
 - 命令形：「話せ」「出せ」「黙るな」「整えるな」
 - 句点（.）終わり：「短い、話せ」「無音、話せ」「失敗、話せ」
-- 英語の状態ラベル：「RECORDING.」「DECODING.」「RECORDED.」「SILENCE.」
+- 英語の状態ラベル：「RECORDING.」「CARVING.」「RECORDED.」「SILENCE.」「CARVED.」
 - 断定：「本物でいろ」「BE TRUE」
 
 ### 文末

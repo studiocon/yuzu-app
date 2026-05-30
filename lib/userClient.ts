@@ -2,7 +2,9 @@
 // v2 以降、ユーザー identity は通し番号 `#NNN` のみ。
 // ニックネーム / 果物アイコンの概念は廃止。DB カラムは残るが UI 不参照。
 
-export const SENTIMENT_CACHE_KEY = "yuzu-sentiment-cache";
+import { STORAGE_KEYS } from "./storageKeys";
+
+export const SENTIMENT_CACHE_KEY = STORAGE_KEYS.sentimentCache;
 
 export function loadSentimentCache(): Record<string, number> {
   try {

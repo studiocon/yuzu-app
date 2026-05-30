@@ -17,30 +17,36 @@ YUZU は「声を加工せずに記録する」音声ジャーナル。世界観
 
 ```
 app/                    Next.js App Router
-  api/                  サーバ API（transcribe, records, reports, analyze-sentiment）
+  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account）
   auth/callback/        Supabase OAuth/Magic Link コールバック
   page.tsx              ルート（録音 + タブ。未ログインなら OnboardingView）
   reports/              レポート一覧 / 詳細（middleware で保護）
-  settings/             ニックネーム等（middleware で保護）
+  settings/             設定（プラン表示 / 通知 / アカウント / 規約 / ログアウト / アカウント削除。middleware で保護）
+  icon.svg              ファビコン（Next が自動でファビコン化。旧 icon.tsx は撤去）
   globals.css           デザイントークンと全 CSS（:root は DESIGN.md と CI で突合）
 components/             "use client" コンポーネント
   LoginModal.tsx        Apple / Google / Magic Link（パスワード認証なし）
+  DeleteAccountModal.tsx アカウント削除の確認ダイアログ（type-to-confirm「YUZU」）
 lib/                    型・ユーティリティ・サーバ呼び出し
   types.ts              共通型（Post, Phase）。Post は user_id / char_count / index を持つ
   period.ts             JST 固定の週/月境界
   streak.ts             連続日数 + WEEKDAY_JA（クライアント側ローカルタイム）
   sentimentSeries.ts    JST 集約のセンチメント時系列（サーバ/クライアント共有）
   reports.ts            Anthropic でレポート生成（**Anthropic SDK を import するためクライアントから直接呼ばない**）
+  plan.ts               プランロール（Free/Light/Premium）型 + getUserPlan（サーバ）。書込は service_role のみ
+  storageKeys.ts        クライアント storage キーの一元管理（ハードコード重複防止）
   supabase/
     client.ts           ブラウザ用 createBrowserClient
     server.ts           Route Handler / Server Component 用 createServerClient（cookie 連携）
     admin.ts            service_role クライアント（RLS バイパス。サーバ専用）
-  userClient.ts         ニックネーム・センチメントキャッシュ（localStorage キャッシュ層）
-  prompts.ts            投稿促進プロンプト（B 案）
-  dailyLimit.ts         1 日 3 回制限（localStorage）
+  userClient.ts         センチメントキャッシュ（localStorage 層。identity は #NNN のみ）
+  prompts.ts            投稿促進プロンプト（過去/現在/未来 各10＝30）
+  dailyLimit.ts         1 日 3 回制限（サーバ強制。localStorage は mock 専用）
+  mockReports.ts        mock-mode 判定 + clearMockMode + ダミーレポート
   useBodyScrollLock.ts  モーダル open 時の body overflow 制御
 middleware.ts           Supabase セッション更新 + /reports・/settings 保護
-supabase/migrations/    0001_init / 0002_reports / 0003_streak
+next.config.js          VERSION ビルド番号（git rev-list --count）を NEXT_PUBLIC_BUILD_NUMBER に注入
+supabase/migrations/    0001〜0009（init/reports/streak/mark/grants/duration/fix_streak/theme_cache/plan）
 public/
   design-preview.html   デザインの実体プレビュー（source-of-truth）
 scripts/

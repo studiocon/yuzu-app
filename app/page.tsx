@@ -17,13 +17,14 @@ import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
 import { MAX_DAILY_SESSIONS, incrementMockCount, getMockTodayCount } from "@/lib/dailyLimit";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
 import { createClient } from "@/lib/supabase/client";
 import { usePostsApi } from "@/lib/usePostsApi";
 import { useRecorder } from "@/lib/useRecorder";
 import SignalCardModal from "@/components/SignalCardModal";
 
-const PENDING_TEXT_KEY = "yuzu_pending_text";
-const SIGNAL_SHOWN_KEY = "yuzu-signal-shown";
+const PENDING_TEXT_KEY = STORAGE_KEYS.pendingText;
+const SIGNAL_SHOWN_KEY = STORAGE_KEYS.signalShown;
 const MILESTONES = [7, 14, 30, 60, 100, 365];
 
 function checkSignalMilestone(streak: number): boolean {
