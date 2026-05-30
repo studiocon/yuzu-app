@@ -124,7 +124,7 @@ insert into public.records (user_id, text, char_count, marked)
 
 ```
 http://localhost:3000/auth/callback        # ローカル開発
-https://yourdomain.com/auth/callback       # 本番
+https://yuzu.style/auth/callback           # 本番
 ```
 
 ## 検証コマンド

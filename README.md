@@ -6,6 +6,8 @@
 **YUZU** is a voice journaling app built on a single refusal: *don't polish your thoughts.*
 You press and hold, you speak, and your raw voice becomes a record — unedited, undeletable, never rewritten. YUZU は「声を加工せずに記録する」音声ジャーナル。
 
+🌐 **[yuzu.style](https://yuzu.style)**
+
 ---
 
 ## What is YUZU
