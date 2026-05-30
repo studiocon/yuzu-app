@@ -9,3 +9,6 @@ node_modules
 .claude/settings.local.json
 .claude/*.local.json
 supabase/.temp/
+
+# MCP 設定（project_ref を含む。公開リポジトリには出さない）
+.mcp.json
