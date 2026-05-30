@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildThemesUserPrompt,
   extractThemesJson,
@@ -16,15 +17,19 @@ export const dynamic = "force-dynamic";
 const MODEL = "claude-sonnet-4-6";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-// プロセス内キャッシュ。Vercel コンテナが再利用される間は有効。
-// 新規投稿で post_count が変われば自然に invalidate される。
-// 冷起動時は再計算（ユーザー1人あたり最大1回の Claude 呼び出しコスト）。
-type CacheEntry = { themes: Theme[]; postCount: number; at: number };
-const cache = new Map<string, CacheEntry>();
-
+// PATTERN テーマキャッシュは Supabase `theme_cache` に永続化する（#79）。
+// in-memory Map は Vercel コールドスタートで消えて Claude を余計に叩くため廃止。
+// 読み取りは authenticated クライアント（RLS で自分の行のみ SELECT 可）、
+// 書き込みは service_role（admin client）。post_count 変化で自然 invalidate、TTL 24h。
 interface RecordRow {
   text: string;
   created_at: string;
+}
+
+interface ThemeCacheRow {
+  themes: Theme[];
+  post_count: number;
+  generated_at: string;
 }
 
 export async function GET() {
@@ -45,9 +50,20 @@ export async function GET() {
     return NextResponse.json({ themes: [], notEnough: true, needed: MIN_POSTS_FOR_THEMES });
   }
 
-  // キャッシュヒット判定
-  const cached = cache.get(user.id);
-  if (cached && cached.postCount === total && Date.now() - cached.at < CACHE_TTL_MS) {
+  // キャッシュヒット判定（Supabase 永続キャッシュ。RLS で自分の行のみ読める）
+  const { data: cached, error: cacheReadError } = await supabase
+    .from("theme_cache")
+    .select("themes, post_count, generated_at")
+    .eq("user_id", user.id)
+    .maybeSingle<ThemeCacheRow>();
+  if (cacheReadError) {
+    // 読み取り失敗は致命的にしない。再生成にフォールバックする（silent fail にはしない）。
+    console.error("GET /api/insights/themes: cache read", cacheReadError);
+  } else if (
+    cached &&
+    cached.post_count === total &&
+    Date.now() - new Date(cached.generated_at).getTime() < CACHE_TTL_MS
+  ) {
     return NextResponse.json({ themes: cached.themes });
   }
 
@@ -85,7 +101,22 @@ export async function GET() {
       console.error("GET /api/insights/themes: parse failed", raw.slice(0, 500));
       return NextResponse.json({ error: "parse failed" }, { status: 502 });
     }
-    cache.set(user.id, { themes, postCount: total, at: Date.now() });
+    // 永続キャッシュへ upsert（service_role。RLS では書けないため admin client）。
+    // 書き込み失敗はログに残しつつ、テーマ自体は返す（ユーザー体験を止めない）。
+    const admin = createAdminClient();
+    const { error: cacheWriteError } = await admin.from("theme_cache").upsert(
+      {
+        user_id: user.id,
+        themes,
+        post_count: total,
+        generated_at: new Date().toISOString(),
+        model: MODEL,
+      },
+      { onConflict: "user_id" },
+    );
+    if (cacheWriteError) {
+      console.error("GET /api/insights/themes: cache write", cacheWriteError);
+    }
     return NextResponse.json({ themes });
   } catch (e) {
     console.error("GET /api/insights/themes:", e);

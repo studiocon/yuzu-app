@@ -89,6 +89,7 @@ SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順*
 0005_records_column_grants.sql    — INSERT/UPDATE のカラム単位 GRANT（編集禁止思想を担保）
 0006_records_duration.sql         — records.duration_ms カラム + INSERT GRANT + get_total_duration_ms() RPC（総録音分数）
 0007_fix_get_streak.sql           — get_streak() の修正
+0008_theme_cache.sql              — theme_cache テーブル（PATTERN テーマの永続キャッシュ）+ RLS SELECT + GRANT
 ```
 
 #### マイグレーション適用後の検証

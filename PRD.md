@@ -123,7 +123,7 @@ LOG とは情報の出どころが違うため別タブ。ヘッダー左上は 
 - **WORDS** — 全投稿から頻出語 20 個を抽出してバブルマップ化（[components/WordBubbleMap.tsx](components/WordBubbleMap.tsx)）。形態素解析は TinySegmenter、配置は d3-hierarchy の pack。タップで弾性バウンス（自バブル + 隣接バブルが距離 delay で連動）。「自分がこんな言葉ばっか使ってたのか」という気づきを与える
 - **PATTERN** — Claude が全投稿を読んで「無意識に繰り返し語っているテーマ」を最大 5 つ抽出・**マインドシェア型ランキング** で表示（[components/RecurringThemes.tsx](components/RecurringThemes.tsx)）。各テーマが「あなたの声のうち何%を占めるか」を黄色の横バーで可視化。バブルマップが「生の単語」なら PATTERN は「意味の塊」。WORDS は浅い・即時、PATTERN は深い・じわじわ
   - 投稿 10 件未満は「もっと話せ、パターンが見えてくる」表示
-  - サーバ側でプロセス内キャッシュ（user_id をキー、24h TTL、`post_count` が変われば invalidate）
+  - サーバ側で Supabase `theme_cache` に永続キャッシュ（user_id を PK、24h TTL、`post_count` が変われば invalidate。読み取りは RLS で自分の行のみ、書き込みは service_role）
 - **REPORTS** — 週次・月次レポートカードを一覧表示（[components/ReadView.tsx](components/ReadView.tsx)）
 - "MORE →" で `/reports` 詳細へ遷移
 
