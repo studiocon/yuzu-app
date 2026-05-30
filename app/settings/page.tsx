@@ -37,18 +37,32 @@ export default function SettingsPage() {
     window.location.href = "/";
   };
 
+  const clearLocalCaches = () => {
+    try {
+      localStorage.removeItem(SENTIMENT_CACHE_KEY);
+      localStorage.removeItem("yuzu-daily-sessions");
+      sessionStorage.removeItem("yuzu_pending_text");
+    } catch { /* storage 不可環境は無視 */ }
+  };
+
   const handleDeleteAccount = async () => {
+    // mock-mode は実セッションが無いため API を叩かず擬似削除。mock を抜けて / へ。
+    if (mock) {
+      try {
+        sessionStorage.removeItem("yuzu-mock-mode");
+        document.cookie = "yuzu-mock-mode=; path=/; Max-Age=0; SameSite=Lax";
+      } catch { /* 無視 */ }
+      clearLocalCaches();
+      window.location.href = "/";
+      return;
+    }
     const res = await fetch("/api/account", { method: "DELETE" });
     if (!res.ok) {
       // 呼び出し元（モーダル）でエラー表示するため throw
       throw new Error(`delete failed: ${res.status}`);
     }
     await supabase.auth.signOut();
-    try {
-      localStorage.removeItem(SENTIMENT_CACHE_KEY);
-      localStorage.removeItem("yuzu-daily-sessions");
-      sessionStorage.removeItem("yuzu_pending_text");
-    } catch { /* storage 不可環境は無視 */ }
+    clearLocalCaches();
     window.location.href = "/";
   };
 
@@ -122,16 +136,14 @@ export default function SettingsPage() {
             <span className="settings-row-label">ログアウト</span>
           </button>
 
-          {!mock && (
-            <button
-              type="button"
-              className="settings-row settings-row--danger"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash size={16} weight="bold" />
-              <span className="settings-row-label">アカウントを削除</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className="settings-row settings-row--danger"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash size={16} weight="bold" />
+            <span className="settings-row-label">アカウントを削除</span>
+          </button>
         </section>
       </div>
 
