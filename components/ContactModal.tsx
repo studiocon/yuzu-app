@@ -120,7 +120,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
       <div className="login-modal-body">
         {step === "input" && (
           <>
-            <h2 className="login-modal-title font-display">CONTACT.</h2>
+            <h2 className="login-modal-title font-display">CONTACT</h2>
             <p className="login-modal-sub">
               改善要望、不具合、感想。<br />
               声を聞かせてくれ。
@@ -191,7 +191,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
 
         {step === "sent" && (
           <>
-            <h2 className="login-modal-title font-display">SENT.</h2>
+            <h2 className="login-modal-title font-display">SENT</h2>
             <p className="login-modal-sub">
               受け取りました。<br />
               必要があれば返信します。

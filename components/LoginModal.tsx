@@ -107,7 +107,7 @@ export default function LoginModal({ open, onClose }: Props) {
       <div className="login-modal-body">
         {step === "select" && (
           <>
-            <h2 className="login-modal-title font-display">SIGN IN.</h2>
+            <h2 className="login-modal-title font-display">SIGN IN</h2>
             <p className="login-modal-sub">声を刻め。</p>
 
             <div className="login-modal-actions">
@@ -149,7 +149,7 @@ export default function LoginModal({ open, onClose }: Props) {
 
         {step === "email-input" && (
           <>
-            <h2 className="login-modal-title font-display">MAIL.</h2>
+            <h2 className="login-modal-title font-display">MAIL</h2>
             <p className="login-modal-sub">アドレスを入れろ。</p>
 
             <form className="login-modal-email-form" onSubmit={handleEmailSubmit}>
@@ -185,7 +185,7 @@ export default function LoginModal({ open, onClose }: Props) {
 
         {step === "email-sent" && (
           <>
-            <h2 className="login-modal-title font-display">SENT.</h2>
+            <h2 className="login-modal-title font-display">SENT</h2>
             <p className="login-modal-sub">メールを送った。<br />確認しろ。</p>
             <p className="login-modal-email-hint">{email}</p>
           </>

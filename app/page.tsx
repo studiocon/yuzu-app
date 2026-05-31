@@ -303,7 +303,7 @@ export default function Home() {
           {isLoggedIn ? (
             <>
               <span className="app-header-title font-display">
-                {tab === "read" ? "INSIGHT." : "LOG."}
+                {tab === "read" ? "INSIGHT" : "LOG"}
               </span>
               <button type="button" className="iconbtn iconbtn--ghost" aria-label="設定" onClick={openSettings}>
                 <Gear size={22} weight="bold" />

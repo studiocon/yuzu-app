@@ -73,8 +73,8 @@ export default function SignalCardModal({ streak, totalCount, onClose }: Props) 
       <div className="signal-backdrop" onClick={handleClose} aria-hidden="true" />
       <div className="signal-sheet">
         <div ref={cardRef} className="signal-card">
-          <p className="signal-label font-display">DAY {streak}.</p>
-          <p className="signal-sub font-display">VOICE {totalCount}.</p>
+          <p className="signal-label font-display">DAY {streak}</p>
+          <p className="signal-sub font-display">VOICE {totalCount}</p>
           <p className="signal-brand font-display">YUZU</p>
         </div>
         <div className="signal-actions">
