@@ -23,7 +23,6 @@ type Props = {
   loadingMore?: boolean;
   onLoadMore?: () => void;
   onOpenDetail?: (post: Post) => void;
-  onToggleMark?: (post: Post, next: boolean) => void;
 };
 
 export default function IndexView({
@@ -36,7 +35,6 @@ export default function IndexView({
   loadingMore,
   onLoadMore,
   onOpenDetail,
-  onToggleMark,
 }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -135,7 +133,6 @@ export default function IndexView({
                   key={p.id}
                   post={p}
                   onOpenDetail={onOpenDetail}
-                  onToggleMark={onToggleMark}
                 />
               ))}
               {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}

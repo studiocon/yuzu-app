@@ -98,34 +98,6 @@ body {
   color: var(--ink-muted);
 }
 
-/* v2: 右端の低主張アイコンボタン（MARK + COPY 共通） */
-.post-actions {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 4px;
-}
-.post-iconbtn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: color 0.15s var(--ease-soft), transform 0.12s var(--ease-soft);
-}
-.post-iconbtn:hover { color: var(--ink); }
-.post-iconbtn:active { transform: scale(0.92); }
-.post-iconbtn.is-marked { color: var(--yuzu-zest); }
-.post-iconbtn.is-copied { color: var(--ink); }
-
 .post-body { display: block; }
 .post-text {
   margin: 0;
@@ -134,6 +106,22 @@ body {
   color: var(--ink);
   white-space: pre-wrap;
   word-break: break-word;
+  /* 一覧では ~5 行で省略。全文は詳細モーダルで読む。 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+/* カード全体をタップ範囲にする（詳細モーダルを開く）。階層は罫線と余白のみ・box-shadow 不使用。 */
+.post-card--tappable {
+  cursor: pointer;
+  transition: background 0.15s var(--ease-soft);
+}
+.post-card--tappable:hover { background: var(--surface-hover); }
+.post-card--tappable:focus-visible {
+  outline: 2px solid var(--yuzu-yellow);
+  outline-offset: 2px;
 }
 
 /* ===== App shell / header fade ===== */
@@ -1733,29 +1721,50 @@ button.settings-row:focus-visible {
   color: var(--ink-muted);
   margin: 0 0 20px;
 }
-/* 本文は再読用の二次情報。主役（#index・事実 STATS）から一段落とす。 */
+/* 詳細モーダルは「読む場」。本文を読みやすく整形する（段落・行間・一回り大きく濃く）。 */
 .index-detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+}
+.index-detail-para {
   font-family: var(--font-body);
   font-weight: 400;
-  font-size: var(--text-base);
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--text-lg);
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.92);
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
 }
-.post-index--btn {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  padding: 0;
-  cursor: pointer;
+/* 本文下の操作行：COPY / MARK。ダーク背景に馴染む低主張ボタン。 */
+.index-detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
 }
-.post-index--btn:focus-visible {
-  outline: 2px solid var(--yuzu-yellow);
-  outline-offset: 2px;
+.index-detail-actionbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sharp);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: color 0.15s var(--ease-soft), border-color 0.15s var(--ease-soft), transform 0.12s var(--ease-soft);
+}
+.index-detail-actionbtn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.index-detail-actionbtn:active { transform: scale(0.96); }
+.index-detail-actionbtn.is-marked { color: var(--yuzu-zest); border-color: var(--yuzu-zest); }
+.index-detail-actionbtn.is-copied { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.index-detail-actionlabel {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
 .mypage-stat-value--index.mypage-stat-value--btn {
   appearance: none;
@@ -2114,35 +2123,8 @@ textarea.login-modal-email-input.contact-modal-textarea {
   letter-spacing: 0.12em;
 }
 
-/* v2: MARK / COPY ボタン本体は .post-iconbtn（旧 .post-mark-btn の枠線・背景は撤廃済） */
-
-.post-card { position: relative; }
 .post-card.is-marked {
   border-top-color: var(--yuzu-zest);
-}
-
-.post-mark-flash,
-.post-copy-flash {
-  position: absolute;
-  right: 12px;
-  bottom: 8px;
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  pointer-events: none;
-  animation: mark-flash 900ms var(--ease-soft) both;
-}
-.post-mark-flash { color: var(--yuzu-zest); }
-.post-copy-flash { color: var(--ink); }
-
-@keyframes mark-flash {
-  0%   { opacity: 0; transform: translateY(4px); }
-  20%  { opacity: 1; transform: translateY(0); }
-  80%  { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-2px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .post-mark-flash,
-  .post-copy-flash { animation: none; opacity: 1; }
 }
 
 /* READ. view (独立タブ) */
