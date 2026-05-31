@@ -7,6 +7,7 @@ import { loadSentimentCache } from "@/lib/userClient";
 import { buildMockReport, isMockMode } from "@/lib/mockReports";
 import type { Report } from "@/lib/reportTypes";
 import { periodLabel } from "@/lib/period";
+import { reportCacheKey } from "@/lib/storageKeys";
 
 type Props = { periodKey: string };
 
@@ -19,33 +20,86 @@ export default function ReportDetail({ periodKey }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setReport(null);
+
     if (isMockMode()) {
+      setStatus("loading");
+      setReport(null);
       const mock = buildMockReport(periodKey);
       if (mock) { setReport(mock); setStatus("ok"); }
       else setStatus("no_posts");
       return;
     }
+
+    // 1) sessionStorage に payload があれば即時描画（裏でリバリデートする）
+    let hasCached = false;
+    try {
+      const raw = sessionStorage.getItem(reportCacheKey(periodKey));
+      if (raw) {
+        const parsed = JSON.parse(raw) as Report;
+        if (parsed?.payload) {
+          setReport(parsed);
+          setStatus("ok");
+          hasCached = true;
+        }
+      }
+    } catch {
+      // 壊れたキャッシュは無視
+    }
+    if (!hasCached) {
+      setStatus("loading");
+      setReport(null);
+    }
+
+    // 2) GET でキャッシュ確認。404 なら POST で生成。
     (async () => {
       try {
-        const scores = loadSentimentCache();
-        // GET ファースト: サーバ側でキャッシュ済みなら即返る。ブラウザの HTTP キャッシュも効く。
-        const scoresParam = Object.entries(scores)
-          .map(([id, s]) => `${id}:${s}`)
-          .join(",");
-        const qs = scoresParam ? `?scores=${encodeURIComponent(scoresParam)}` : "";
-        const res = await fetch(`/api/reports/${encodeURIComponent(periodKey)}${qs}`);
+        const getRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`);
         if (cancelled) return;
-        if (res.status === 404) { setStatus("no_posts"); return; }
-        if (res.status === 422) { setStatus("in_progress"); return; }
-        if (!res.ok) { setStatus("error"); return; }
-        const data = (await res.json()) as { report?: Report };
-        if (!data.report) { setStatus("error"); return; }
+        if (getRes.status === 422) { setStatus("in_progress"); return; }
+        if (getRes.ok) {
+          const data = (await getRes.json()) as { report?: Report };
+          if (data.report) {
+            setReport(data.report);
+            setStatus("ok");
+            try {
+              sessionStorage.setItem(reportCacheKey(periodKey), JSON.stringify(data.report));
+            } catch {}
+            return;
+          }
+          if (!hasCached) setStatus("error");
+          return;
+        }
+        if (getRes.status !== 404) {
+          if (!hasCached) setStatus("error");
+          return;
+        }
+        // 未生成 → 生成
+        const scores = loadSentimentCache();
+        const postRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scores }),
+        });
+        if (cancelled) return;
+        if (postRes.status === 404) { setStatus("no_posts"); return; }
+        if (postRes.status === 422) { setStatus("in_progress"); return; }
+        if (!postRes.ok) {
+          if (!hasCached) setStatus("error");
+          return;
+        }
+        const data = (await postRes.json()) as { report?: Report };
+        if (!data.report) {
+          if (!hasCached) setStatus("error");
+          return;
+        }
         setReport(data.report);
         setStatus("ok");
+        try {
+          sessionStorage.setItem(reportCacheKey(periodKey), JSON.stringify(data.report));
+        } catch {}
       } catch {
-        if (!cancelled) setStatus("error");
+        if (cancelled) return;
+        if (!hasCached) setStatus("error");
       }
     })();
     return () => { cancelled = true; };

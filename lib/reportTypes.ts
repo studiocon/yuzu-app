@@ -31,4 +31,7 @@ export type ReportMeta = {
   headline?: string;
   topics?: string[];
   postCount: number;
+  payload?: ReportPayload;
+  generatedAt?: number;
+  model?: string;
 };

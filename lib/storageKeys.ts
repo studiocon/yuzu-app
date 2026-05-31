@@ -7,3 +7,7 @@ export const STORAGE_KEYS = {
   sentimentCache: "yuzu-sentiment-cache", // センチメントキャッシュ（localStorage）
   signalShown: "yuzu-signal-shown",     // SIGNAL カード表示済みマイルストーン（localStorage）
 } as const;
+
+// レポート詳細のクライアントキャッシュ（sessionStorage）。
+// INSIGHT で取得済みの payload を詳細遷移時に即時描画するために使う。
+export const reportCacheKey = (periodKey: string) => `yuzu-report-cache:${periodKey}`;

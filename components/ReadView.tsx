@@ -10,6 +10,7 @@ import type { Post } from "@/lib/types";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import { reportCacheKey } from "@/lib/storageKeys";
 
 type Props = {
   myPosts: Post[];
@@ -78,7 +79,45 @@ export default function ReadView({ myPosts }: Props) {
         }
         const data = (await res.json()) as { reports?: ReportMeta[] };
         if (cancelled) return;
-        setReports(Array.isArray(data.reports) ? data.reports : []);
+        const list = Array.isArray(data.reports) ? data.reports : [];
+        setReports(list);
+
+        // 生成済み payload を sessionStorage に保存 → 詳細遷移時に即時描画
+        try {
+          for (const meta of list) {
+            if (meta.generated && meta.payload) {
+              const cached = {
+                user_id: "",
+                periodKey: meta.periodKey,
+                kind: meta.kind,
+                rangeStart: meta.rangeStart,
+                rangeEnd: meta.rangeEnd,
+                payload: meta.payload,
+                generatedAt: meta.generatedAt ?? Date.now(),
+                model: meta.model ?? "",
+              };
+              sessionStorage.setItem(reportCacheKey(meta.periodKey), JSON.stringify(cached));
+            }
+          }
+        } catch {
+          // sessionStorage が落ちても致命ではない
+        }
+
+        // 未生成かつ投稿ありの上位 2 件を背景で先読み生成（fire-and-forget）
+        const pending = list
+          .filter((m) => !m.generated && m.postCount > 0)
+          .slice(0, 2);
+        if (pending.length > 0) {
+          const scores = loadSentimentCache();
+          for (const m of pending) {
+            fetch(`/api/reports/${encodeURIComponent(m.periodKey)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ scores }),
+              keepalive: true,
+            }).catch(() => {});
+          }
+        }
       } catch {
         if (!cancelled) setError("失敗、話せ");
       } finally {

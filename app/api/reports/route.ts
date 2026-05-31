@@ -68,6 +68,10 @@ export async function GET(req: Request) {
           headline: cached?.payload.headline,
           topics: cached?.payload.topics,
           postCount,
+          // 詳細遷移時の即時描画のためフル payload も載せる
+          payload: cached?.payload,
+          generatedAt: cached?.generatedAt,
+          model: cached?.model,
         };
       }),
     );
