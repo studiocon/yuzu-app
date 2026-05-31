@@ -16,6 +16,9 @@ export const dynamic = "force-dynamic";
 
 const MODEL = "claude-sonnet-4-6";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// #82: Anthropic 失敗時の negative cache TTL（短く）。
+// 連続リロードでの再課金を抑えつつ、5 分後には自然回復するように。
+const NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // PATTERN テーマキャッシュは Supabase `theme_cache` に永続化する（#79）。
 // in-memory Map は Vercel コールドスタートで消えて Claude を余計に叩くため廃止。
@@ -30,6 +33,7 @@ interface ThemeCacheRow {
   themes: Theme[];
   post_count: number;
   generated_at: string;
+  error: string | null;
 }
 
 export async function GET() {
@@ -51,20 +55,29 @@ export async function GET() {
   }
 
   // キャッシュヒット判定（Supabase 永続キャッシュ。RLS で自分の行のみ読める）
+  // - 成功キャッシュ: themes を返す（24h TTL or post_count 変化で invalidate）
+  // - 失敗キャッシュ（#82）: 5min は再課金しないため 502 を即返す
   const { data: cached, error: cacheReadError } = await supabase
     .from("theme_cache")
-    .select("themes, post_count, generated_at")
+    .select("themes, post_count, generated_at, error")
     .eq("user_id", user.id)
     .maybeSingle<ThemeCacheRow>();
   if (cacheReadError) {
     // 読み取り失敗は致命的にしない。再生成にフォールバックする（silent fail にはしない）。
     console.error("GET /api/insights/themes: cache read", cacheReadError);
-  } else if (
-    cached &&
-    cached.post_count === total &&
-    Date.now() - new Date(cached.generated_at).getTime() < CACHE_TTL_MS
-  ) {
-    return NextResponse.json({ themes: cached.themes });
+  } else if (cached && cached.post_count === total) {
+    const ageMs = Date.now() - new Date(cached.generated_at).getTime();
+    if (cached.error) {
+      if (ageMs < NEGATIVE_CACHE_TTL_MS) {
+        return NextResponse.json(
+          { error: cached.error, cached: true },
+          { status: 502 },
+        );
+      }
+      // negative TTL 経過 → 再試行へフォールスルー
+    } else if (ageMs < CACHE_TTL_MS) {
+      return NextResponse.json({ themes: cached.themes });
+    }
   }
 
   // 最新 50 件まで取得
@@ -87,6 +100,28 @@ export async function GET() {
     return NextResponse.json({ error: "missing ANTHROPIC_API_KEY" }, { status: 500 });
   }
 
+  // #82: 失敗時も negative cache に書く helper（ユーザー体験を止めず、再課金だけ防ぐ）
+  const admin = createAdminClient();
+  const writeCache = async (row: {
+    themes: Theme[];
+    error: string | null;
+  }) => {
+    const { error: cacheWriteError } = await admin.from("theme_cache").upsert(
+      {
+        user_id: user.id,
+        themes: row.themes,
+        error: row.error,
+        post_count: total,
+        generated_at: new Date().toISOString(),
+        model: MODEL,
+      },
+      { onConflict: "user_id" },
+    );
+    if (cacheWriteError) {
+      console.error("GET /api/insights/themes: cache write", cacheWriteError);
+    }
+  };
+
   try {
     const client = new Anthropic({ apiKey });
     const msg = await client.messages.create({
@@ -99,27 +134,14 @@ export async function GET() {
     const themes = extractThemesJson(raw);
     if (!themes) {
       console.error("GET /api/insights/themes: parse failed", raw.slice(0, 500));
+      await writeCache({ themes: [], error: "parse_failed" });
       return NextResponse.json({ error: "parse failed" }, { status: 502 });
     }
-    // 永続キャッシュへ upsert（service_role。RLS では書けないため admin client）。
-    // 書き込み失敗はログに残しつつ、テーマ自体は返す（ユーザー体験を止めない）。
-    const admin = createAdminClient();
-    const { error: cacheWriteError } = await admin.from("theme_cache").upsert(
-      {
-        user_id: user.id,
-        themes,
-        post_count: total,
-        generated_at: new Date().toISOString(),
-        model: MODEL,
-      },
-      { onConflict: "user_id" },
-    );
-    if (cacheWriteError) {
-      console.error("GET /api/insights/themes: cache write", cacheWriteError);
-    }
+    await writeCache({ themes, error: null });
     return NextResponse.json({ themes });
   } catch (e) {
     console.error("GET /api/insights/themes:", e);
+    await writeCache({ themes: [], error: "anthropic_call_failed" });
     return NextResponse.json({ error: "anthropic call failed" }, { status: 502 });
   }
 }

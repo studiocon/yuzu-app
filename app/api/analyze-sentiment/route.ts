@@ -1,11 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { mapWithConcurrency } from "@/lib/concurrency";
 
 export const runtime = "nodejs";
 
 // #40: 1 リクエストあたりの post 上限。Anthropic 課金を保護。
 const MAX_POSTS_PER_REQUEST = 50;
+// #80: Anthropic Tier 1 RPM=50 に対する余裕を持たせた並列度。
+// 50 posts を全並列で叩くと 429 が出て sentiment が無音 0 化する事故が起きた。
+const SENTIMENT_CONCURRENCY = 5;
 
 type IncomingPost = { id: string; text: string; createdAt: number };
 type Result = { postId: string; date: string; score: number };
@@ -67,8 +71,10 @@ export async function POST(req: NextRequest) {
 
   const client = new Anthropic({ apiKey });
 
-  const results: Result[] = await Promise.all(
-    posts.map(async (p): Promise<Result> => {
+  const results: Result[] = await mapWithConcurrency(
+    posts,
+    SENTIMENT_CONCURRENCY,
+    async (p): Promise<Result> => {
       const date = formatDate(p.createdAt);
       try {
         const msg = await client.messages.create({
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
       } catch {
         return { postId: p.id, date, score: 0 };
       }
-    })
+    },
   );
 
   return NextResponse.json({ results });
