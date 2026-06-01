@@ -6,7 +6,7 @@ import type { Post } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
 import { totalRecordedMinutes } from "@/lib/stats";
 
-type Filter = "all" | "pinned";
+type Filter = "all" | "marked";
 
 type Props = {
   myPosts: Post[];
@@ -23,7 +23,6 @@ type Props = {
   loadingMore?: boolean;
   onLoadMore?: () => void;
   onOpenDetail?: (post: Post) => void;
-  onToggleMark?: (post: Post, next: boolean) => void;
 };
 
 export default function IndexView({
@@ -36,7 +35,6 @@ export default function IndexView({
   loadingMore,
   onLoadMore,
   onOpenDetail,
-  onToggleMark,
 }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -47,13 +45,13 @@ export default function IndexView({
   // 総録音分数（サーバ集計が信頼源、未取得時は posts から fallback）。CompleteView と共有。
   const totalMinutes = totalRecordedMinutes(totalDurationMs, myPosts);
   const filteredPosts = useMemo(() => {
-    if (filter === "pinned") return myPosts.filter((p) => p.marked);
+    if (filter === "marked") return myPosts.filter((p) => p.marked);
     return myPosts;
   }, [myPosts, filter]);
 
   // ── 無限スクロール: 末尾 sentinel が見えたら onLoadMore 発火 ──
   useEffect(() => {
-    if (!hasMore || !onLoadMore || filter === "pinned") return;
+    if (!hasMore || !onLoadMore || filter === "marked") return;
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -101,11 +99,11 @@ export default function IndexView({
             <button
               type="button"
               role="tab"
-              aria-selected={filter === "pinned"}
-              className={"section-filter-item font-display" + (filter === "pinned" ? " is-active" : "")}
-              onClick={() => setFilter("pinned")}
+              aria-selected={filter === "marked"}
+              className={"section-filter-item font-display" + (filter === "marked" ? " is-active" : "")}
+              onClick={() => setFilter("marked")}
             >
-              PINNED
+              MARKED
             </button>
           </div>
         </div>
@@ -127,7 +125,7 @@ export default function IndexView({
             <>
               {filteredPosts.length === 0 && (
                 <p className="mypage-empty">
-                  {filter === "pinned" ? "MARK されたものは無い。" : "話せ。"}
+                  {filter === "marked" ? "MARK されたものは無い。" : "話せ。"}
                 </p>
               )}
               {filteredPosts.map((p) => (
@@ -135,7 +133,6 @@ export default function IndexView({
                   key={p.id}
                   post={p}
                   onOpenDetail={onOpenDetail}
-                  onToggleMark={onToggleMark}
                 />
               ))}
               {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}

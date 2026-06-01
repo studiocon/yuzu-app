@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, PushPin, PushPinSlash } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
 
 type Props = {
   post: Post;
   onOpenDetail?: (post: Post) => void;
-  onToggleMark?: (post: Post, next: boolean) => void;
 };
 
 const formatTimeLabel = (ts: number): string => {
@@ -24,104 +21,31 @@ const formatTimeLabel = (ts: number): string => {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
 };
 
-const formatTimestamp = (ts: number): string => {
-  const d = new Date(ts);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-
-export default function RecordCard({ post, onOpenDetail, onToggleMark }: Props) {
-  const [justMarked, setJustMarked] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const fireMark = () => {
-    if (!onToggleMark) return;
-    const next = !post.marked;
-    onToggleMark(post, next);
-    if (next) {
-      setJustMarked(true);
-      setTimeout(() => setJustMarked(false), 900);
-    }
-  };
-
-  // TEMPORARY: Notion移行期間限定のコピー機能。
-  // 削除トリガー: オーナー（こんちゃん）が Notion 併用を止めたタイミング。
-  // 詳細は PRD.md "COPY（一時機能 / ⚠️ 将来削除予定）" 節を参照。
-  const handleCopy = async () => {
-    const payload = `#${String(post.index).padStart(3, "0")}  ${formatTimestamp(post.createdAt)}\n${post.text}`;
-    let ok = false;
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(payload);
-        ok = true;
-      }
-    } catch {}
-    if (!ok) {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = payload;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch {}
-    }
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 900);
-    }
-  };
+export default function RecordCard({ post, onOpenDetail }: Props) {
+  // カード全体タップで詳細モーダルを開く（COPY / MARK はモーダル内に移設）。
+  const open = () => onOpenDetail?.(post);
 
   return (
-    <article className={"post-card" + (post.marked ? " is-marked" : "")}>
+    <article
+      className={"post-card post-card--tappable" + (post.marked ? " is-marked" : "")}
+      role="button"
+      tabIndex={0}
+      aria-label={`#${post.index} を開く`}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      }}
+    >
       <div className="post-header">
         <time className="post-time font-display">{formatTimeLabel(post.createdAt)}</time>
-        {onOpenDetail ? (
-          <button
-            type="button"
-            className="post-index post-index--btn font-display"
-            onClick={() => onOpenDetail(post)}
-            aria-label={`#${post.index} を開く`}
-          >
-            #{post.index}
-          </button>
-        ) : (
-          <span className="post-index font-display">#{post.index}</span>
-        )}
-        <span className="post-actions">
-          {onToggleMark && (
-            <button
-              type="button"
-              className={"post-iconbtn post-mark-btn" + (post.marked ? " is-marked" : "")}
-              onClick={fireMark}
-              aria-label={post.marked ? "MARK を外す" : "MARK する"}
-              aria-pressed={post.marked}
-              title={post.marked ? "MARKED." : "MARK"}
-            >
-              {post.marked
-                ? <PushPin size={16} weight="fill" />
-                : <PushPinSlash size={16} weight="regular" />}
-            </button>
-          )}
-          {/* TEMPORARY: Notion移行期間限定のコピー機能。YUZU運用が完全移行したら削除する。 */}
-          <button
-            type="button"
-            className={"post-iconbtn post-copy-btn" + (copied ? " is-copied" : "")}
-            onClick={handleCopy}
-            aria-label={copied ? "COPIED." : "本文をコピー"}
-            title={copied ? "COPIED." : "COPY"}
-          >
-            <Copy size={16} weight="regular" />
-          </button>
-        </span>
+        <span className="post-index font-display">#{post.index}</span>
       </div>
       <div className="post-body">
         <p className="post-text">{post.text}</p>
       </div>
-      {justMarked && <span className="post-mark-flash font-display" aria-hidden>MARKED.</span>}
-      {copied && <span className="post-copy-flash font-display" aria-hidden>COPIED.</span>}
     </article>
   );
 }

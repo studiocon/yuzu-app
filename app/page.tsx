@@ -332,7 +332,6 @@ export default function Home() {
           loadingMore={loadingMore}
           onLoadMore={loadMore}
           onOpenDetail={setDetailPost}
-          onToggleMark={toggleMark}
         />
       )}
 
@@ -351,7 +350,7 @@ export default function Home() {
         </>
       )}
 
-      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} onClose={() => setDetailPost(null)} />
+      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} onToggleMark={toggleMark} onClose={() => setDetailPost(null)} />
 
       <RecordModal
         open={recordOpen}

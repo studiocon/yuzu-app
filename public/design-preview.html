@@ -123,7 +123,9 @@
   .post-card .emoji { font-size: 20px; }
   .post-card .name { font-family: var(--font-body); font-weight: 700; font-size: var(--text-sm); }
   .post-card .time { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: var(--text-xs); color: var(--ink-muted); }
-  .post-card .text { margin: 10px 0 0; font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); color: var(--ink); }
+  .post-card .text { margin: 10px 0 0; font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); line-height: 1.75; color: var(--ink); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
+  .post-card--tappable { cursor: pointer; transition: background 0.15s var(--ease-soft); }
+  .post-card--tappable:hover { background: var(--surface-hover); }
   .post-card .index { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.08em; }
 
   /* buttons */
@@ -231,7 +233,10 @@
   .index-detail-mock .label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
   .index-detail-mock .value { font-family: var(--font-display); font-weight: 900; font-size: 36px; line-height: 1; letter-spacing: -0.02em; color: #fff; font-variant-numeric: tabular-nums; }
   .index-detail-mock .stamp { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.16em; color: var(--ink-muted); margin: 0 0 20px; }
-  .index-detail-mock .body { font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); line-height: 1.7; color: rgba(255,255,255,0.6); margin: 0; white-space: pre-wrap; }
+  .index-detail-mock .body { display: flex; flex-direction: column; gap: 14px; margin: 0; }
+  .index-detail-mock .body p { font-family: var(--font-body); font-weight: 400; font-size: var(--text-lg); line-height: 1.85; color: rgba(255,255,255,0.92); margin: 0; white-space: pre-wrap; }
+  .index-detail-mock .actions { display: flex; gap: 12px; margin-top: 28px; }
+  .index-detail-mock .actionbtn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sharp); color: rgba(255,255,255,0.7); font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; }
 
   /* prompts */
   .prompts { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -498,16 +503,15 @@
         <div class="comp" id="c-post">
           <h4>RECORD CARD (v2)</h4>
           <div class="stage" style="align-items:flex-start">
-            <div class="post-card">
+            <div class="post-card post-card--tappable">
               <div class="row" style="justify-content:space-between;align-items:center">
                 <span class="time">たった今</span>
                 <span class="index" style="margin-left:auto">#042</span>
-                <span style="display:inline-flex;gap:4px;margin-left:8px;color:var(--ink-muted);font-size:14px">📌 ⧉</span>
               </div>
-              <p class="text">今日はずっと機嫌が良かった。理由はわからない。</p>
+              <p class="text">今日はずっと機嫌が良かった。理由はわからない。仕事も悪くなかったし、夜は早めに帰れた。久しぶりに本を読んだ。気づいたら寝落ちしていた。明日も同じならいい。</p>
             </div>
           </div>
-          <p class="note">v2: アイコン・名前なし（identity は <code>#NNN</code> のみ）。右端に低主張の MARK / COPY のみ。COPY は <strong>Notion 移行期間限定の一時機能</strong>。</p>
+          <p class="note">v2.2: アイコン・名前なし（identity は <code>#NNN</code> のみ）。<strong>カード全体タップ</strong>で詳細モーダルへ。本文は <strong>~5 行で省略</strong>（全文・MARK / COPY は詳細モーダル側）。</p>
         </div>
 
         <div class="comp" id="c-index-detail" style="grid-column: 1 / -1">
@@ -520,10 +524,18 @@
                 <div class="stat-card"><span class="label">DAY</span><span class="value">14</span></div>
               </div>
               <p class="stamp">2026.05.29 (木) 23:11</p>
-              <p class="body">今日はずっと機嫌が良かった。理由はわからない。</p>
+              <div class="body">
+                <p>今日はずっと機嫌が良かった。</p>
+                <p>理由はわからない。</p>
+                <p>明日も同じならいい。</p>
+              </div>
+              <div class="actions">
+                <span class="actionbtn">📌 MARK</span>
+                <span class="actionbtn">⧉ COPY</span>
+              </div>
             </div>
           </div>
-          <p class="note">#番号タップ後の詳細。主役は <strong>その1件の事実</strong>（<code>LENGTH</code>＝録音時間 / <code>DAY</code>＝登録から何日目）。本文は再読用の二次情報に格下げ。シェア導線は持たない（最新 STREAK の SIGNAL カードに委ねる）。<code>--ink</code> 背景・白文字・罫線のみで階層化（box-shadow なし）。</p>
+          <p class="note">#番号タップ（v2.2 は<strong>カード全体タップ</strong>）後の詳細＝<strong>1 件をじっくり読む場</strong>。本文は「。」で段落分割・行間を空け・一回り大きく濃く（<code>--text-lg</code>）。<code>MARK</code> / <code>COPY</code> はここに集約（COPY は <strong>Notion 移行期間限定の一時機能</strong>）。シェア導線は持たない（最新 STREAK の SIGNAL カードに委ねる）。<code>--ink</code> 背景・白文字・罫線のみで階層化（box-shadow なし）。</p>
         </div>
 
         <div class="comp" id="c-sentiment" style="grid-column: 1 / -1">
@@ -687,9 +699,9 @@
           <tr><td class="where">オンボ 変換完了（未保存）</td><td class="what en">CARVED.</td></tr>
           <tr><td class="where">オンボ 保存 / 再録音</td><td class="what">刻む / もう一度</td></tr>
           <tr><td class="where">MARK / COPY 操作直後</td><td class="what en">MARKED. / COPIED.</td></tr>
-          <tr><td class="where">RECORDS フィルタ</td><td class="what en">ALL / PINNED</td></tr>
+          <tr><td class="where">RECORDS フィルタ</td><td class="what en">ALL / MARKED</td></tr>
           <tr><td class="where">タイムライン空（ALL）</td><td class="what">話せ。</td></tr>
-          <tr><td class="where">PINNED 空表示</td><td class="what">MARK されたものは無い。</td></tr>
+          <tr><td class="where">MARKED 空表示</td><td class="what">MARK されたものは無い。</td></tr>
           <tr><td class="where">追加読み込み中</td><td class="what en">LOADING.</td></tr>
           <tr><td class="where">INDEX 通し番号</td><td class="what en">#NNN（ゼロ埋め3桁）</td></tr>
           <tr><td class="where">STATS（LOG）</td><td class="what en">RECORDS / MINUTES / STREAK</td></tr>
@@ -761,7 +773,7 @@
           <tr><td class="where">RECORD FAB</td><td>録音アクション。タブバー右の正円ボタン。タブ state を持たない。</td><td>旧「TALK タブ」は廃止</td></tr>
           <tr><td class="where">#NNN</td><td>ユーザーの identity 兼通し番号。名前・アイコンの代替。ゼロ埋め3桁。</td><td>「名前は無い。お前は #020 だ」</td></tr>
           <tr><td class="where">RECORD / RECORDS</td><td>1 件の声の記録 / その一覧。</td><td>「投稿」「日記」「テキスト」</td></tr>
-          <tr><td class="where">MARK / PINNED</td><td>RECORD に刻印を打つトグル / MARK 済みのみのフィルタ。</td><td>「お気に入り」「いいね」「ブックマーク」</td></tr>
+          <tr><td class="where">MARK / MARKED（フィルタ）</td><td>RECORD に刻印を打つトグル / MARK 済みのみのフィルタ。</td><td>「お気に入り」「いいね」「ブックマーク」「PINNED」</td></tr>
           <tr><td class="where">COPY</td><td>本文 + #NNN + 日時をクリップボードへ。<strong>Notion 移行期間限定の一時機能</strong>。</td><td>⚠️ 将来削除。恒久 UI ではない</td></tr>
           <tr><td class="where">STATS</td><td>LOG 上部の 3 スタッツ <strong>RECORDS / MINUTES / STREAK</strong>。DAY は INDEX 詳細モーダル側。</td><td>「DAYS. NO SKIP.」は使わない</td></tr>
           <tr><td class="where">MINUTES</td><td>総録音分数。声の積み上げ量。</td><td>旧「SINCE（登録日数）」を置換</td></tr>

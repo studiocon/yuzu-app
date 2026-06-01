@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CaretRight, SignOut, Trash } from "@phosphor-icons/react";
+import { CaretRight, SignOut, Trash, Copy } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import ContactModal from "@/components/ContactModal";
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [mock, setMock] = useState(false);
+  const [idCopied, setIdCopied] = useState(false);
 
   const supabase = createClient();
 
@@ -67,6 +68,23 @@ export default function SettingsPage() {
   };
 
   const shortId = userId ? userId.slice(0, 8) + "..." : "―";
+
+  const handleCopyUserId = async () => {
+    if (!userId) return;
+    try {
+      await navigator.clipboard.writeText(userId);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = userId;
+      ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setIdCopied(true);
+    setTimeout(() => setIdCopied(false), 1500);
+  };
   const displayEmail = email ?? "―";
 
   return (
@@ -106,10 +124,20 @@ export default function SettingsPage() {
             <span className="settings-row-value">{displayEmail}</span>
           </div>
 
-          <div className="settings-row settings-row--disabled" aria-disabled="true">
+          <button
+            type="button"
+            className="settings-row"
+            onClick={handleCopyUserId}
+            disabled={!userId}
+            aria-label={idCopied ? "COPIED." : "ユーザーID をコピー"}
+            title={idCopied ? "COPIED." : "タップでコピー"}
+          >
             <span className="settings-row-label">ユーザーID</span>
-            <span className="settings-row-value settings-row-value--mono">{shortId}</span>
-          </div>
+            <span className="settings-row-value settings-row-value--mono">
+              {idCopied ? "COPIED." : shortId}
+            </span>
+            <Copy size={14} className="settings-row-chevron" />
+          </button>
         </section>
 
         <section className="settings-section">

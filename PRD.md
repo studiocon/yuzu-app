@@ -110,7 +110,7 @@ YUZUは "自己肯定" を一切しない。「あなたは本物だ」と励ま
 ヘッダー左上の **ページ名 `LOG.`** が見出しを兼ねる（画面内には別途タイトルを置かない）。上から下へ「抽象 → 具体」で縦に積み、**`RECORDS` で完結する**（PROFILE・INSIGHT を含まない）。
 
 1. **STATS（横3列）** — `RECORDS` / `MINUTES` / `STREAK`。
-2. **RECORDS** — 自分の RECORD 一覧（新着順）。見出し右に `ALL / PINNED` フィルタトグル1つだけ。`PINNED` は MARK 済みのみ抽出。
+2. **RECORDS** — 自分の RECORD 一覧（新着順）。見出し右に `ALL / MARKED` フィルタトグル1つだけ。`MARKED` は MARK 済みのみ抽出。
 
 設定（`/settings`）はヘッダー右上の歯車アイコンに据え置く。`#NNN`（通し番号）は各 RECORD カード上に表示し、identity として機能する。
 
@@ -137,9 +137,9 @@ YUZU は編集・削除を許さない。その代わりユーザーに **唯一
 - 各 RECORD カード右端の常時トグルボタン（PushPin / PushPinSlash）。v1 の長押し検出は廃止。
 - 黄色枠なし。色の差分（線→塗り、`--ink-muted` → `--yuzu-zest`）のみで状態表現。タッチターゲット 44px。
 - `records.marked: boolean` で永続化（[supabase/migrations/0004_mark.sql](supabase/migrations/0004_mark.sql)）
-- INDEX `RECORDS` に `ALL` / `PINNED` フィルタ（PINNED = `marked === true` のみ）
-- 操作直後にカード右下へ `MARKED.`（Unbounded 700・`--yuzu-zest`）を 0.9s フラッシュ
-- PINNED 空表示は `MARK されたものは無い。`
+- INDEX `RECORDS` に `ALL` / `MARKED` フィルタ（MARKED = `marked === true` のみ）
+- 操作直後に `MARKED.`（Unbounded 700・`--yuzu-zest`）を 0.9s フラッシュ
+- MARKED 空表示は `MARK されたものは無い。`
 - MARK と編集・削除は別概念。UI 上は鉛筆・ゴミ箱アイコンを使わない
 
 ### COPY（一時機能 / ⚠️ 将来削除予定）

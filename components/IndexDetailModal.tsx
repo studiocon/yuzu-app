@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "@phosphor-icons/react";
+import { X, Copy, PushPin, PushPinSlash } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { WEEKDAY_JA } from "@/lib/streak";
@@ -16,6 +16,7 @@ type Props = {
   post: Post | null;
   /** 最初の投稿時刻。DAY（登録から何日目か）の算出に使う。未取得なら DAY は出さない。 */
   firstPostAt?: number | null;
+  onToggleMark?: (post: Post, next: boolean) => void;
   onClose: () => void;
 };
 
@@ -26,9 +27,32 @@ const formatStamp = (ts: number): string => {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} (${wd}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-export default function IndexDetailModal({ post, firstPostAt, onClose }: Props) {
+const formatTimestamp = (ts: number): string => {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// 「。」直後で段落に割る（句点は残す）。明示改行は段落内で pre-wrap に委ねる。
+const splitParagraphs = (text: string): string[] => {
+  const parts = text
+    .split(/(?<=。)\s*\n?/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+  return parts.length > 0 ? parts : [text];
+};
+
+export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("opening");
+  // モーダルは detailPost のスナップショットを保持するので marked はローカルで持つ。
+  const [marked, setMarked] = useState(false);
+  const [justMarked, setJustMarked] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (post) setMarked(post.marked);
+  }, [post]);
 
   useEffect(() => {
     if (post) {
@@ -96,6 +120,48 @@ export default function IndexDetailModal({ post, firstPostAt, onClose }: Props) 
     typeof firstPostAt === "number" ? dayNumberSince(post.createdAt, firstPostAt) : 0;
   const dayLabel = dayNumber > 0 ? String(dayNumber) : null;
   const hasStats = lengthLabel !== null || dayLabel !== null;
+  const paragraphs = splitParagraphs(post.text);
+
+  const fireMark = () => {
+    if (!onToggleMark) return;
+    const next = !marked;
+    setMarked(next);
+    onToggleMark(post, next);
+    if (next) {
+      setJustMarked(true);
+      setTimeout(() => setJustMarked(false), 900);
+    }
+  };
+
+  // TEMPORARY: Notion移行期間限定のコピー機能。
+  // 削除トリガー: オーナー（こんちゃん）が Notion 併用を止めたタイミング。
+  // 詳細は PRD.md "COPY（一時機能 / ⚠️ 将来削除予定）" 節を参照。
+  const handleCopy = async () => {
+    const payload = `#${String(post.index).padStart(3, "0")}  ${formatTimestamp(post.createdAt)}\n${post.text}`;
+    let ok = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payload);
+        ok = true;
+      }
+    } catch {}
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = payload;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {}
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 900);
+    }
+  };
 
   return (
     <div
@@ -135,7 +201,40 @@ export default function IndexDetailModal({ post, firstPostAt, onClose }: Props) 
         )}
 
         <p className="index-detail-stamp font-display">{formatStamp(post.createdAt)}</p>
-        <p className="index-detail-text">{post.text}</p>
+        <div className="index-detail-text">
+          {paragraphs.map((para, i) => (
+            <p key={i} className="index-detail-para">{para}</p>
+          ))}
+        </div>
+
+        <div className="index-detail-actions">
+          {onToggleMark && (
+            <button
+              type="button"
+              className={"index-detail-actionbtn" + (marked ? " is-marked" : "")}
+              onClick={fireMark}
+              aria-label={marked ? "MARK を外す" : "MARK する"}
+              aria-pressed={marked}
+              title={marked ? "MARKED." : "MARK"}
+            >
+              {marked
+                ? <PushPin size={18} weight="fill" />
+                : <PushPinSlash size={18} weight="regular" />}
+              <span className="index-detail-actionlabel font-display">{justMarked ? "MARKED." : "MARK"}</span>
+            </button>
+          )}
+          {/* TEMPORARY: Notion移行期間限定のコピー機能。YUZU運用が完全移行したら削除する。 */}
+          <button
+            type="button"
+            className={"index-detail-actionbtn" + (copied ? " is-copied" : "")}
+            onClick={handleCopy}
+            aria-label={copied ? "COPIED." : "本文をコピー"}
+            title={copied ? "COPIED." : "COPY"}
+          >
+            <Copy size={18} weight="regular" />
+            <span className="index-detail-actionlabel font-display">{copied ? "COPIED." : "COPY"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
