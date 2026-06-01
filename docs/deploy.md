@@ -8,7 +8,7 @@
 
 ### 1-1. CI ステータス
 
-- [main の最新 commit で GitHub Actions が両方緑](https://github.com/kyotar/YUZU/actions)
+- [main の最新 commit で GitHub Actions が両方緑](https://github.com/studiocon/yuzu-app/actions)
   - `CI` (typecheck + lint + build)
   - `Design check` (drift + linter)
 
