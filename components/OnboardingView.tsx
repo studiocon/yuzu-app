@@ -39,8 +39,8 @@ export default function OnboardingView({ onStart, pendingText, onSave }: Props) 
   return (
     <section className="onboarding-view">
       <div className="onboarding-copy">
-        <p className="onboarding-headline">話せ</p>
-        <p className="onboarding-sub">まずは、長押しして声を残せ</p>
+        <p className="onboarding-headline">声を刻め</p>
+        <p className="onboarding-sub">長押しで話せ</p>
       </div>
 
       <button

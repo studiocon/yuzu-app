@@ -179,11 +179,11 @@ body {
 }
 .onboarding-headline {
   margin: 0;
-  font-size: 36px;
+  font-size: var(--text-3xl);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
   color: var(--ink);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 .onboarding-sub {
   margin: 0;
