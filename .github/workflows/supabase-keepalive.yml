@@ -1,0 +1,31 @@
+name: Supabase Keepalive
+
+# Supabase Free tier は 7 日間 API リクエストがゼロだと Pause する。
+# 毎日 /api/health を叩いて DB に軽量な読み取りを発生させ、Pause を防ぐ。
+# - Hobby/Free tier で運用するときの最小防衛
+# - Pro tier に移行したら不要だが残しておいて損は無い（軽量なヘルスチェックとして機能）
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 毎日 UTC 03:00 = JST 12:00
+  workflow_dispatch: # 手動トリガーも許可
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping /api/health
+        run: |
+          set -e
+          URL="${HEALTH_URL:-https://yuzu-app.vercel.app/api/health}"
+          echo "Pinging $URL"
+          response=$(curl -sf -o /tmp/health.json -w "%{http_code}" "$URL")
+          cat /tmp/health.json
+          echo ""
+          if [ "$response" -ne 200 ]; then
+            echo "::error::Health check failed with status $response"
+            exit 1
+          fi
+        env:
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
