@@ -2143,7 +2143,7 @@ textarea.login-modal-email-input.contact-modal-textarea {
   top: calc(100% + 6px);
   right: 0;
   background: var(--ink);
-  color: var(--surface);
+  color: var(--yuzu-white);
   font-size: 10px;
   letter-spacing: 0.12em;
   padding: 4px 8px;
