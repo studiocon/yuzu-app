@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Phase } from "./types";
 import { MAX_RECORD_MS } from "./constants";
+import { track } from "./analytics";
 
 const MIN_RECORD_MS = 500;
 
@@ -222,14 +223,22 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
       }
 
       const text = getString(data, "text") ?? "";
-      if (text === "") { showHint("無音、話せ"); setStatusMsg(null); setPhaseSync("idle"); await onTranscribed({ kind: "silence" }); return; }
-      if (text.length < 5) { showHint("短い、話せ"); setStatusMsg(null); setPhaseSync("idle"); await onTranscribed({ kind: "short" }); return; }
+      if (text === "") {
+        track("transcribe_failed", { errorCode: "silence" });
+        showHint("無音、話せ"); setStatusMsg(null); setPhaseSync("idle"); await onTranscribed({ kind: "silence" }); return;
+      }
+      if (text.length < 5) {
+        track("transcribe_failed", { errorCode: "short" });
+        showHint("短い、話せ"); setStatusMsg(null); setPhaseSync("idle"); await onTranscribed({ kind: "short" }); return;
+      }
 
       // 成功 — phase は呼び出し側が save 結果に応じて complete / idle を決める
+      track("transcribe_succeeded", { durationMs, charCount: text.length });
       setStatusMsg(null);
       await onTranscribedRef.current({ kind: "text", text, durationMs });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "エラーが発生しました";
+      track("transcribe_failed", { errorCode: msg.slice(0, 64) });
       setError(msg);
       setStatusMsg(null); setPhaseSync("idle");
       await onTranscribedRef.current({ kind: "error", message: msg });
@@ -251,6 +260,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     setShortTap(false);
     pressStartRef.current = Date.now();
     setPhaseSync("recording");
+    track("record_started");
 
     const ok = await startMediaRecorder();
     if (!ok) return;
