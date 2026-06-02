@@ -1,6 +1,6 @@
 "use client";
 
-import { ListNumbers, FileText } from "@phosphor-icons/react";
+import { Waveform, Pulse } from "@phosphor-icons/react";
 
 export type MainTab = "index" | "read";
 
@@ -27,7 +27,7 @@ export default function TabBar({ tab, onChange, hidden }: Props) {
         className="tab-item"
         onClick={() => onChange("index")}
       >
-        <ListNumbers size={24} weight={tab === "index" ? "fill" : "regular"} />
+        <Waveform size={24} weight={tab === "index" ? "fill" : "regular"} />
         <span className="tab-label font-display">LOG</span>
       </button>
       <button
@@ -38,7 +38,7 @@ export default function TabBar({ tab, onChange, hidden }: Props) {
         className="tab-item"
         onClick={() => onChange("read")}
       >
-        <FileText size={24} weight={tab === "read" ? "fill" : "regular"} />
+        <Pulse size={24} weight={tab === "read" ? "fill" : "regular"} />
         <span className="tab-label font-display">INSIGHT</span>
       </button>
     </nav>
