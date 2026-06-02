@@ -49,7 +49,22 @@ function makeDateTick(dates: string[]) {
 }
 
 export default function SentimentChart({ data }: Props) {
-  if (data.length < 3) return null;
+  if (data.length === 0) {
+    return (
+      <div className="sentiment-chart-empty" role="status">
+        <p className="sentiment-chart-empty-label font-display">SILENCE.</p>
+        <p className="sentiment-chart-empty-msg">声紋が無い</p>
+      </div>
+    );
+  }
+  if (data.length < 2) {
+    return (
+      <div className="sentiment-chart-empty" role="status">
+        <p className="sentiment-chart-empty-label font-display">SPARSE.</p>
+        <p className="sentiment-chart-empty-msg">声紋が 1 日分のみ、続けろ</p>
+      </div>
+    );
+  }
 
   const DateTick = makeDateTick(data.map((d) => d.date));
 

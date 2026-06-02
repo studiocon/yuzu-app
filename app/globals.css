@@ -1194,6 +1194,31 @@ button.settings-row:focus-visible {
   padding: 8px 0;
 }
 .sentiment-chart-wrap { width: 100%; height: 220px; position: relative; }
+.sentiment-chart-empty {
+  width: 100%;
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px dashed var(--divider);
+  border-radius: 2px;
+}
+.sentiment-chart-empty-label {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.sentiment-chart-empty-msg {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+  text-align: center;
+}
 .sentiment-legend {
   position: absolute;
   top: 4px;
