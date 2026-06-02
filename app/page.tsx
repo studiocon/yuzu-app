@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Gear } from "@phosphor-icons/react";
 import type { User } from "@supabase/supabase-js";
+import { identify, resetIdentity, track } from "@/lib/analytics";
 import IndexView from "@/components/IndexView";
 import InsightView from "@/components/InsightView";
 import OnboardingView from "@/components/OnboardingView";
@@ -142,6 +143,7 @@ export default function Home() {
           if (errCode === "daily_limit") {
             const tc = getNumber(data, "todayCount");
             if (typeof tc === "number") setTodayCount(tc);
+            track("daily_limit_hit");
             recorder.failWithError(`今日はここまで（${res.status}）`);
             return;
           }
@@ -166,6 +168,7 @@ export default function Home() {
         if (typeof tc === "number") setTodayCount(tc);
         const streak = getNumber(data, "streak");
         if (typeof streak === "number") setServerStreak(streak);
+        track("post_created", { durationMs: newPost.durationMs, charCount: newPost.char_count });
         recorder.setComplete();
       } catch (e) {
         const msg = e instanceof Error ? e.message : "通信失敗";
@@ -192,9 +195,20 @@ export default function Home() {
       saveSentimentCache({ ...prev, ...sentiments });
       return;
     }
-    supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      setUser(u ?? null);
+      if (u) identify(u.id); // PostHog identify
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (event === "SIGNED_IN" && u) {
+        identify(u.id);
+        track("login_succeeded");
+      }
+      if (event === "SIGNED_OUT") {
+        resetIdentity();
+      }
     });
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,7 +1,9 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Unbounded } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import SplashScreen from "@/components/SplashScreen";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const unbounded = Unbounded({
   subsets: ["latin"],
@@ -64,7 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <SplashScreen />
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );
