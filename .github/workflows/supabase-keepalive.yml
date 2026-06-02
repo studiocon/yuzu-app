@@ -18,7 +18,7 @@ jobs:
       - name: Ping /api/health
         run: |
           set -e
-          URL="${HEALTH_URL:-https://yuzu-app.vercel.app/api/health}"
+          URL="${HEALTH_URL:-https://yuzu-journal.vercel.app/api/health}"
           echo "Pinging $URL"
           response=$(curl -sf -o /tmp/health.json -w "%{http_code}" "$URL")
           cat /tmp/health.json
