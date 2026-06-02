@@ -194,14 +194,19 @@ body {
 .onboarding-mic {
   width: 96px;
   height: 96px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
+  background: var(--yuzu-yellow);
+  color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    0 10px 30px rgba(26, 26, 48, 0.10),
+    0 2px 8px rgba(26, 26, 48, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transition: transform 0.15s var(--ease-snap);
 }
 .onboarding-mic:active { transform: scale(0.94); }
