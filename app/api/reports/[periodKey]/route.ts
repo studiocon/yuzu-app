@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateReport, getReport } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
+import { scoreSentiments } from "@/lib/sentimentScore";
 import type { Post } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -101,11 +102,24 @@ export async function POST(req: NextRequest, ctx: Params) {
     }
 
     try {
+      // クライアントが渡してこなかったスコアをサーバ側で補完する。
+      // 修正前はクライアントの localStorage cache が空だと sentimentSeries が空配列になり、
+      // ReportDetail の EMOTION チャートが silent fail（data.length < 3 で null return）していた。
+      const missingPosts = posts.filter((p) => typeof scores[p.id] !== "number");
+      let fullScores: Record<string, number> = scores;
+      if (missingPosts.length > 0 && process.env.ANTHROPIC_API_KEY) {
+        const backfilled = await scoreSentiments(
+          missingPosts.map((p) => ({ id: p.id, text: p.text })),
+          process.env.ANTHROPIC_API_KEY,
+        );
+        fullScores = { ...scores, ...backfilled };
+      }
+
       const report = await generateReport({
         userId: user.id,
         periodKey,
         posts,
-        scores,
+        scores: fullScores,
       });
       return NextResponse.json({ report });
     } catch (e) {
