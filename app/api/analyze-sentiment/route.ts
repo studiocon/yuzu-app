@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mapWithConcurrency } from "@/lib/concurrency";
+import { DAY_MS } from "@/lib/period";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,6 @@ const MAX_POSTS_PER_REQUEST = 50;
 const SENTIMENT_CONCURRENCY = 5;
 // #81 MVP: 課金未導入のため、感情解析は全員「直近 30 日」に限定する。
 // 課金導入時 (#65) は plan を見て `if (plan === "free")` で包む。
-const DAY_MS = 24 * 60 * 60 * 1000;
 const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
 type IncomingPost = { id: string; text: string; createdAt: number };

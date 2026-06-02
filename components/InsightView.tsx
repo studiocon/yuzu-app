@@ -138,7 +138,7 @@ export default function InsightView({ myPosts }: Props) {
   if (!hydrated) return null;
 
   return (
-    <section className="read-view">
+    <section className="insight-view">
       <EmotionChart posts={myPosts} scores={scores} />
 
       <section className="mypage-section">

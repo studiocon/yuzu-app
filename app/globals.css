@@ -2174,8 +2174,8 @@ textarea.login-modal-email-input.contact-modal-textarea {
   border-top-color: var(--yuzu-zest);
 }
 
-/* READ. view (独立タブ) */
-.read-view {
+/* INSIGHT view (独立タブ) */
+.insight-view {
   display: flex;
   flex-direction: column;
   padding: 24px 20px calc(140px + env(safe-area-inset-bottom));
@@ -2183,7 +2183,8 @@ textarea.login-modal-email-input.contact-modal-textarea {
   max-width: 640px;
   margin: 0 auto;
 }
-/* (v2.1: ヘッダー INSIGHT. を app-header-title に集約したため .read-view-title は撤去。) */
+/* (v2.1: ヘッダー INSIGHT. を app-header-title に集約したため .insight-view-title は撤去。
+   v2.2: .read-view → .insight-view にリネーム。コンポーネント InsightView と統一。) */
 
 /* Long sentiment toggle */
 .long-sentiment-header {

@@ -1,5 +1,5 @@
 import type { Post } from "./types";
-import { jstDateString } from "./period";
+import { jstDateString, DAY_MS } from "./period";
 
 export type SentimentPoint = { date: string; score: number };
 
@@ -24,7 +24,6 @@ export function computeSentimentSeries(
 
 // 日次系列を週次（日曜始まり）で平均化する。ALL モードの描画密度を抑えるため。
 export function aggregateSentimentByWeek(points: SentimentPoint[]): SentimentPoint[] {
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const byWeek = new Map<string, number[]>();
   for (const p of points) {
     const [y, m, d] = p.date.split("-").map(Number);
