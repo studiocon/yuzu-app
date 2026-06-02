@@ -2444,25 +2444,6 @@ textarea.login-modal-email-input.contact-modal-textarea {
 .signal-save-btn:disabled { opacity: 0.4; cursor: default; }
 .signal-save-btn:not(:disabled):hover { opacity: 0.85; }
 
-.signal-x-btn {
-  width: 100%;
-  padding: 14px;
-  background: transparent;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-  display: block;
-  transition: border-color 0.12s;
-  font-family: var(--font-display), 'Unbounded', sans-serif;
-}
-.signal-x-btn:hover { border-color: rgba(255, 255, 255, 0.6); }
-
 .signal-close-btn {
   width: 100%;
   padding: 10px;

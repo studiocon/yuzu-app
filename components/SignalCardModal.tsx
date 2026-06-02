@@ -64,10 +64,6 @@ export default function SignalCardModal({ streak, totalCount, onClose }: Props) 
     }
   };
 
-  const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-    `DAY ${streak}. VOICE ${totalCount}. #YUZU`
-  )}`;
-
   return (
     <div className="signal-overlay" data-anim={animState} role="dialog" aria-modal="true" aria-label="SIGNAL カード">
       <div className="signal-backdrop" onClick={handleClose} aria-hidden="true" />
@@ -86,14 +82,6 @@ export default function SignalCardModal({ streak, totalCount, onClose }: Props) 
           >
             {exporting ? "SAVING." : "画像を保存"}
           </button>
-          <a
-            href={xUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="signal-x-btn font-display"
-          >
-            X でシェア
-          </a>
           <button type="button" className="signal-close-btn" onClick={handleClose}>
             閉じる
           </button>
