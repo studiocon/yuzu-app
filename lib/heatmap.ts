@@ -4,7 +4,7 @@ export type HeatmapCell = { date: string; bucket: number; charCount: number };
 
 export function buildHeatmap(
   posts: { text: string; createdAt: number }[],
-  days = 42,
+  days = 28,
   now: number = Date.now(),
 ): HeatmapCell[] {
   // 過去 days 日分の date を JST で列挙（古い → 新しい）
@@ -22,14 +22,14 @@ export function buildHeatmap(
     if (p.createdAt < cutoff) continue;
     const date = jstDateString(p.createdAt);
     if (!dateSet.has(date)) continue;
-    const bucket = Math.floor(jstHour(p.createdAt) / 4);
+    const bucket = Math.floor(jstHour(p.createdAt) / 2);
     const key = `${date}|${bucket}`;
     sums.set(key, (sums.get(key) ?? 0) + (p.text?.length ?? 0));
   }
 
   const cells: HeatmapCell[] = [];
   for (const date of dates) {
-    for (let bucket = 0; bucket < 6; bucket++) {
+    for (let bucket = 0; bucket < 12; bucket++) {
       cells.push({ date, bucket, charCount: sums.get(`${date}|${bucket}`) ?? 0 });
     }
   }

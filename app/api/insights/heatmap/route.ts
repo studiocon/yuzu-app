@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const cutoff = new Date(Date.now() - 30 * DAY_MS).toISOString();
+  const cutoff = new Date(Date.now() - 28 * DAY_MS).toISOString();
   const { data, error } = await supabase
     .from("records")
     .select("text, created_at")

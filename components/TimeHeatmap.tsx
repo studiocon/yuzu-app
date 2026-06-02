@@ -71,7 +71,7 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
                 key={`${c.date}-${c.bucket}`}
                 type="button"
                 className="time-heatmap-cell"
-                aria-label={`${fmtDateLabel(c.date)} ${fmtHour(c.bucket * 4)}:00 ${c.charCount} chars`}
+                aria-label={`${fmtDateLabel(c.date)} ${fmtHour(c.bucket * 2)}:00 ${c.charCount} chars`}
                 style={{
                   gridColumn: dateIndex + 1,
                   gridRow: c.bucket + 1,
@@ -105,10 +105,10 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
             className="time-heatmap-tooltip font-display"
             style={{
               left: `calc(${dates.indexOf(hover.date) + 0.5} / ${cols} * 100%)`,
-              top: `calc(${hover.bucket} / 6 * 100% - 6px)`,
+              top: `calc(${hover.bucket} / 12 * 100% - 6px)`,
             }}
           >
-            {fmtDateLabel(hover.date)} {fmtHour(hover.bucket * 4)}:00 / {hover.charCount} CHARS
+            {fmtDateLabel(hover.date)} {fmtHour(hover.bucket * 2)}:00 / {hover.charCount} CHARS
           </div>
         )}
       </div>

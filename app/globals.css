@@ -2534,7 +2534,7 @@ textarea.login-modal-email-input.contact-modal-textarea {
 }
 .time-heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(var(--heatmap-cols, 42), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--heatmap-cols, 28), minmax(0, 1fr));
   gap: 2px;
   width: 100%;
 }
