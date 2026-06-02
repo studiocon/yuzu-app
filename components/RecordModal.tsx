@@ -42,6 +42,8 @@ type Props = {
   onPressStart: (e: React.PointerEvent) => void;
   onPressEnd: () => void;
   onPressCancel: () => void;
+  /** idle hero の prompt を固定したい場合に指定（オンボーディング用）。 */
+  prompt?: string;
 };
 
 export default function RecordModal({
@@ -65,6 +67,7 @@ export default function RecordModal({
   onPressStart,
   onPressEnd,
   onPressCancel,
+  prompt,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("measuring");
@@ -162,6 +165,7 @@ export default function RecordModal({
           onPressStart={onPressStart}
           onPressEnd={onPressEnd}
           onPressCancel={onPressCancel}
+          prompt={prompt}
         />
       )}
     </div>

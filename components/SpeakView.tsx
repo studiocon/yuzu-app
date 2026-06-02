@@ -21,6 +21,10 @@ type Props = {
   onPressStart: (e: React.PointerEvent) => void;
   onPressEnd: () => void;
   onPressCancel: () => void;
+  /** 任意。指定されればその文字列を idle hero の prompt として固定表示。
+   *  未指定なら従来通り pickPrompt() でランダム抽出（ログイン後挙動）。
+   *  オンボーディング時の固定文言用。 */
+  prompt?: string;
 };
 
 const CIRCUMFERENCE = 339.3; // 2π × 54
@@ -46,10 +50,13 @@ export default function SpeakView({
   onPressStart,
   onPressEnd,
   onPressCancel,
+  prompt: fixedPrompt,
 }: Props) {
   const isRecording = phase === "recording";
   const isBusy = phase === "busy";
-  const [prompt] = useState(() => pickPrompt());
+  // 固定 prompt が渡されていればそれを使い、無ければ pickPrompt() でランダム抽出。
+  // useState の初期化時に一度だけ解決して以降固定（マウント中の再抽選を防止）。
+  const [prompt] = useState(() => fixedPrompt ?? pickPrompt());
 
   const isIdleHero =
     phase === "idle" && !permissionDenied && !error && !shortTap;

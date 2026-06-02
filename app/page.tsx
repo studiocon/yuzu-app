@@ -387,6 +387,7 @@ export default function Home() {
         onPressStart={recorder.onPressStart}
         onPressEnd={recorder.onPressEnd}
         onPressCancel={recorder.onPressCancel}
+        prompt={isOnboarding ? "10秒でいい、考えてることを刻め。" : undefined}
       />
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
