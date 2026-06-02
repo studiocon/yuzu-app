@@ -1119,6 +1119,7 @@ button.settings-row:focus-visible {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
+  border-bottom: 1px solid var(--divider);
 }
 .mypage-stat-card {
   background: transparent;
@@ -2074,8 +2075,6 @@ textarea.login-modal-email-input.contact-modal-textarea {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding-top: 44px;
-  border-top: 1px solid var(--divider);
 }
 .records-section-head .mypage-section-title {
   padding-top: 0;
