@@ -12,24 +12,18 @@ export default function OnboardingView({ onStart, pendingText, onSave }: Props) 
   if (pendingText) {
     return (
       <section className="onboarding-view onboarding-view--preview">
+        <p className="onboarding-preview-stamp font-display">CARVED.</p>
         <div className="onboarding-preview-card">
-          <p className="onboarding-preview-label font-display">CARVED.</p>
           <p className="onboarding-preview-text">{pendingText}</p>
         </div>
         <div className="onboarding-preview-actions">
+          <p className="onboarding-guide">残すには、登録しろ</p>
           <button
             type="button"
             className="onboarding-save-btn font-display"
             onClick={onSave}
           >
             刻む
-          </button>
-          <button
-            type="button"
-            className="onboarding-redo-btn"
-            onClick={onStart}
-          >
-            もう一度
           </button>
         </div>
       </section>
