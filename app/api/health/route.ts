@@ -23,25 +23,36 @@ export async function GET() {
   }
   try {
     const supabase = createAdminClient();
-    const { error } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .limit(1);
+    // 単純な select で 1 行だけ取る（profiles が空でも data=[] で error=null になる）
+    const { data, error } = await supabase.from("profiles").select("id").limit(1);
     if (error) {
       return NextResponse.json(
         {
           ok: false,
           stage: "query",
-          error: { message: error.message, code: error.code, details: error.details, hint: error.hint },
+          // error オブジェクトを丸ごと文字列化して全フィールド見せる
+          errorRaw: JSON.parse(JSON.stringify(error)),
+          errorStr: String(error),
           durationMs: Date.now() - t0,
         },
         { status: 503 },
       );
     }
-    return NextResponse.json({ ok: true, t: Date.now(), durationMs: Date.now() - t0 });
+    return NextResponse.json({
+      ok: true,
+      t: Date.now(),
+      durationMs: Date.now() - t0,
+      rows: Array.isArray(data) ? data.length : 0,
+    });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, stage: "exception", error: String(e), durationMs: Date.now() - t0 },
+      {
+        ok: false,
+        stage: "exception",
+        error: String(e),
+        stack: e instanceof Error ? e.stack?.split("\n").slice(0, 5) : null,
+        durationMs: Date.now() - t0,
+      },
       { status: 503 },
     );
   }
