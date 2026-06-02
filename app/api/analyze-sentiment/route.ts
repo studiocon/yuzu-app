@@ -10,6 +10,10 @@ const MAX_POSTS_PER_REQUEST = 50;
 // #80: Anthropic Tier 1 RPM=50 に対する余裕を持たせた並列度。
 // 50 posts を全並列で叩くと 429 が出て sentiment が無音 0 化する事故が起きた。
 const SENTIMENT_CONCURRENCY = 5;
+// #81 MVP: 課金未導入のため、感情解析は全員「直近 30 日」に限定する。
+// 課金導入時 (#65) は plan を見て `if (plan === "free")` で包む。
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
 type IncomingPost = { id: string; text: string; createdAt: number };
 type Result = { postId: string; date: string; score: number };
@@ -58,7 +62,10 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "リクエストの形式が不正です" }, { status: 400 });
   }
-  const posts = Array.isArray(body.posts) ? body.posts : [];
+  const rawPosts = Array.isArray(body.posts) ? body.posts : [];
+  // #81: 30 日より古い post はサーバ側でドロップ。クライアントは未スコアのまま扱う。
+  const cutoff = Date.now() - SENTIMENT_WINDOW_MS;
+  const posts = rawPosts.filter((p) => typeof p.createdAt === "number" && p.createdAt >= cutoff);
   if (posts.length === 0) {
     return NextResponse.json({ results: [] });
   }

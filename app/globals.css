@@ -2111,6 +2111,38 @@ textarea.login-modal-email-input.contact-modal-textarea {
   border-bottom-color: var(--yuzu-zest);
 }
 .section-filter-item:hover { color: var(--ink); }
+.section-filter-item.is-locked {
+  color: var(--ink-muted);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.section-filter-item.is-locked:hover { color: var(--ink-muted); }
+
+/* ALL の Coming Soon ツールチップ (#81 MVP: 課金導入で撤去) */
+.section-filter-lock {
+  position: relative;
+  display: inline-block;
+}
+.section-filter-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 160ms, transform 160ms;
+  z-index: 5;
+}
+.section-filter-tooltip.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* 無限スクロール sentinel */
 .records-sentinel {

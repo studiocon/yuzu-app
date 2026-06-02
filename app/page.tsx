@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Gear } from "@phosphor-icons/react";
 import type { User } from "@supabase/supabase-js";
 import IndexView from "@/components/IndexView";
-import ReadView from "@/components/ReadView";
+import InsightView from "@/components/InsightView";
 import OnboardingView from "@/components/OnboardingView";
 import RecordModal from "@/components/RecordModal";
 import IndexDetailModal from "@/components/IndexDetailModal";
@@ -320,7 +320,7 @@ export default function Home() {
           onSave={handleOnboardingSave}
         />
       ) : tab === "read" ? (
-        <ReadView myPosts={myPosts} />
+        <InsightView myPosts={myPosts} />
       ) : (
         <IndexView
           myPosts={myPosts}

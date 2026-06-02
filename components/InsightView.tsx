@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReportCard from "./ReportCard";
-import LongSentimentChart from "./LongSentimentChart";
+import EmotionChart from "./EmotionChart";
 import WordBubbleMap from "./WordBubbleMap";
 import TimeHeatmap from "./TimeHeatmap";
 import RecurringThemes from "./RecurringThemes";
@@ -11,12 +11,17 @@ import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
 import { reportCacheKey } from "@/lib/storageKeys";
+import { DAY_MS } from "@/lib/period";
+
+// #81 MVP: 課金未導入のため sentiment 解析は全員「直近 30 日」に限定。
+// 課金導入時 (#65) は plan === "free" 時のみ適用するよう分岐する。
+const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
 type Props = {
   myPosts: Post[];
 };
 
-export default function ReadView({ myPosts }: Props) {
+export default function InsightView({ myPosts }: Props) {
   const [reports, setReports] = useState<ReportMeta[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +36,10 @@ export default function ReadView({ myPosts }: Props) {
   // ── 未分析 post のセンチメントスコアを取得（IndexView から移管） ──
   useEffect(() => {
     if (!hydrated || myPosts.length === 0 || isMockMode()) return;
-    const unresolved = myPosts.filter((p) => !(p.id in scores));
+    const cutoff = Date.now() - SENTIMENT_WINDOW_MS;
+    const unresolved = myPosts.filter(
+      (p) => p.createdAt >= cutoff && !(p.id in scores),
+    );
     if (unresolved.length === 0) return;
 
     let cancelled = false;
@@ -131,7 +139,7 @@ export default function ReadView({ myPosts }: Props) {
 
   return (
     <section className="read-view">
-      <LongSentimentChart posts={myPosts} scores={scores} />
+      <EmotionChart posts={myPosts} scores={scores} />
 
       <section className="mypage-section">
         <h3 className="mypage-section-title font-display">SIGNAL</h3>
