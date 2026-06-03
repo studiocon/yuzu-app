@@ -52,10 +52,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const scoreMap = await scoreSentiments(
-    posts.map((p) => ({ id: p.id, text: p.text })),
-    apiKey,
-  );
+  let scoreMap: Record<string, number>;
+  try {
+    scoreMap = await scoreSentiments(
+      posts.map((p) => ({ id: p.id, text: p.text })),
+      apiKey,
+    );
+  } catch (err) {
+    const status = (err as { status?: number })?.status;
+    if (status === 429) {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
+    console.error("scoreSentiments failed", err);
+    return NextResponse.json({ error: "sentiment_failed" }, { status: 502 });
+  }
 
   const results = posts.map((p) => ({
     postId: p.id,
