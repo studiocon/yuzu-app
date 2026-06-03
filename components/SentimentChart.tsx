@@ -50,6 +50,20 @@ function makeDateTick(dates: string[]) {
 }
 
 export default function SentimentChart({ data }: Props) {
+  // 0 ラインで色を厳密に分けるため、正領域 / 負領域を別系列に展開して 2 本の Area で塗る。
+  // SVG gradient (objectBoundingBox) は path の bbox 中央で色が割れるので、正のピーク内に
+  // 紺が滲む現象が起きる。symmetric split で確実に上=オレンジ / 下=紺にする。
+  // Hooks は early return より前に呼ぶ（rules-of-hooks）。
+  const splitData = useMemo(
+    () => data.map((d) => ({
+      date: d.date,
+      score: d.score,
+      posScore: d.score > 0 ? d.score : 0,
+      negScore: d.score < 0 ? d.score : 0,
+    })),
+    [data],
+  );
+
   if (data.length === 0) {
     return (
       <div className="sentiment-chart-empty" role="status">
@@ -68,19 +82,6 @@ export default function SentimentChart({ data }: Props) {
   }
 
   const DateTick = makeDateTick(data.map((d) => d.date));
-
-  // 0 ラインで色を厳密に分けるため、正領域 / 負領域を別系列に展開して 2 本の Area で塗る。
-  // SVG gradient (objectBoundingBox) は path の bbox 中央で色が割れるので、正のピーク内に
-  // 紺が滲む現象が起きる。symmetric split で確実に上=オレンジ / 下=紺にする。
-  const splitData = useMemo(
-    () => data.map((d) => ({
-      date: d.date,
-      score: d.score,
-      posScore: d.score > 0 ? d.score : 0,
-      negScore: d.score < 0 ? d.score : 0,
-    })),
-    [data],
-  );
 
   return (
     <div className="sentiment-chart-wrap" role="img" aria-label="感情スコア 7 日トレンド">
