@@ -4,7 +4,7 @@ export const STORAGE_KEYS = {
   mockMode: "yuzu-mock-mode",          // mock-mode マーク（sessionStorage + cookie）
   dailySessions: "yuzu-daily-sessions", // 1日上限の mock フォールバック（localStorage）
   pendingText: "yuzu_pending_text",     // 未ログイン録音の退避（sessionStorage）
-  sentimentCache: "yuzu-sentiment-cache", // センチメントキャッシュ（localStorage）
+  sentimentCache: "yuzu-sentiment-cache-v2", // センチメントキャッシュ（localStorage）。v1 は失敗時 0 が焼き付くバグがあり wipe 済み
   signalShown: "yuzu-signal-shown",     // SIGNAL カード表示済みマイルストーン（localStorage）
 } as const;
 

@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sentiment_failed" }, { status: 502 });
   }
 
-  const results = posts.map((p) => ({
-    postId: p.id,
-    date: formatDate(p.createdAt),
-    score: scoreMap[p.id] ?? 0,
-  }));
+  // 解析できなかった post は results に含めない。クライアントは未キャッシュとして
+  // 次回マウント時に再リクエストする。silent fail で 0 を焼き付けない（v1 のバグ修正）。
+  const results = posts
+    .map((p) => ({ postId: p.id, date: formatDate(p.createdAt), score: scoreMap[p.id] }))
+    .filter((r): r is { postId: string; date: string; score: number } => typeof r.score === "number");
 
   return NextResponse.json({ results });
 }

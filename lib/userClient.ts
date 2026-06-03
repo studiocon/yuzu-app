@@ -8,6 +8,8 @@ export const SENTIMENT_CACHE_KEY = STORAGE_KEYS.sentimentCache;
 
 export function loadSentimentCache(): Record<string, number> {
   try {
+    // v1 は解析失敗時に score=0 を焼き付けるバグがあったため、見つけたら一度だけ捨てる。
+    try { localStorage.removeItem("yuzu-sentiment-cache"); } catch {}
     const raw = localStorage.getItem(SENTIMENT_CACHE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);

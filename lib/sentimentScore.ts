@@ -35,7 +35,9 @@ export const parseScore = (raw: string): number => {
   if (m) return clamp(Number(m[1]));
   const d = raw.match(/-?\d+(?:\.\d+)?/);
   if (d) return clamp(Number(d[0]));
-  return 0;
+  // 抽出失敗を 0 として返すと正値ピークに見える紛れになるので throw。
+  // 呼び出し側で当該 post をスキップする。
+  throw new Error("parseScore: no numeric score in response");
 };
 
 export type ScorablePost = { id: string; text: string };
@@ -57,7 +59,7 @@ export async function scoreSentiments(
   const results = await mapWithConcurrency(
     posts,
     SENTIMENT_CONCURRENCY,
-    async (p): Promise<{ id: string; score: number }> => {
+    async (p): Promise<{ id: string; score: number } | null> => {
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
           const msg = await client.messages.create({
@@ -74,13 +76,18 @@ export async function scoreSentiments(
             await sleep(delay);
             continue;
           }
-          throw err;
+          // 429 の最終試行も含めた個別失敗は null で握って次の post へ。
+          // 1 件失敗で全体を 502 にしないため。呼び出し側でログ済み。
+          console.error("scoreSentiments item failed", p.id, err);
+          return null;
         }
       }
-      throw new Error("scoreSentiments: unreachable");
+      return null;
     },
   );
   const out: Record<string, number> = {};
-  for (const r of results) out[r.id] = r.score;
+  for (const r of results) {
+    if (r) out[r.id] = r.score;
+  }
   return out;
 }

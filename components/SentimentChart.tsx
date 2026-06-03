@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Area,
   CartesianGrid,
@@ -68,25 +69,23 @@ export default function SentimentChart({ data }: Props) {
 
   const DateTick = makeDateTick(data.map((d) => d.date));
 
+  // 0 ラインで色を厳密に分けるため、正領域 / 負領域を別系列に展開して 2 本の Area で塗る。
+  // SVG gradient (objectBoundingBox) は path の bbox 中央で色が割れるので、正のピーク内に
+  // 紺が滲む現象が起きる。symmetric split で確実に上=オレンジ / 下=紺にする。
+  const splitData = useMemo(
+    () => data.map((d) => ({
+      date: d.date,
+      score: d.score,
+      posScore: d.score > 0 ? d.score : 0,
+      negScore: d.score < 0 ? d.score : 0,
+    })),
+    [data],
+  );
+
   return (
     <div className="sentiment-chart-wrap" role="img" aria-label="感情スコア 7 日トレンド">
-      <svg
-        width="1"
-        height="1"
-        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
-        aria-hidden
-      >
-        <defs>
-          <linearGradient id="sentiGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={POS_COLOR} stopOpacity={0.9} />
-            <stop offset="50%" stopColor={POS_COLOR} stopOpacity={0.15} />
-            <stop offset="50%" stopColor={NEG_COLOR} stopOpacity={0.15} />
-            <stop offset="100%" stopColor={NEG_COLOR} stopOpacity={0.9} />
-          </linearGradient>
-        </defs>
-      </svg>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 12, right: 12, bottom: 16, left: 0 }}>
+        <ComposedChart data={splitData} margin={{ top: 12, right: 12, bottom: 16, left: 0 }}>
           <CartesianGrid stroke="var(--surface-border)" strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="date"
@@ -103,15 +102,28 @@ export default function SentimentChart({ data }: Props) {
               fontSize: 12,
               color: "var(--ink)",
             }}
-            formatter={(v: number) => [scoreLabel(v), "気分"]}
+            formatter={(v: number, name: string) =>
+              name === "score" ? [scoreLabel(v), "気分"] : null
+            }
           />
           <ReferenceLine y={0} stroke="var(--ink-muted)" strokeDasharray="4 4" />
           <Area
             type="monotone"
-            dataKey="score"
+            dataKey="posScore"
             stroke="none"
-            fill="url(#sentiGrad)"
-            fillOpacity={1}
+            fill={POS_COLOR}
+            fillOpacity={0.45}
+            baseValue={0}
+            tooltipType="none"
+            isAnimationActive={true}
+            animationDuration={500}
+          />
+          <Area
+            type="monotone"
+            dataKey="negScore"
+            stroke="none"
+            fill={NEG_COLOR}
+            fillOpacity={0.45}
             baseValue={0}
             tooltipType="none"
             isAnimationActive={true}
