@@ -138,7 +138,7 @@ YUZU は編集・削除を許さない。その代わりユーザーに **唯一
 - 黄色枠なし。色の差分（線→塗り、`--ink-muted` → `--yuzu-zest`）のみで状態表現。タッチターゲット 44px。
 - `records.marked: boolean` で永続化（[supabase/migrations/0004_mark.sql](supabase/migrations/0004_mark.sql)）
 - INDEX `RECORDS` に `ALL` / `MARKED` フィルタ（MARKED = `marked === true` のみ）
-- 操作直後に `MARKED.`（Unbounded 700・`--yuzu-zest`）を 0.9s フラッシュ
+- 操作直後に `MARKED`（ピリオドなし・Unbounded 700・`--yuzu-zest`）を 0.9s フラッシュ
 - MARKED 空表示は `MARK されたものは無い。`
 - MARK と編集・削除は別概念。UI 上は鉛筆・ゴミ箱アイコンを使わない
 
@@ -151,7 +151,7 @@ YUZU は編集・削除を許さない。その代わりユーザーに **唯一
 **実装メモ**
 - RECORD カード右端に Copy アイコンを配置（MARK と同等の低主張アイコン）
 - クリックで本文 + `#NNN` + 日時をクリップボードへコピー
-- 操作直後に `COPIED.` を 0.9s フラッシュ
+- 操作直後に `COPIED`（ピリオドなし）を 0.9s フラッシュ
 - コード上に `// TEMPORARY: Notion移行期間限定...` コメント必須（[components/RecordCard.tsx](components/RecordCard.tsx)）
 
 ### INDEX番号
@@ -169,7 +169,7 @@ YUZU は編集・削除を許さない。その代わりユーザーに **唯一
 | 場所 | 形式 | スタイル |
 |---|---|---|
 | 投稿カード（タイムライン） | `#N · X時間前` | Unbounded 700 / `--ink-muted` / 11px |
-| 投稿完了モーダル | `RECORDED.` の下に `#N` | Unbounded 700 / `--ink` / 32px |
+| 投稿完了モーダル | `CARVED.` の下に `#N` | Unbounded 700 / `--ink` / 32px |
 | INDEX 通し番号ヘッダー | `#NNN` | Unbounded 700 / `--text-3xl` / ゼロ埋め3桁 |
 | 週次レポート | `WEEK #N` | Unbounded 700 / 18px（登録日からの週数） |
 | 月次レポート | `MONTH #N` | Unbounded 700 / 18px（登録日からの月数） |
@@ -193,7 +193,7 @@ index = total_count - position   // 最新（position=0）が最大値
   - 録音中：**音量に反応する波形**（既存波形アニメ維持）＋ 同心円リング
   - 変換中：ドットが中心に集まり消える
 - 下部：マイクボタン（正円。歪んだ楕円シェイプは廃止）
-- 録音完了後：**`RECORDED.`** ＋ `#INDEX` ＋ 投稿テキスト → INDEX に反映
+- 録音完了後：**`CARVED.`** ＋ `#INDEX` ＋ 投稿テキスト → INDEX に反映
   - 続けて 7日ストリーク帯と累計 STATS（`MINUTES` = 総録音分数 / `STREAK` = 連続日数）を 0 からカウントアップ表示（`prefers-reduced-motion` 時は即着地）
   - 下部 CTA は「閉じる」のみ（画像書き出しは廃止）
 
@@ -306,7 +306,7 @@ TODO: 追記
 
 - 待機中：浮遊ドットが軽快に動く
 - 録音中：波形アニメーションが音量に反応する
-- 完了後：`RECORDED.` ＋ 投稿テキスト
+- 完了後：`CARVED.` ＋ 投稿テキスト
 - INDEX に戻る：`#NNN` / RECORDS 一覧に反映されている
 
 ### コピートーン

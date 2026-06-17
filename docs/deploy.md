@@ -110,12 +110,12 @@ main を Vercel にデプロイ後、本番 URL で実機チェック。
 
 - [ ] 中央 TALK FAB タップ → RecordModal が flyout アニメで開く
 - [ ] マイク長押し → `RECORDING.` 表示・波形が動く
-- [ ] 離す → `CARVING.` → CompleteView の `RECORDED.` + `#NNN`
+- [ ] 離す → `CARVING.` → CompleteView の `CARVED.` + `#NNN`
 - [ ] 「戻る」で閉じる → INDEX 先頭に新 record + `#NNN` がインクリメント
 
 ### 4-3. MARK / COPY
 
-- [ ] RECORD カード右端のピンタップ → 色が `--yuzu-zest` に + `MARKED.` フラッシュ
+- [ ] RECORD カード右端のピンタップ → 色が `--yuzu-zest` に + `MARKED` フラッシュ
 - [ ] PINNED フィルタタップ → 該当カードのみ表示
 - [ ] COPY タップ → ペースト先に「`#NNN  YYYY/MM/DD HH:MM\n本文`」が入る
 

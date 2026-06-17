@@ -26,7 +26,23 @@ export default function RecurringThemes({ posts }: { posts: Post[] }) {
   });
 
   if (error) return <InsightFallback state="error" message={error} />;
-  if (data === null) return <InsightFallback state="loading" message="読み取り中" />;
+  if (data === null) {
+    return (
+      <ol className="theme-list" aria-busy="true" aria-label="読み取り中">
+        {[0, 1, 2].map((i) => (
+          <li key={i} className="theme-card theme-card-skeleton">
+            <div className="theme-card-head">
+              <span className="skeleton-block skeleton-block--rank" />
+              <span className="skeleton-block skeleton-block--theme-title" />
+              <span className="skeleton-block skeleton-block--share" />
+            </div>
+            <div className="skeleton-block skeleton-block--theme-bar" />
+            <div className="skeleton-block skeleton-block--line" />
+          </li>
+        ))}
+      </ol>
+    );
+  }
   if (data.notEnough) return <InsightFallback state="empty" message="もっと話せ、パターンが見えてくる" />;
   if (data.themes.length === 0) return <InsightFallback state="empty" message="まだパターンがない" />;
 

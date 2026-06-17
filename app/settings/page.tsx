@@ -129,12 +129,12 @@ export default function SettingsPage() {
             className="settings-row"
             onClick={handleCopyUserId}
             disabled={!userId}
-            aria-label={idCopied ? "COPIED." : "ユーザーID をコピー"}
-            title={idCopied ? "COPIED." : "タップでコピー"}
+            aria-label={idCopied ? "COPIED" : "ユーザーID をコピー"}
+            title={idCopied ? "COPIED" : "タップでコピー"}
           >
             <span className="settings-row-label">ユーザーID</span>
             <span className="settings-row-value settings-row-value--mono">
-              {idCopied ? "COPIED." : shortId}
+              {idCopied ? "COPIED" : shortId}
             </span>
             <Copy size={14} className="settings-row-chevron" />
           </button>

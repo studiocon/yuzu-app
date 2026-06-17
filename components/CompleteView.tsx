@@ -31,7 +31,7 @@ export default function CompleteView({ post, posts, totalDurationMs, serverStrea
 
   return (
     <section className="complete-view">
-      <p className="complete-stamp font-display">RECORDED.</p>
+      <p className="complete-stamp font-display">CARVED.</p>
       <p className="complete-index font-display">#{post.index}</p>
       <div className="complete-card">
         <p className="complete-text">{post.text}</p>
