@@ -118,8 +118,8 @@ export default function SpeakView({
   const status =
     permissionDenied ? "マイクを許可しろ" :
     error ? error :
-    isBusy ? (statusMsg ?? "CARVING.") :
-    isRecording ? "RECORDING." :
+    isBusy ? (statusMsg ?? "CARVING") :
+    isRecording ? "RECORDING" :
     shortTap ? "短い、話せ" : "";
 
   return (
@@ -160,7 +160,7 @@ export default function SpeakView({
         )}
         {isIdleHero && remainingSessions < 3 && (
           <p className="speak-remaining font-display">
-            {remainingSessions} LEFT.
+            {remainingSessions} LEFT
           </p>
         )}
         <div className="mic-wrap">

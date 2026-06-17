@@ -80,7 +80,7 @@ export default function SignalCardModal({ streak, totalCount, onClose }: Props) 
             onClick={handleSave}
             disabled={exporting}
           >
-            {exporting ? "SAVING." : "画像を保存"}
+            {exporting ? "SAVING" : "画像を保存"}
           </button>
           <button type="button" className="signal-close-btn" onClick={handleClose}>
             閉じる

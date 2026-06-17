@@ -131,7 +131,7 @@ export default function IndexView({
             <>
               {filteredPosts.length === 0 && (
                 <p className="mypage-empty">
-                  {filter === "marked" ? "MARK されたものは無い。" : "話せ。"}
+                  {filter === "marked" ? "MARK されたものは無い" : "話せ"}
                 </p>
               )}
               {filteredPosts.map((p) => (
@@ -144,7 +144,7 @@ export default function IndexView({
               {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}
               {hasMore && filter === "all" && (
                 <div ref={sentinelRef} className="records-sentinel" aria-hidden>
-                  {loadingMore && <span className="font-display">LOADING.</span>}
+                  {loadingMore && <span className="font-display">LOADING</span>}
                 </div>
               )}
             </>

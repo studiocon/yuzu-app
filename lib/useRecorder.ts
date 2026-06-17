@@ -198,7 +198,7 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
   };
 
   const transcribe = async (blob: Blob, durationMs: number) => {
-    setStatusMsg("CARVING.");
+    setStatusMsg("CARVING");
     try {
       const ext = blob.type.includes("mp4") ? "mp4"
         : blob.type.includes("ogg") ? "ogg"

@@ -67,7 +67,7 @@ export default function SentimentChart({ data }: Props) {
   if (data.length === 0) {
     return (
       <div className="sentiment-chart-empty" role="status">
-        <p className="sentiment-chart-empty-label font-display">SILENCE.</p>
+        <p className="sentiment-chart-empty-label font-display">SILENCE</p>
         <p className="sentiment-chart-empty-msg">声紋が無い</p>
       </div>
     );

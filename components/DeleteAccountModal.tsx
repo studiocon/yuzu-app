@@ -73,7 +73,7 @@ export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) 
         <h2 className="confirm-modal-title font-display">全部消す</h2>
         <p className="confirm-modal-body">記録も、番号も、戻らない。</p>
 
-        <p className="confirm-modal-prompt font-display">YUZU と打て。</p>
+        <p className="confirm-modal-prompt font-display">YUZU と打て</p>
         <input
           type="text"
           className="confirm-modal-input"

@@ -221,8 +221,8 @@ body {
 }
 
 /* onboarding preview（STT 完了後・未ログイン）
-   CompleteView の dark card + CARVED. スタンプ パターンに準拠。
-   完了スタンプはオンボ／ログイン共通で CARVED.。違いは login 誘導メッセージが付くこと。 */
+   CompleteView の dark card + CARVED スタンプ パターンに準拠。
+   完了スタンプはオンボ／ログイン共通で CARVED。違いは login 誘導メッセージが付くこと。 */
 .onboarding-view--preview {
   padding: 56px 24px 40px;
   gap: 20px;
@@ -709,7 +709,7 @@ button.settings-row:focus-visible {
   text-align: left;
   min-height: 1.4em;
 }
-/* busy（CARVING.）は進行中をテキストの呼吸で示す。spinner-ring の回転と併走。 */
+/* busy（CARVING）は進行中をテキストの呼吸で示す。spinner-ring の回転と併走。 */
 .speak-top--busy {
   animation: busy-breathe 1.2s ease-in-out infinite;
 }
@@ -1296,7 +1296,7 @@ button.settings-row:focus-visible {
   }
 }
 
-/* 完了画面の CARVED. スタンプ */
+/* 完了画面の CARVED スタンプ */
 .complete-stamp {
   font-weight: 900;
   font-size: 40px;
