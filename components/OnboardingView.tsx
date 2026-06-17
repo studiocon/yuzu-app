@@ -12,7 +12,7 @@ export default function OnboardingView({ onStart, pendingText, onSave }: Props) 
   if (pendingText) {
     return (
       <section className="onboarding-view onboarding-view--preview">
-        <p className="onboarding-preview-stamp font-display">CARVED.</p>
+        <p className="onboarding-preview-stamp font-display">CARVED</p>
         <div className="onboarding-preview-card">
           <p className="onboarding-preview-text">{pendingText}</p>
         </div>

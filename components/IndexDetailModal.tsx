@@ -215,12 +215,12 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
               onClick={fireMark}
               aria-label={marked ? "MARK を外す" : "MARK する"}
               aria-pressed={marked}
-              title={marked ? "MARKED." : "MARK"}
+              title={marked ? "MARKED" : "MARK"}
             >
               {marked
                 ? <PushPin size={18} weight="fill" />
                 : <PushPinSlash size={18} weight="regular" />}
-              <span className="index-detail-actionlabel font-display">{justMarked ? "MARKED." : "MARK"}</span>
+              <span className="index-detail-actionlabel font-display">{justMarked ? "MARKED" : "MARK"}</span>
             </button>
           )}
           {/* TEMPORARY: Notion移行期間限定のコピー機能。YUZU運用が完全移行したら削除する。 */}
@@ -228,11 +228,11 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
             type="button"
             className={"index-detail-actionbtn" + (copied ? " is-copied" : "")}
             onClick={handleCopy}
-            aria-label={copied ? "COPIED." : "本文をコピー"}
-            title={copied ? "COPIED." : "COPY"}
+            aria-label={copied ? "COPIED" : "本文をコピー"}
+            title={copied ? "COPIED" : "COPY"}
           >
             <Copy size={18} weight="regular" />
-            <span className="index-detail-actionlabel font-display">{copied ? "COPIED." : "COPY"}</span>
+            <span className="index-detail-actionlabel font-display">{copied ? "COPIED" : "COPY"}</span>
           </button>
         </div>
       </div>

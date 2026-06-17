@@ -66,7 +66,7 @@ export default function EmotionChart({ posts, scores }: Props) {
               role="tooltip"
               className={"section-filter-tooltip font-display" + (tooltipOpen ? " is-open" : "")}
             >
-              COMING SOON.
+              COMING SOON
             </span>
           </span>
         </div>
@@ -76,7 +76,7 @@ export default function EmotionChart({ posts, scores }: Props) {
           <div className="sentiment-preview">
             <SentimentChart data={buildDummySentiment()} />
             <div className="sentiment-preview-overlay">
-              <p className="sentiment-preview-label font-display">PREVIEW.</p>
+              <p className="sentiment-preview-label font-display">PREVIEW</p>
               <p className="sentiment-preview-msg">RECORD すると、ここに見える</p>
             </div>
           </div>

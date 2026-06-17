@@ -68,18 +68,24 @@ export default function IndexView({
 
   return (
     <section className="index-view">
-      <div className="mypage-stats">
+      <div className="mypage-stats" aria-busy={loading ? "true" : undefined}>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">RECORDS</span>
-          <span className="mypage-stat-value font-display">{recordsCount}</span>
+          <span className="mypage-stat-value font-display">
+            {loading ? <span className="skeleton-block skeleton-block--stat" /> : recordsCount}
+          </span>
         </div>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">MINUTES</span>
-          <span className="mypage-stat-value font-display">{totalMinutes}</span>
+          <span className="mypage-stat-value font-display">
+            {loading ? <span className="skeleton-block skeleton-block--stat" /> : totalMinutes}
+          </span>
         </div>
         <div className="mypage-stat-card">
           <span className="mypage-stat-label font-display">STREAK</span>
-          <span className="mypage-stat-value font-display">{streak}</span>
+          <span className="mypage-stat-value font-display">
+            {loading ? <span className="skeleton-block skeleton-block--stat" /> : streak}
+          </span>
         </div>
       </div>
 
@@ -125,7 +131,7 @@ export default function IndexView({
             <>
               {filteredPosts.length === 0 && (
                 <p className="mypage-empty">
-                  {filter === "marked" ? "MARK されたものは無い。" : "話せ。"}
+                  {filter === "marked" ? "MARK されたものは無い" : "話せ"}
                 </p>
               )}
               {filteredPosts.map((p) => (
@@ -138,7 +144,7 @@ export default function IndexView({
               {/* 無限スクロール sentinel（ALL のときだけ次ページを取りに行く） */}
               {hasMore && filter === "all" && (
                 <div ref={sentinelRef} className="records-sentinel" aria-hidden>
-                  {loadingMore && <span className="font-display">LOADING.</span>}
+                  {loadingMore && <span className="font-display">LOADING</span>}
                 </div>
               )}
             </>

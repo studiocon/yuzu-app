@@ -221,8 +221,8 @@ body {
 }
 
 /* onboarding preview（STT 完了後・未ログイン）
-   CompleteView の dark card + RECORDED. スタンプ パターンに準拠。
-   違いは label が CARVED. (まだ保存していない・刻まれただけ) で、login 誘導メッセージが付くこと。 */
+   CompleteView の dark card + CARVED スタンプ パターンに準拠。
+   完了スタンプはオンボ／ログイン共通で CARVED。違いは login 誘導メッセージが付くこと。 */
 .onboarding-view--preview {
   padding: 56px 24px 40px;
   gap: 20px;
@@ -709,6 +709,14 @@ button.settings-row:focus-visible {
   text-align: left;
   min-height: 1.4em;
 }
+/* busy（CARVING）は進行中をテキストの呼吸で示す。spinner-ring の回転と併走。 */
+.speak-top--busy {
+  animation: busy-breathe 1.2s ease-in-out infinite;
+}
+@keyframes busy-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
 .speak-prompt {
   margin: 0;
   text-align: center;
@@ -717,6 +725,12 @@ button.settings-row:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  /* 即時表示を避け、フェードで出す（アイドル遅延 / 録音中ナッジ共通） */
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-soft);
+}
+.speak-prompt[data-show="true"] {
+  opacity: 1;
 }
 .speak-prompt-text {
   margin: 0;
@@ -944,6 +958,8 @@ button.settings-row:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .waveform-bar { transition: none; }
   .waveform-bar.idle { animation: none; height: 24px; }
+  .speak-top--busy { animation: none; }
+  .speak-prompt { transition: none; }
 }
 
 /* ===== Spinner (busy) ===== */
@@ -1280,7 +1296,7 @@ button.settings-row:focus-visible {
   }
 }
 
-/* 完了画面の RECORDED. スタンプ */
+/* 完了画面の CARVED スタンプ */
 .complete-stamp {
   font-weight: 900;
   font-size: 40px;
@@ -1806,7 +1822,7 @@ button.settings-row:focus-visible {
 .index-detail-actionbtn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
 .index-detail-actionbtn:active { transform: scale(0.96); }
 .index-detail-actionbtn.is-marked { color: var(--yuzu-zest); border-color: var(--yuzu-zest); }
-.index-detail-actionbtn.is-copied { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.index-detail-actionbtn.is-copied { color: var(--yuzu-zest); border-color: var(--yuzu-zest); }
 .index-detail-actionlabel {
   font-size: var(--text-xs);
   font-weight: 700;
@@ -2245,6 +2261,7 @@ textarea.login-modal-email-input.contact-modal-textarea {
 .skeleton-block--chart { width: 100%; height: 200px; border-radius: 4px; }
 .skeleton-block--line { width: 100%; height: 14px; }
 .skeleton-block--line-short { width: 65%; }
+.skeleton-block--stat { display: inline-block; width: 40px; height: 28px; margin: 0 auto; }
 
 .report-card-skeleton {
   display: flex;
@@ -2684,3 +2701,9 @@ textarea.login-modal-email-input.contact-modal-textarea {
   .theme-card,
   .theme-card-bar-fill { animation: none; }
 }
+/* PATTERN 読み込み中スケルトン（theme-card 形に寄せる） */
+.theme-card-skeleton .skeleton-block--rank { width: 18px; height: 11px; }
+.theme-card-skeleton .skeleton-block--theme-title { width: 60%; height: 15px; }
+.theme-card-skeleton .skeleton-block--share { width: 28px; height: 13px; }
+.theme-card-skeleton .skeleton-block--theme-bar { width: 100%; height: 4px; margin-bottom: 8px; }
+.theme-card-skeleton .skeleton-block--line { width: 90%; }

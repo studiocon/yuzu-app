@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import FloatingDots from "./FloatingDots";
 import Waveform from "./Waveform";
@@ -28,6 +28,12 @@ type Props = {
 };
 
 const CIRCUMFERENCE = 339.3; // 2π × 54
+
+// 質問（プロンプト）の表示タイミング。話そうとする瞬間のノイズを避けるため即時表示しない。
+const IDLE_PROMPT_DELAY_MS = 4000; // アイドル画面で数秒待ってからフェードイン
+const SILENCE_NUDGE_MS = 5000;     // 録音中、連続無音がこの長さを超えたらナッジ表示
+const SILENCE_CHECK_MS = 250;      // 無音判定の刻み（elapsed timer と同じ）
+const SILENCE_THRESHOLD = 6;       // time-domain（中心128）からの最大偏差がこれ未満なら無音とみなす
 
 function formatCountdown(remainingMs: number): string {
   const total = Math.max(0, Math.ceil(remainingMs / 1000));
@@ -61,6 +67,50 @@ export default function SpeakView({
   const isIdleHero =
     phase === "idle" && !permissionDenied && !error && !shortTap;
 
+  // アイドルでは数秒遅延、録音中は5秒沈黙でだけ質問を出す。
+  const [idlePromptShown, setIdlePromptShown] = useState(false);
+  const [recordingNudge, setRecordingNudge] = useState(false);
+  const silenceStartRef = useRef<number | null>(null);
+
+  // ── アイドル遅延フェードイン ──
+  useEffect(() => {
+    if (!isIdleHero) { setIdlePromptShown(false); return; }
+    const t = setTimeout(() => setIdlePromptShown(true), IDLE_PROMPT_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [isIdleHero]);
+
+  // ── 録音中の沈黙検出（連続無音 → ナッジ表示。話し出したら消える） ──
+  useEffect(() => {
+    if (!isRecording || !analyser) {
+      setRecordingNudge(false);
+      silenceStartRef.current = null;
+      return;
+    }
+    const data = new Uint8Array(analyser.fftSize);
+    const id = setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let peak = 0;
+      for (let i = 0; i < data.length; i++) {
+        const dev = Math.abs(data[i] - 128);
+        if (dev > peak) peak = dev;
+      }
+      if (peak < SILENCE_THRESHOLD) {
+        if (silenceStartRef.current === null) {
+          silenceStartRef.current = Date.now();
+        } else if (Date.now() - silenceStartRef.current >= SILENCE_NUDGE_MS) {
+          setRecordingNudge(true);
+        }
+      } else {
+        silenceStartRef.current = null;
+        setRecordingNudge(false);
+      }
+    }, SILENCE_CHECK_MS);
+    return () => clearInterval(id);
+  }, [isRecording, analyser]);
+
+  const promptVisible =
+    (isIdleHero && idlePromptShown) || (isRecording && recordingNudge);
+
   const remainingMs = Math.max(0, maxRecordMs - recordingElapsed);
   const progress = Math.min(recordingElapsed / maxRecordMs, 1);
   const ringOffset = CIRCUMFERENCE * (1 - progress);
@@ -68,13 +118,21 @@ export default function SpeakView({
   const status =
     permissionDenied ? "マイクを許可しろ" :
     error ? error :
-    isBusy ? (statusMsg ?? "CARVING.") :
-    isRecording ? "RECORDING." :
+    isBusy ? (statusMsg ?? "CARVING") :
+    isRecording ? "RECORDING" :
     shortTap ? "短い、話せ" : "";
 
   return (
     <section className="speak-view">
-      {!isIdleHero && <p className="speak-top" role="status" aria-live="polite">{status}</p>}
+      {!isIdleHero && (
+        <p
+          className={"speak-top" + (isBusy ? " speak-top--busy" : "")}
+          role="status"
+          aria-live="polite"
+        >
+          {status}
+        </p>
+      )}
       {isRecording && (
         <p className="speak-timer font-display" aria-live="off">
           {formatCountdown(remainingMs)}
@@ -95,14 +153,14 @@ export default function SpeakView({
       </div>
 
       <div className="speak-bottom">
-        {isIdleHero && (
-          <div className="speak-prompt">
+        {(isIdleHero || isRecording) && (
+          <div className="speak-prompt" data-show={promptVisible ? "true" : "false"} aria-hidden={!promptVisible}>
             <p className="speak-prompt-text">{prompt}</p>
           </div>
         )}
         {isIdleHero && remainingSessions < 3 && (
           <p className="speak-remaining font-display">
-            {remainingSessions} LEFT.
+            {remainingSessions} LEFT
           </p>
         )}
         <div className="mic-wrap">

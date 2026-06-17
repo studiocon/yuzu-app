@@ -17,7 +17,7 @@ YUZU の VOICE & TONE 規約に対する UI コピーの監査。
 
 ### 英日使い分け
 
-- **英語＝Unbounded＝挑発・状態**：`RECORDING.` / `CARVING.` / `RECORDED.` / `SILENCE.` / `DAY` / `RECORDS` / `STREAK`（旧 `DECODING.` は `CARVING.` に改称済）
+- **英語＝Unbounded＝挑発・状態**：`RECORDING` / `CARVING` / `CARVED` / `SILENCE` / `DAY` / `RECORDS` / `STREAK`（**状態 pill は UI ＝ 句点なし**。旧 `DECODING.` は `CARVING` に改称済。完了スタンプの旧 `RECORDED.` は引退し `CARVED` に統一。`MARK`/`COPY` のフラッシュ `MARKED`/`COPIED` も句点なし）
 - **日本語＝LINE Seed JP＝事実・本文・プロンプト**：プロンプト群・エラー・タグライン・本文 UI
 
 ### NG ワード（即 reject）
@@ -33,8 +33,8 @@ YUZU の VOICE & TONE 規約に対する UI コピーの監査。
 ### OK パターン
 
 - 命令形：「話せ」「出せ」「黙るな」「整えるな」
-- 句点（.）終わり：「短い、話せ」「無音、話せ」「失敗、話せ」
-- 英語の状態ラベル：「RECORDING.」「CARVING.」「RECORDED.」「SILENCE.」「CARVED.」
+- 句点（.）は説明文のみ：複数文・丁寧語の説明/トースト/エラー（「今日はここまで。明日また話せ。」「削除できなかった。もう一度。」）に付く。短い命令・空状態（「短い、話せ」「無音、話せ」「話せ」）は句点なし
+- 英語の状態ラベル（UI ＝ 句点なし）：「RECORDING」「CARVING」「CARVED」「SILENCE」
 - 断定：「本物でいろ」「BE TRUE」
 
 ### 文末
