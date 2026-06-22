@@ -708,6 +708,11 @@ button.settings-row:focus-visible {
   letter-spacing: 0.02em;
   text-align: left;
   min-height: 1.4em;
+  /* iOS Safari: モーダル開閉の transform アニメ中に Unbounded がスワップすると、
+     古い fallback フォントのグリフが消えずに新しいグリフと二重表示される
+     （ゴーストテキスト）。独立した合成レイヤーに昇格させて回避する。 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 /* busy（CARVING）は進行中をテキストの呼吸で示す。spinner-ring の回転と併走。 */
 .speak-top--busy {
@@ -855,6 +860,8 @@ button.settings-row:focus-visible {
   letter-spacing: 0.06em;
   text-align: left;
   min-height: 1.4em;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* ===== Remaining sessions ===== */
@@ -2566,6 +2573,15 @@ textarea.login-modal-email-input.contact-modal-textarea {
   }
 }
 
+/* WORDS 読み込み中スケルトン（バブル形に寄せる） */
+.word-bubble-skeleton-dot {
+  fill: var(--divider);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-bubble-skeleton-dot { animation: none; opacity: 0.6; }
+}
+
 /* ── SIGNAL 時間帯ヒートマップ ───────────────── */
 .time-heatmap {
   width: 100%;
@@ -2622,6 +2638,18 @@ textarea.login-modal-email-input.contact-modal-textarea {
   .time-heatmap-cell { transition: none; }
   .time-heatmap-cell:hover,
   .time-heatmap-cell:focus-visible { transform: none; }
+}
+
+/* SIGNAL 読み込み中スケルトン（grid 形に寄せる） */
+.time-heatmap-cell--skeleton {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  background: var(--divider);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .time-heatmap-cell--skeleton { animation: none; opacity: 0.6; }
 }
 
 /* ── PATTERN 繰り返しテーマ（マインドシェア ランキング） ── */
