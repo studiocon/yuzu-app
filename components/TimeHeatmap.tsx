@@ -10,6 +10,8 @@ const computeCells = (posts: Post[]) =>
   buildHeatmap(posts.map((p) => ({ text: p.text, createdAt: p.createdAt })));
 
 const DATE_LABEL_EVERY = 7;
+const SKELETON_COLS = 28;
+const SKELETON_ROWS = 12;
 
 function fmtDateLabel(date: string): string {
   // "YYYY-MM-DD" → "MM/DD"
@@ -46,7 +48,19 @@ export default function TimeHeatmap({ posts }: { posts: Post[] }) {
   }, [cells]);
 
   if (error) return <InsightFallback state="error" message={error} />;
-  if (cells === null) return <InsightFallback state="loading" message="読み取り中" />;
+  if (cells === null) {
+    return (
+      <div className="time-heatmap">
+        <div className="time-heatmap-inner" style={{ ["--heatmap-cols" as string]: SKELETON_COLS }}>
+          <div className="time-heatmap-grid" aria-busy="true" aria-label="読み取り中">
+            {Array.from({ length: SKELETON_COLS * SKELETON_ROWS }, (_, i) => (
+              <span key={i} className="time-heatmap-cell--skeleton" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!hasAny) return <InsightFallback state="empty" message="まだ声がない" />;
 
   const cols = dates.length;
