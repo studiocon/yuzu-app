@@ -18,12 +18,13 @@
 ## ディレクトリ構成
 
 ```
-app/                  Next.js App Router + API routes（transcribe / records / reports / insights）
+app/                  Next.js App Router + API routes（transcribe / records / reports / insights / account / mcp）
 components/           "use client" コンポーネント
 lib/                  型・JST 境界・センチメント集約・レポート生成・カスタムフック
 public/               design-preview.html ほか静的アセット
 scripts/              design:drift / design:sync スクリプト
 supabase/migrations/  スキーマ・RLS・RPC（番号順に適用）
+mcp-server/           Claude Desktop 用スタンドアロン MCP サーバー（個人用アクセストークンで `/api/mcp/*` を読む。Next.js アプリとは別の npm パッケージ）
 .claude/              Claude Code の共有設定・サブエージェント
 docs/                 デプロイ / 運用手順
 ```

@@ -17,17 +17,18 @@ YUZU は「声を加工せずに記録する」音声ジャーナル。世界観
 
 ```
 app/                    Next.js App Router
-  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account, inquiries）
+  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account, account/tokens, mcp/{records,reports}, inquiries）
   auth/callback/        Supabase OAuth/Magic Link コールバック
   page.tsx              ルート（録音 + タブ。未ログインなら OnboardingView）
   reports/              レポート一覧 / 詳細（middleware で保護）
-  settings/             設定（プラン表示 / 通知 / アカウント / 問い合わせ / 規約 / ログアウト / アカウント削除。middleware で保護）
+  settings/             設定（プラン表示 / 通知 / アカウント / CONNECT(API トークン) / 問い合わせ / 規約 / ログアウト / アカウント削除。middleware で保護）
   icon.svg              ファビコン（Next が自動でファビコン化。旧 icon.tsx は撤去）
   globals.css           デザイントークンと全 CSS（:root は DESIGN.md と CI で突合）
 components/             "use client" コンポーネント
   LoginModal.tsx        Apple / Google / Magic Link（パスワード認証なし）
   DeleteAccountModal.tsx アカウント削除の確認ダイアログ（type-to-confirm「YUZU」）
   ContactModal.tsx      問い合わせフォーム（件名/本文/任意メール → POST /api/inquiries）
+  ApiTokenModal.tsx     個人用アクセストークンの発行/一覧/削除（MCP 連携用。トークン本体は発行直後のみ表示）
 lib/                    型・ユーティリティ・サーバ呼び出し
   types.ts              共通型（Post, Phase）。Post は user_id / char_count / index を持つ
   period.ts             JST 固定の週/月境界
@@ -36,6 +37,8 @@ lib/                    型・ユーティリティ・サーバ呼び出し
   reports.ts            Anthropic でレポート生成（**Anthropic SDK を import するためクライアントから直接呼ばない**）
   plan.ts               プランロール（Free/Light/Premium）型 + getUserPlan（サーバ）。書込は service_role のみ
   storageKeys.ts        クライアント storage キーの一元管理（ハードコード重複防止）
+  personalAccessToken.ts 個人用アクセストークンの生成（`yuzu_pat_` prefix）/ SHA-256 ハッシュ照合
+  mcpAuth.ts            `/api/mcp/*` 用 Bearer トークン認証（admin client + 明示 user_id フィルタ）
   supabase/
     client.ts           ブラウザ用 createBrowserClient
     server.ts           Route Handler / Server Component 用 createServerClient（cookie 連携）
@@ -47,7 +50,8 @@ lib/                    型・ユーティリティ・サーバ呼び出し
   useBodyScrollLock.ts  モーダル open 時の body overflow 制御
 middleware.ts           Supabase セッション更新 + /reports・/settings 保護
 next.config.js          VERSION ビルド番号（git rev-list --count）を NEXT_PUBLIC_BUILD_NUMBER に注入
-supabase/migrations/    0001〜0010（init/reports/streak/mark/grants/duration/fix_streak/theme_cache/plan/inquiries）
+supabase/migrations/    0001〜0014（init/reports/streak/mark/grants/duration/fix_streak/theme_cache/plan/inquiries/theme_cache_error/profiles_grant/service_role_dml/personal_access_tokens）
+mcp-server/             Claude Desktop 用スタンドアロン MCP サーバー（個人用。get_records / get_reports の2ツール。Next.js アプリとは別の npm パッケージ。詳細は [mcp-server/README.md](mcp-server/README.md)）
 public/
   design-preview.html   デザインの実体プレビュー（source-of-truth）
 scripts/
@@ -93,6 +97,7 @@ DESIGN.md と globals.css の不整合は CI（[.github/workflows/design-check.y
 - **ブラウザ（"use client"）**：`createBrowserClient` 経由でセッション読み取り・OAuth・signOut。例：[app/page.tsx](app/page.tsx) の auth state listener、[components/LoginModal.tsx](components/LoginModal.tsx)
 - **Route Handler / Server Component**：`lib/supabase/server.ts` の `createServerClient` を使い `await supabase.auth.getUser()` で本人確認。未ログインは 401 を返す。例：[app/api/records/route.ts](app/api/records/route.ts)
 - **service_role（RLS バイパス）**：`lib/supabase/admin.ts`。レポート保存など RLS でカバーできないサーバ専用処理のみで使う。**絶対にクライアントへ import しない**
+- **`/api/mcp/*` は Bearer トークン認証のみ**（Cookie セッション不可。MCP サーバーはブラウザを持たないため）。`lib/mcpAuth.ts` の `authenticateMcpRequest` が個人用アクセストークン（`personal_access_tokens` テーブル、SHA-256 ハッシュ照合）を検証し、admin client + 明示 `user_id` フィルタで読み取る。`/api/records` や `/api/reports` と同じ組み立てロジックを意図的に重複させている箇所がある（認証境界が異なるため共有すると既存ルートの回帰リスクが上がる）
 - **認証手段は 3 つだけ**：Apple Sign In（Issue #36）/ Google OAuth / Magic Link（`signInWithOtp`）。**パスワード認証 UI は作らない**
 - **保護ルートは [middleware.ts](middleware.ts)** で `PROTECTED = ["/reports", "/settings"]`。未ログインアクセスは `/` にリダイレクトしてオンボーディングを見せる
 - **オンボーディングの pending post**：未ログイン状態の STT 結果は `sessionStorage["yuzu_pending_text"]` に退避し、ログイン直後（`app/page.tsx` の auth listener）で `/api/records` に POST → 即削除（多重投稿防止）
@@ -175,3 +180,4 @@ npm run dev            # ローカル起動（http://localhost:3000）
 - **annotation は `tag_audio_events=false` で抑止する**：`[音楽]` / `(背景ノイズ)` / `（咳）` 等の非音声 annotation は記録に残したくないので、Scribe にそもそも出力させない（旧実装の正規表現 strip ハックは廃止済み）。受信テキストは空白正規化 + trim のみ。`text.length < 5` で silent reject → `useRecorder.ts` の `showHint("無音、話せ")` / `showHint("短い、話せ")`。`no_verbatim` でフィラーだけの発話が短文化して弾かれるのは望ましい挙動
 - **`/api/records` POST の失敗を silent catch しない**。`recorder.failWithError(msg)` でステータスコード／エラーコードを SpeakView に出す。`catch {}` で握り潰すと「モーダルが busy のまま」 or 「モーダル閉じて何も起きない」の原因不明バグが量産される（ユーザは何が起きたかわからず、DevTools を開ける人しか報告できなくなる）
 - **デバッグ困難バグは「複数層の silent failure」が重なって起きる**ことが多い。今回の保存されない事故は (1) `useRecorder` の stale closure、(2) 当時 `scribe_v2` が無効なモデル ID だった（※現在は v2 が現行で有効）、(3) `/api/records` POST の silent catch、の3層が重なって診断不能になっていた。新規コードでは silent fail を許さない方針
+- **`0014_personal_access_tokens.sql` は本番 Supabase に手動適用が必要**（このリポジトリの migration は自動デプロイされない）。個人用アクセストークンは平文を DB に保存しない：発行時に `lib/personalAccessToken.ts` の `generateToken()` が `yuzu_pat_` prefix 付きトークンを返し、SHA-256 ハッシュ（`token_hash`）のみ永続化、平文は発行レスポンスの一度きり（[components/ApiTokenModal.tsx](components/ApiTokenModal.tsx) の `step === "created"`）。再表示・復元は不可、失くしたら削除して再発行

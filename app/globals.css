@@ -2125,6 +2125,80 @@ textarea.login-modal-email-input.contact-modal-textarea {
   word-break: break-all;
 }
 
+/* ApiTokenModal: トークン一覧 + 発行直後の表示 */
+.token-modal-empty {
+  font-size: var(--text-sm);
+  color: var(--yuzu-white);
+  opacity: 0.5;
+  margin: 0 0 20px;
+}
+.token-modal-list {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.token-modal-item {
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 4px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.token-modal-item-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.token-modal-item-name {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--yuzu-white);
+}
+.token-modal-item-prefix {
+  font-size: var(--text-xs);
+  font-family: monospace;
+  color: var(--yuzu-white);
+  opacity: 0.6;
+}
+.token-modal-item-meta {
+  display: flex;
+  gap: 12px;
+  font-size: var(--text-xs);
+  color: var(--yuzu-white);
+  opacity: 0.5;
+}
+.token-modal-revoke {
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: #ff6b6b;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  padding: 4px 0 0;
+  opacity: 0.8;
+  transition: opacity 120ms;
+}
+.token-modal-revoke:hover { opacity: 1; }
+.token-modal-revoke:disabled { opacity: 0.3; cursor: default; }
+.token-modal-secret {
+  border: 1px solid var(--yuzu-yellow);
+  border-radius: 4px;
+  padding: 16px;
+  margin: 0 0 20px;
+}
+.token-modal-secret-value {
+  display: block;
+  font-family: monospace;
+  font-size: var(--text-sm);
+  color: var(--yuzu-yellow);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
 /* ===== INDEX view (旧 ME + 旧ホーム統合) ===== */
 .index-view {
   display: flex;
