@@ -12,3 +12,6 @@ supabase/.temp/
 
 # MCP 設定（project_ref を含む。公開リポジトリには出さない）
 .mcp.json
+
+# 個人用 MCP サーバー（mcp-server/）のビルド出力
+mcp-server/dist

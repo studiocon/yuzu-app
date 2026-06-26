@@ -5,6 +5,7 @@ import { CaretRight, SignOut, Trash, Copy } from "@phosphor-icons/react";
 import PageHeader from "@/components/PageHeader";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import ContactModal from "@/components/ContactModal";
+import ApiTokenModal from "@/components/ApiTokenModal";
 import { createClient } from "@/lib/supabase/client";
 import { isMockMode, clearMockMode } from "@/lib/mockReports";
 import { STORAGE_KEYS } from "@/lib/storageKeys";
@@ -18,6 +19,7 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [tokenOpen, setTokenOpen] = useState(false);
   const [mock, setMock] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
 
@@ -141,6 +143,19 @@ export default function SettingsPage() {
         </section>
 
         <section className="settings-section">
+          <p className="settings-section-title font-display">CONNECT</p>
+
+          <button
+            type="button"
+            className="settings-row"
+            onClick={() => setTokenOpen(true)}
+          >
+            <span className="settings-row-label">API トークン</span>
+            <CaretRight size={14} className="settings-row-chevron" />
+          </button>
+        </section>
+
+        <section className="settings-section">
           <p className="settings-section-title font-display">SUPPORT</p>
 
           <button
@@ -200,6 +215,11 @@ export default function SettingsPage() {
         open={contactOpen}
         onClose={() => setContactOpen(false)}
         defaultEmail={email}
+      />
+
+      <ApiTokenModal
+        open={tokenOpen}
+        onClose={() => setTokenOpen(false)}
       />
     </main>
   );
