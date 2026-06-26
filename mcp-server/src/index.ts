@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-const BASE_URL = (process.env.YUZU_API_BASE_URL ?? "https://yuzu.style").replace(/\/$/, "");
+const BASE_URL = (process.env.YUZU_API_BASE_URL ?? "https://app.yuzu.style").replace(/\/$/, "");
 const TOKEN = process.env.YUZU_API_TOKEN;
 
 if (!TOKEN) {

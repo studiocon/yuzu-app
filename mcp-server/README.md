@@ -61,7 +61,7 @@ Claude Desktop の設定ファイル（`claude_desktop_config.json`）の `mcpSe
 | 変数 | 必須 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | `YUZU_API_TOKEN` | ◯ | なし | Settings > API トークン で発行したトークン |
-| `YUZU_API_BASE_URL` | - | `https://yuzu.style` | 自前デプロイ等で API のオリジンを変えたい場合のみ指定 |
+| `YUZU_API_BASE_URL` | - | `https://app.yuzu.style` | 自前デプロイ等で API のオリジンを変えたい場合のみ指定 |
 
 ## トラブルシュート
 
