@@ -15,3 +15,4 @@ supabase/.temp/
 
 # 個人用 MCP サーバー（mcp-server/）のビルド出力
 mcp-server/dist
+.vercel

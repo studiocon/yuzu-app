@@ -119,6 +119,8 @@ export function buildMockReportMetas(now = Date.now()): ReportMeta[] {
       headline: s.headline,
       topics: s.topics,
       postCount: p.kind === "week" ? 6 : 22,
+      // ReportCard の感情スパークライン/左端バー用。実 API も一覧に payload を載せる。
+      payload: { ...s, sentimentSeries: fakeSentimentSeries(p.start, p.end) },
     };
   });
 }

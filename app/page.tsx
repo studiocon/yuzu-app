@@ -17,6 +17,7 @@ import type { Post } from "@/lib/types";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import { DAY_MS } from "@/lib/period";
 import { MAX_DAILY_SESSIONS, incrementMockCount, getMockTodayCount } from "@/lib/dailyLimit";
 import { STORAGE_KEYS } from "@/lib/storageKeys";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,8 @@ import SignalCardModal from "@/components/SignalCardModal";
 const PENDING_TEXT_KEY = STORAGE_KEYS.pendingText;
 const SIGNAL_SHOWN_KEY = STORAGE_KEYS.signalShown;
 const MILESTONES = [7, 14, 30, 60, 100, 365];
+// #81 MVP: sentiment 解析は全員「直近 30 日」に限定（InsightView から移管）。
+const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
 function checkSignalMilestone(streak: number): boolean {
   if (!MILESTONES.includes(streak)) return false;
@@ -71,6 +74,9 @@ export default function Home() {
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [pendingDurationMs, setPendingDurationMs] = useState<number>(0);
   const [signalCard, setSignalCard] = useState<{ streak: number; totalCount: number } | null>(null);
+  // 感情スコア（postId → -1.0〜1.0）。LOG / INSIGHT 両方で共有。localStorage が信頼源。
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [scoresHydrated, setScoresHydrated] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
@@ -275,6 +281,49 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverStreak, totalCount]);
 
+  // ── 感情スコア: localStorage から hydrate ──
+  useEffect(() => {
+    setScores(loadSentimentCache());
+    setScoresHydrated(true);
+  }, []);
+
+  // ── 未解析 post のセンチメントスコアを取得（InsightView から移管）──
+  // LOG / INSIGHT どちらを開いていても走らせ、両 view でカード色を共有する。
+  // 30 日窓・未解析分のみ・mock スキップは従来どおり（同じ post は一度しか解析しない）。
+  useEffect(() => {
+    const list = posts ?? [];
+    if (!scoresHydrated || list.length === 0 || isMockMode()) return;
+    const cutoff = Date.now() - SENTIMENT_WINDOW_MS;
+    const unresolved = list.filter((p) => p.createdAt >= cutoff && !(p.id in scores));
+    if (unresolved.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/analyze-sentiment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            posts: unresolved.map((p) => ({ id: p.id, text: p.text, createdAt: p.createdAt })),
+          }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { results: { postId: string; score: number }[] };
+        if (cancelled) return;
+        setScores((prev) => {
+          const next = { ...prev };
+          for (const r of data.results) next[r.postId] = r.score;
+          saveSentimentCache(next);
+          return next;
+        });
+      } catch {
+        // silent: 次回再試行（スコアはあくまで装飾、無くても致命ではない）
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoresHydrated, posts]);
+
   const handleCloseModal = () => {
     setRecordOpen(false);
     recorder.resetIfIdleOrComplete();
@@ -334,10 +383,11 @@ export default function Home() {
           onSave={handleOnboardingSave}
         />
       ) : tab === "read" ? (
-        <InsightView myPosts={myPosts} />
+        <InsightView myPosts={myPosts} scores={scores} />
       ) : (
         <IndexView
           myPosts={myPosts}
+          scores={scores}
           totalCount={totalCount}
           totalDurationMs={totalDurationMs}
           serverStreak={serverStreak}

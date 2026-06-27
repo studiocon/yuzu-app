@@ -14,13 +14,20 @@ import {
 } from "recharts";
 import { WEEKDAY_JA } from "@/lib/streak";
 import type { SentimentPoint } from "@/lib/sentimentSeries";
+import { SENTIMENT_POS, SENTIMENT_NEG } from "@/lib/sentimentColor";
 
 export type { SentimentPoint };
 
 type Props = { data: SentimentPoint[] };
 
-const POS_COLOR = "#E8A020"; // --yuzu-zest
-const NEG_COLOR = "#6F84A6"; // --mood-low
+// LOG のカード左端バーと同じ感情スケールの端点を共有（紺 → オレンジ）。
+const POS_COLOR = SENTIMENT_POS; // +1.0 端点 = --yuzu-zest
+const NEG_COLOR = SENTIMENT_NEG; // -1.0 端点 = --mood-low（紺）
+// .sentiment-chart-wrap は height:220px 固定。ComposedChart margin top:12 / bottom:16。
+// → 上端(score=+1)=y12, ゼロ線=y108, 下端(score=-1)=y204。userSpaceOnUse でこの
+//   y 座標にグラデの色止めを置くと、objectBoundingBox のような bbox 中央割れが起きない。
+const CHART_H = 220;
+const ZERO_OFFSET = `${((108 / CHART_H) * 100).toFixed(1)}%`;
 
 // Mirror 原則: 感情を judging せず、状態を描写する短い言葉だけ返す。
 // 「ポジティブ／ネガティブ」のような評価語は使わない。
@@ -87,6 +94,18 @@ export default function SentimentChart({ data }: Props) {
     <div className="sentiment-chart-wrap" role="img" aria-label="感情スコア 7 日トレンド">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={splitData} margin={{ top: 12, right: 12, bottom: 16, left: 0 }}>
+          <defs>
+            {/* 正領域: 上端=オレンジ濃 → ゼロ線へ向けて減衰（弱い感情でも見える floor 付き） */}
+            <linearGradient id="sentGradPos" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={CHART_H}>
+              <stop offset="0%" stopColor={POS_COLOR} stopOpacity={0.62} />
+              <stop offset={ZERO_OFFSET} stopColor={POS_COLOR} stopOpacity={0.18} />
+            </linearGradient>
+            {/* 負領域: ゼロ線から減衰 → 下端=紺濃 */}
+            <linearGradient id="sentGradNeg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={CHART_H}>
+              <stop offset={ZERO_OFFSET} stopColor={NEG_COLOR} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={NEG_COLOR} stopOpacity={0.62} />
+            </linearGradient>
+          </defs>
           <CartesianGrid stroke="var(--surface-border)" strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="date"
@@ -112,8 +131,8 @@ export default function SentimentChart({ data }: Props) {
             type="monotone"
             dataKey="posScore"
             stroke="none"
-            fill={POS_COLOR}
-            fillOpacity={0.45}
+            fill="url(#sentGradPos)"
+            fillOpacity={1}
             baseValue={0}
             tooltipType="none"
             isAnimationActive={true}
@@ -123,8 +142,8 @@ export default function SentimentChart({ data }: Props) {
             type="monotone"
             dataKey="negScore"
             stroke="none"
-            fill={NEG_COLOR}
-            fillOpacity={0.45}
+            fill="url(#sentGradNeg)"
+            fillOpacity={1}
             baseValue={0}
             tooltipType="none"
             isAnimationActive={true}

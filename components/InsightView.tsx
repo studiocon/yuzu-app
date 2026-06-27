@@ -9,63 +9,24 @@ import RecurringThemes from "./RecurringThemes";
 import type { Post } from "@/lib/types";
 import type { ReportMeta } from "@/lib/reportTypes";
 import { buildMockReportMetas, isMockMode } from "@/lib/mockReports";
-import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
+import { loadSentimentCache } from "@/lib/userClient";
 import { reportCacheKey } from "@/lib/storageKeys";
-import { DAY_MS } from "@/lib/period";
-
-// #81 MVP: 課金未導入のため sentiment 解析は全員「直近 30 日」に限定。
-// 課金導入時 (#65) は plan === "free" 時のみ適用するよう分岐する。
-const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
 type Props = {
   myPosts: Post[];
+  /** 感情スコア（postId → -1.0〜1.0）。page.tsx で集約・解析され共有される。 */
+  scores: Record<string, number>;
 };
 
-export default function InsightView({ myPosts }: Props) {
+export default function InsightView({ myPosts, scores }: Props) {
   const [reports, setReports] = useState<ReportMeta[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scores, setScores] = useState<Record<string, number>>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
-    setScores(loadSentimentCache());
   }, []);
-
-  // ── 未分析 post のセンチメントスコアを取得（IndexView から移管） ──
-  useEffect(() => {
-    if (!hydrated || myPosts.length === 0 || isMockMode()) return;
-    const cutoff = Date.now() - SENTIMENT_WINDOW_MS;
-    const unresolved = myPosts.filter(
-      (p) => p.createdAt >= cutoff && !(p.id in scores),
-    );
-    if (unresolved.length === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/analyze-sentiment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            posts: unresolved.map((p) => ({ id: p.id, text: p.text, createdAt: p.createdAt })),
-          }),
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as { results: { postId: string; score: number }[] };
-        if (cancelled) return;
-        const next = { ...scores };
-        for (const r of data.results) next[r.postId] = r.score;
-        setScores(next);
-        saveSentimentCache(next);
-      } catch {
-        // silent: 次回再試行
-      }
-    })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, myPosts]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -116,12 +77,12 @@ export default function InsightView({ myPosts }: Props) {
           .filter((m) => !m.generated && m.postCount > 0)
           .slice(0, 2);
         if (pending.length > 0) {
-          const scores = loadSentimentCache();
+          const cachedScores = loadSentimentCache();
           for (const m of pending) {
             fetch(`/api/reports/${encodeURIComponent(m.periodKey)}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ scores }),
+              body: JSON.stringify({ scores: cachedScores }),
               keepalive: true,
             }).catch(() => {});
           }

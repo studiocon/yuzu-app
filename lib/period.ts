@@ -129,6 +129,18 @@ export function jstDateString(ts: number): string {
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 
+// レポートカードの期間スパン表示（JST）。end は排他境界なので最終日は end - DAY_MS。
+// week → "M/D–M/D"（例 6/8–6/14）、month → "M月"（例 6月）。
+export function formatPeriodRange(start: number, end: number, kind: PeriodKind): string {
+  if (kind === "month") {
+    const { m } = jstParts(start);
+    return `${m}月`;
+  }
+  const s = jstParts(start);
+  const e = jstParts(end - DAY_MS);
+  return `${s.m}/${s.d}–${e.m}/${e.d}`;
+}
+
 // 投稿の createdAt を JST の 0〜23 時で返す
 export function jstHour(ts: number): number {
   const d = new Date(ts + JST_OFFSET_MS);

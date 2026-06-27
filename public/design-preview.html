@@ -26,7 +26,7 @@
     /* iconbtn 常時ディスク */
     --icon-bg:       rgba(26, 26, 46, 0.06);
     /* EMOTION チャート neg 側塗り */
-    --mood-low:      #6F84A6;
+    --mood-low:      #2E3A66;
     /* Easing */
     --ease-organic: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-soft:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -117,16 +117,24 @@
   .stat-label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--ink-muted); display: block; }
   .stat-value { font-family: var(--font-display); font-weight: 700; font-size: var(--text-3xl); color: var(--ink); line-height: 1; display: block; margin-top: 10px; }
 
-  /* post card */
-  .post-card { border: 1px solid var(--divider); border-radius: 4px; padding: 16px 14px; max-width: 360px; width: 100%; }
-  .post-card .row { display: flex; align-items: baseline; gap: 12px; }
-  .post-card .emoji { font-size: 20px; }
-  .post-card .name { font-family: var(--font-body); font-weight: 700; font-size: var(--text-sm); }
-  .post-card .time { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: var(--text-xs); color: var(--ink-muted); }
+  /* post card (v2.3: 感情カラー左端バー + 声紋 + index/duration ヘッダー) */
+  .post-card { position: relative; border: 1px solid var(--divider); border-radius: 4px; padding: 16px 14px; max-width: 360px; width: 100%; }
+  .post-card .row { display: flex; align-items: center; gap: 12px; }
   .post-card .text { margin: 10px 0 0; font-family: var(--font-body); font-weight: 400; font-size: var(--text-base); line-height: 1.75; color: var(--ink); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
   .post-card--tappable { cursor: pointer; transition: background 0.15s var(--ease-soft); }
   .post-card--tappable:hover { background: var(--surface-hover); }
-  .post-card .index { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.08em; }
+  .post-card .index { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.06em; }
+  .post-card .duration { font-family: var(--font-display); font-weight: 500; font-size: var(--text-xs); color: var(--ink-muted); letter-spacing: 0.06em; }
+  .post-card .edge { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+  .post-card .voiceprint { display: flex; align-items: flex-end; gap: 2px; height: 20px; margin-top: 12px; opacity: 0.45; }
+  .post-card .voiceprint span { flex: 1 1 0; min-width: 1px; background: var(--ink-muted); }
+
+  /* timeline（LOG タブ RECORDS セクション: 背骨 + 日付区切り） */
+  .timeline-mock { position: relative; display: flex; flex-direction: column; gap: 14px; padding-left: 20px; max-width: 360px; }
+  .timeline-mock::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: var(--divider); }
+  .timeline-divider { display: flex; align-items: center; gap: 8px; }
+  .timeline-divider .dot { width: 9px; height: 9px; margin-left: -19px; border-radius: 9999px; background: var(--ink-muted); }
+  .timeline-divider .label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-secondary); }
 
   /* buttons */
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 4px; border: 1px solid transparent; font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.08em; cursor: pointer; transition: transform .12s var(--ease-soft), background .15s var(--ease-soft), color .15s var(--ease-soft), border-color .15s var(--ease-soft), opacity .15s var(--ease-soft); -webkit-tap-highlight-color: transparent; }
@@ -206,12 +214,16 @@
   .sent-card { border: 1px solid var(--divider); padding: 16px; border-radius: var(--radius-sharp); background: #fff; }
   .sent-svg { width: 100%; height: 180px; display: block; }
 
-  /* report card / detail mock */
-  .report-card-mock { display: flex; flex-direction: column; gap: 10px; padding: 16px 14px; border: 1px solid var(--divider); border-radius: 4px; background: #fff; max-width: 280px; width: 100%; }
-  .report-card-mock .kind { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); }
-  .report-card-mock .label { font-family: var(--font-body); font-weight: 700; font-size: var(--text-base); color: var(--ink); line-height: 1.3; }
-  .report-card-mock .headline { font-size: var(--text-sm); color: var(--ink-secondary); line-height: 1.5; margin: 0; }
+  /* report card / detail mock (v2.3: バッジ + 期間スパン + 感情カラー左端バー + sparkline) */
+  .report-card-mock { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px; border: 1px solid var(--divider); border-radius: 4px; background: #fff; max-width: 280px; width: 100%; text-decoration: none; color: var(--ink); }
+  .report-card-mock .edge { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+  .report-card-mock .head { display: flex; align-items: center; gap: 8px; }
+  .report-card-mock .kind { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.14em; padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid var(--ink); color: var(--ink); }
+  .report-card-mock.month .kind { background: var(--ink); color: var(--yuzu-white); }
+  .report-card-mock .span { font-family: var(--font-display); font-size: var(--text-xs); letter-spacing: 0.06em; color: var(--ink-muted); }
+  .report-card-mock .headline { font-family: var(--font-body); font-weight: 700; font-size: var(--text-base); color: var(--ink); line-height: 1.4; margin: 0; }
   .report-card-mock .topics { display: flex; flex-wrap: wrap; gap: 6px; }
+  .report-card-mock .spark { width: 100%; height: 28px; display: block; margin-top: 4px; }
   .report-chip { display: inline-block; padding: 4px 10px; border: 1px solid var(--divider); border-radius: var(--radius-pill); font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--ink-secondary); background: var(--yuzu-white); }
   .report-detail-mock { padding: 24px; border: 1px solid var(--divider); border-radius: var(--radius-sharp); background: #fff; display: flex; flex-direction: column; gap: 24px; }
   .report-detail-mock .title { font-family: var(--font-display); font-weight: 700; font-size: 32px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; margin: 0; }
@@ -222,8 +234,8 @@
   .report-detail-mock .advice { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xl); letter-spacing: -0.01em; padding-bottom: 6px; border-bottom: 2px solid var(--yuzu-yellow); align-self: flex-start; margin: 0; }
   .reports-row { display: flex; gap: 12px; align-items: stretch; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .reports-row .report-card-mock { flex: 0 0 78%; max-width: 280px; }
-  .reports-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-  .reports-head .more { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.16em; color: var(--ink-secondary); text-decoration: none; text-transform: uppercase; }
+  /* INSIGHT 内のセクション見出し（.mypage-section-title 相当）。独立タブ時代の大見出し+MORE→は撤去済み。 */
+  .reports-head { font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); margin-bottom: 16px; }
 
   /* index detail mock (#番号タップ後) */
   .index-detail-mock { background: var(--ink); color: var(--yuzu-white); padding: 40px 24px; width: 100%; text-align: left; }
@@ -394,11 +406,11 @@
         <a href="#c-button"><span class="num">03</span><span class="name">BUTTON</span><span class="desc">Primary / Secondary / Accent / Ghost / Danger。</span></a>
         <a href="#c-iconbutton"><span class="num">04</span><span class="name">ICON BUTTON</span><span class="desc">44px・round・lg のアイコン専用ボタン。</span></a>
         <a href="#c-status"><span class="num">05</span><span class="name">STATUS PILL</span><span class="desc">RECORDING / CARVING / CARVED</span></a>
-        <a href="#c-stat"><span class="num">06</span><span class="name">STAT CARD</span><span class="desc">DAY / RECORDS / STREAK の数値表示。</span></a>
-        <a href="#c-post"><span class="num">07</span><span class="name">POST CARD</span><span class="desc">投稿の最小単位。連番＋タイムスタンプ。</span></a>
+        <a href="#c-stat"><span class="num">06</span><span class="name">STAT CARD</span><span class="desc">RECORDS / MINUTES / STREAK（カウントアップ）。</span></a>
+        <a href="#c-post"><span class="num">07</span><span class="name">POST CARD</span><span class="desc">連番＋長さ・声紋・感情カラー。背骨＋日付区切り。</span></a>
         <a href="#c-index-detail"><span class="num">07b</span><span class="name">INDEX DETAIL</span><span class="desc">#番号タップ後。事実 STATS（LENGTH / DAY）。</span></a>
-        <a href="#c-sentiment"><span class="num">08</span><span class="name">EMOTION CHART</span><span class="desc">ポジ＝黄／ネガ＝青の面グラフ。</span></a>
-        <a href="#c-reports"><span class="num">09</span><span class="name">REPORT TAB</span><span class="desc">独立タブ。AI 解釈の週次レポート。</span></a>
+        <a href="#c-sentiment"><span class="num">08</span><span class="name">EMOTION CHART</span><span class="desc">ポジ＝オレンジ／ネガ＝紺の面グラフ。</span></a>
+        <a href="#c-reports"><span class="num">09</span><span class="name">REPORTS</span><span class="desc">INSIGHT 内セクション。バッジ＋スパークラインで判別。</span></a>
         <a href="#c-report-detail"><span class="num">10</span><span class="name">REPORT DETAIL</span><span class="desc">EMOTION / TOPICS / SURFACE / DEPTH / ADVICE。</span></a>
       </nav>
 
@@ -493,25 +505,44 @@
         <div class="comp" id="c-stat">
           <h4>STAT CARD</h4>
           <div class="stage" style="display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;gap:0;padding:0">
-            <div class="stat-card"><span class="stat-label">DAY</span><span class="stat-value">14</span></div>
-            <div class="stat-card"><span class="stat-label">RECORDS</span><span class="stat-value">42</span></div>
-            <div class="stat-card"><span class="stat-label">STREAK</span><span class="stat-value">7</span></div>
+            <div class="stat-card"><span class="stat-label">RECORDS</span><span class="stat-value">20</span></div>
+            <div class="stat-card"><span class="stat-label">MINUTES</span><span class="stat-value">128</span></div>
+            <div class="stat-card"><span class="stat-label">STREAK</span><span class="stat-value">14</span></div>
           </div>
-          <p class="note">ラベル上・数値下・中央揃え。罫線で区切る。</p>
+          <p class="note">ラベル上・数値下・中央揃え。罫線で区切る。LOG 画面ヘッダー直下の表示例（<code>RECORDS / MINUTES / STREAK</code>）。<strong>アクセス時に 0 → 値へカウントアップ</strong>（<code>lib/useCountUp.ts</code>、約1秒・ease-out）。同パターンを完了画面（MINUTES / STREAK）・INDEX 詳細（LENGTH / DAY）でも使い回す。</p>
         </div>
 
-        <div class="comp" id="c-post">
-          <h4>RECORD CARD (v2)</h4>
-          <div class="stage" style="align-items:flex-start">
-            <div class="post-card post-card--tappable">
-              <div class="row" style="justify-content:space-between;align-items:center">
-                <span class="time">たった今</span>
-                <span class="index" style="margin-left:auto">#042</span>
+        <div class="comp" id="c-post" style="grid-column: 1 / -1">
+          <h4>RECORD CARD (v2.3 — タイムライン)</h4>
+          <div class="stage" style="flex-direction:column;align-items:stretch;padding:24px;background:var(--yuzu-white)">
+            <div class="timeline-mock">
+              <div class="timeline-divider"><span class="dot"></span><span class="label">TODAY</span></div>
+              <div class="post-card post-card--tappable">
+                <span class="edge" style="background:#E8A020"></span>
+                <div class="row" style="justify-content:space-between">
+                  <span class="index">#042</span>
+                  <span class="duration">1:24</span>
+                </div>
+                <p class="text">今日はずっと機嫌が良かった。理由はわからない。仕事も悪くなかったし、夜は早めに帰れた。久しぶりに本を読んだ。気づいたら寝落ちしていた。明日も同じならいい。</p>
+                <div class="voiceprint">
+                  <span style="height:40%"></span><span style="height:80%"></span><span style="height:55%"></span><span style="height:95%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:50%"></span><span style="height:85%"></span><span style="height:30%"></span><span style="height:65%"></span><span style="height:45%"></span><span style="height:90%"></span><span style="height:38%"></span><span style="height:60%"></span>
+                </div>
               </div>
-              <p class="text">今日はずっと機嫌が良かった。理由はわからない。仕事も悪くなかったし、夜は早めに帰れた。久しぶりに本を読んだ。気づいたら寝落ちしていた。明日も同じならいい。</p>
+              <div class="timeline-divider"><span class="dot"></span><span class="label">YESTERDAY</span></div>
+              <div class="post-card post-card--tappable">
+                <span class="edge" style="background:#2E3A66"></span>
+                <div class="row" style="justify-content:space-between">
+                  <span class="index">#041</span>
+                  <span class="duration">0:48</span>
+                </div>
+                <p class="text">少し疲れた。でも前に進めた気がする。</p>
+                <div class="voiceprint">
+                  <span style="height:50%"></span><span style="height:70%"></span><span style="height:35%"></span><span style="height:90%"></span><span style="height:45%"></span><span style="height:60%"></span>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="note">v2.2: アイコン・名前なし（identity は <code>#NNN</code> のみ）。<strong>カード全体タップ</strong>で詳細モーダルへ。本文は <strong>~5 行で省略</strong>（全文・MARK / COPY は詳細モーダル側）。</p>
+          <p class="note">v2.3: アイコン・名前なし（identity は <code>#NNN</code> のみ）。<strong>カード全体タップ</strong>で詳細モーダルへ。本文は <strong>~5 行で省略</strong>（全文・MARK / COPY は詳細モーダル側）。ヘッダーは <code>#NNN</code>（左）+ 録音長 <code>m:ss</code>（右）の2点配置。<strong>絶対日付はカードに持たない</strong>（タイムラインの区切りに一本化、重複表示を解消）。左端の感情カラーバーと声紋バー（録音長に比例）を追加。一覧は背骨（縦罫線）+ 日付区切り（<code>TODAY</code> / <code>YESTERDAY</code> / <code>M.D DOW</code>）でグルーピング。</p>
         </div>
 
         <div class="comp" id="c-index-detail" style="grid-column: 1 / -1">
@@ -546,8 +577,8 @@
                 <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%"  stop-color="#E8A020" stop-opacity="0.9"/>
                   <stop offset="50%" stop-color="#E8A020" stop-opacity="0.15"/>
-                  <stop offset="50%" stop-color="#6F84A6" stop-opacity="0.15"/>
-                  <stop offset="100%" stop-color="#6F84A6" stop-opacity="0.9"/>
+                  <stop offset="50%" stop-color="#2E3A66" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#2E3A66" stop-opacity="0.9"/>
                 </linearGradient>
               </defs>
               <line x1="0" y1="90" x2="600" y2="90" stroke="#9A9ABA" stroke-dasharray="4 4"/>
@@ -555,59 +586,92 @@
               <path d="M0,80 C60,40 90,140 150,120 C210,100 240,30 300,50 C360,70 390,150 450,130 C510,110 540,40 600,60" fill="none" stroke="#1A1A2E" stroke-opacity="0.4" stroke-width="1.5"/>
             </svg>
           </div>
-          <p class="note">ポジ＝<code>--yuzu-zest</code>、ネガ＝<code>--mood-low</code>（スレート青）。ゼロは点線。</p>
+          <p class="note">ポジ＝<code>--yuzu-zest</code>、ネガ＝<code>--mood-low</code>（紺）。ゼロは点線。<strong>この2色（オレンジ↔紺）は LOG カード左端バー・REPORTS カード左端バー＋sparkline と共有する1本の感情スケール</strong>（正準実装: <code>lib/sentimentColor.ts</code>）。</p>
         </div>
 
         <div class="comp" id="c-reports" style="grid-column: 1 / -1">
-          <h4>REPORT TAB (v2)</h4>
+          <h4>REPORTS (v2.3 — バッジ + 期間スパン + sparkline)</h4>
           <div class="stage" style="flex-direction:column;align-items:stretch;gap:16px;min-height:0;padding:24px;background:var(--yuzu-white)">
-            <div class="reports-head">
-              <div style="font-family:var(--font-display);font-weight:700;font-size:40px;letter-spacing:0.04em;text-transform:uppercase;line-height:1">REPORT</div>
-              <a class="more" href="#">MORE →</a>
-            </div>
+            <div class="reports-head">REPORTS</div>
             <div class="reports-row">
               <a class="report-card-mock" href="#">
-                <div class="kind">WEEK</div>
-                <div class="label">4月3週 週次レポート</div>
+                <span class="edge" style="background:#7A8099"></span>
+                <div class="head">
+                  <span class="kind">WEEK</span>
+                  <span class="span">6/14–6/20</span>
+                </div>
                 <p class="headline">怒りを置きにいった一週間。</p>
                 <div class="topics">
                   <span class="report-chip">仕事のミーティング</span>
                   <span class="report-chip">家族</span>
                   <span class="report-chip">寝不足</span>
                 </div>
+                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
+                  <defs>
+                    <linearGradient id="spark-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="28">
+                      <stop offset="0%" stop-color="#E8A020" stop-opacity="0.5"/>
+                      <stop offset="50%" stop-color="#E8A020" stop-opacity="0.06"/>
+                      <stop offset="50%" stop-color="#2E3A66" stop-opacity="0.06"/>
+                      <stop offset="100%" stop-color="#2E3A66" stop-opacity="0.5"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,10 L14,18 L28,8 L42,20 L57,6 L71,16 L85,9 L100,17 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
+                  <path d="M0,10 L14,18 L28,8 L42,20 L57,6 L71,16 L85,9 L100,17" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                </svg>
               </a>
               <a class="report-card-mock" href="#">
-                <div class="kind">WEEK</div>
-                <div class="label">4月2週 週次レポート</div>
+                <span class="edge" style="background:#B6B6C6"></span>
+                <div class="head">
+                  <span class="kind">WEEK</span>
+                  <span class="span">6/7–6/13</span>
+                </div>
                 <p class="headline">凪。たまに笑った。</p>
                 <div class="topics">
                   <span class="report-chip">散歩</span>
                   <span class="report-chip">本</span>
                   <span class="report-chip">同僚</span>
                 </div>
+                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,15 L14,13 L28,16 L42,12 L57,15 L71,11 L85,14 L100,13 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
+                  <path d="M0,15 L14,13 L28,16 L42,12 L57,15 L71,11 L85,14 L100,13" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                </svg>
               </a>
               <a class="report-card-mock" href="#">
-                <div class="kind">WEEK</div>
-                <div class="label">4月1週 週次レポート</div>
+                <span class="edge" style="background:#D6A24A"></span>
+                <div class="head">
+                  <span class="kind">WEEK</span>
+                  <span class="span">5/31–6/6</span>
+                </div>
                 <p class="headline">出だしから走った。疲れも残った。</p>
                 <div class="topics">
                   <span class="report-chip">新プロジェクト</span>
                   <span class="report-chip">通勤</span>
                 </div>
+                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,8 L14,14 L28,10 L42,20 L57,16 L71,22 L85,18 L100,21 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
+                  <path d="M0,8 L14,14 L28,10 L42,20 L57,16 L71,22 L85,18 L100,21" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                </svg>
               </a>
-              <a class="report-card-mock" href="#">
-                <div class="kind">MONTH</div>
-                <div class="label">3月 月次レポート</div>
+              <a class="report-card-mock month" href="#">
+                <span class="edge" style="background:#5C6690"></span>
+                <div class="head">
+                  <span class="kind">MONTH</span>
+                  <span class="span">5月</span>
+                </div>
                 <p class="headline">出すより、抱えた月。</p>
                 <div class="topics">
                   <span class="report-chip">引っ越し</span>
                   <span class="report-chip">別れ</span>
                   <span class="report-chip">沈黙</span>
                 </div>
+                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,12 L9,18 L18,10 L27,22 L36,14 L45,19 L55,9 L64,17 L73,21 L82,11 L91,16 L100,20 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
+                  <path d="M0,12 L9,18 L18,10 L27,22 L36,14 L45,19 L55,9 L64,17 L73,21 L82,11 L91,16 L100,20" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                </svg>
               </a>
             </div>
           </div>
-          <p class="note">EMOTION セクションと RECORDS セクションの間に挿入。直近1か月の確定済み週／月レポートを横スクロール snap で並べる。<code>more →</code> で <code>/reports</code> 全件ページへ。</p>
+          <p class="note">EMOTION セクションと RECORDS セクションの間に挿入。直近1か月の確定済み週／月レポートを横スクロール snap で並べる。種別バッジは <code>WEEK</code>=ゴースト／<code>MONTH</code>=塗り（<code>--ink</code>）で判別、冗長な「週次/月次レポート」接尾辞は廃止し期間スパン（日付レンジ / 月名）に統一。左端バー・ミニ sparkline は EMOTION チャートと同じ感情スケールを共有。詳細遷移は <code>/reports/{periodKey}</code>。</p>
         </div>
 
         <div class="comp" id="c-report-detail" style="grid-column: 1 / -1">
@@ -623,8 +687,8 @@
                     <linearGradient id="grad-r" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%"  stop-color="#E8A020" stop-opacity="0.9"/>
                       <stop offset="50%" stop-color="#E8A020" stop-opacity="0.15"/>
-                      <stop offset="50%" stop-color="#6F84A6" stop-opacity="0.15"/>
-                      <stop offset="100%" stop-color="#6F84A6" stop-opacity="0.9"/>
+                      <stop offset="50%" stop-color="#2E3A66" stop-opacity="0.15"/>
+                      <stop offset="100%" stop-color="#2E3A66" stop-opacity="0.9"/>
                     </linearGradient>
                   </defs>
                   <line x1="0" y1="70" x2="600" y2="70" stroke="#9A9ABA" stroke-dasharray="4 4"/>
@@ -702,6 +766,7 @@
           <tr><td class="where">EMOTION フィルタ ALL（MVP）</td><td class="what en">COMING SOON</td></tr>
           <tr><td class="where">MARK / COPY 操作直後</td><td class="what en">MARKED / COPIED</td></tr>
           <tr><td class="where">RECORDS フィルタ</td><td class="what en">ALL / MARKED</td></tr>
+          <tr><td class="where">タイムライン日付区切り</td><td class="what en">TODAY / YESTERDAY / M.D DOW</td></tr>
           <tr><td class="where">タイムライン空（ALL）</td><td class="what">話せ</td></tr>
           <tr><td class="where">MARKED 空表示</td><td class="what">MARK されたものは無い</td></tr>
           <tr><td class="where">追加読み込み中</td><td class="what en">LOADING</td></tr>
@@ -716,9 +781,10 @@
           <tr><td class="where">WORDS / SIGNAL 空</td><td class="what">まだ声がない</td></tr>
           <tr><td class="where">PATTERN 投稿不足 / なし</td><td class="what">もっと話せ、パターンが見えてくる / まだパターンがない</td></tr>
           <tr><td class="where">REPORTS 空</td><td class="what">NOTHING TO READ YET / 沈黙は記録されない、話せ</td></tr>
+          <tr><td class="where">REPORTS 種別バッジ / 期間スパン</td><td class="what en">WEEK / MONTH ・ M/D–M/D / M月</td></tr>
           <tr><td class="where">レポート詳細 見出し</td><td class="what en">EMOTION / TOPICS / SURFACE / DEPTH / ADVICE</td></tr>
           <tr><td class="where">レポート 期間なし / 進行中</td><td class="what">この期間は何も無い / まだ進行中の期間だ</td></tr>
-          <tr><td class="where">レポート一覧へ / 再試行</td><td class="what en">MORE → / RETRY</td></tr>
+          <tr><td class="where">再試行</td><td class="what en">RETRY</td></tr>
           <tr><td class="where">ログイン（ステップ別）</td><td class="what en">SIGN IN → MAIL → SENT</td></tr>
           <tr><td class="where">ログイン手段</td><td class="what">Apple で続ける / Google で続ける / メールで続ける / 送れ</td></tr>
           <tr><td class="where">マイルストーン共有</td><td class="what en">DAY {N} / VOICE {N} / SAVING</td></tr>
