@@ -223,7 +223,7 @@
   .report-card-mock .span { font-family: var(--font-display); font-size: var(--text-xs); letter-spacing: 0.06em; color: var(--ink-muted); }
   .report-card-mock .headline { font-family: var(--font-body); font-weight: 700; font-size: var(--text-base); color: var(--ink); line-height: 1.4; margin: 0; }
   .report-card-mock .topics { display: flex; flex-wrap: wrap; gap: 6px; }
-  .report-card-mock .spark { width: 100%; height: 28px; display: block; margin-top: 4px; }
+  .report-card-mock .spark { width: 100%; height: 72px; display: block; margin-top: 4px; }
   .report-chip { display: inline-block; padding: 4px 10px; border: 1px solid var(--divider); border-radius: var(--radius-pill); font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--ink-secondary); background: var(--yuzu-white); }
   .report-detail-mock { padding: 24px; border: 1px solid var(--divider); border-radius: var(--radius-sharp); background: #fff; display: flex; flex-direction: column; gap: 24px; }
   .report-detail-mock .title { font-family: var(--font-display); font-weight: 700; font-size: 32px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; margin: 0; }
@@ -606,17 +606,20 @@
                   <span class="report-chip">家族</span>
                   <span class="report-chip">寝不足</span>
                 </div>
-                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
+                <svg class="spark" viewBox="0 0 100 72" preserveAspectRatio="none" aria-hidden>
                   <defs>
-                    <linearGradient id="spark-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="28">
-                      <stop offset="0%" stop-color="#E8A020" stop-opacity="0.5"/>
-                      <stop offset="50%" stop-color="#E8A020" stop-opacity="0.06"/>
-                      <stop offset="50%" stop-color="#2E3A66" stop-opacity="0.06"/>
-                      <stop offset="100%" stop-color="#2E3A66" stop-opacity="0.5"/>
+                    <linearGradient id="spark-grad-pos" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="72">
+                      <stop offset="0%" stop-color="#E8A020" stop-opacity="0.62"/>
+                      <stop offset="50%" stop-color="#E8A020" stop-opacity="0.18"/>
+                    </linearGradient>
+                    <linearGradient id="spark-grad-neg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="72">
+                      <stop offset="50%" stop-color="#2E3A66" stop-opacity="0.18"/>
+                      <stop offset="100%" stop-color="#2E3A66" stop-opacity="0.62"/>
                     </linearGradient>
                   </defs>
-                  <path d="M0,10 L14,18 L28,8 L42,20 L57,6 L71,16 L85,9 L100,17 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
-                  <path d="M0,10 L14,18 L28,8 L42,20 L57,6 L71,16 L85,9 L100,17" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                  <path d="M0,36L0,26L14,36L28,21L42,36L57,16L71,36L85,23.5L100,36L100,36Z" fill="url(#spark-grad-pos)"/>
+                  <path d="M0,36L0,36L14,46L28,36L42,51L57,36L71,41L85,36L100,43.5L100,36Z" fill="url(#spark-grad-neg)"/>
+                  <path d="M0,26L14,46L28,21L42,51L57,16L71,41L85,23.5L100,43.5" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
                 </svg>
               </a>
               <a class="report-card-mock" href="#">
@@ -631,9 +634,10 @@
                   <span class="report-chip">本</span>
                   <span class="report-chip">同僚</span>
                 </div>
-                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
-                  <path d="M0,15 L14,13 L28,16 L42,12 L57,15 L71,11 L85,14 L100,13 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
-                  <path d="M0,15 L14,13 L28,16 L42,12 L57,15 L71,11 L85,14 L100,13" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                <svg class="spark" viewBox="0 0 100 72" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,36L0,36L14,33.5L28,36L42,31L57,36L71,28.5L85,36L100,33.5L100,36Z" fill="url(#spark-grad-pos)"/>
+                  <path d="M0,36L0,38.5L14,36L28,41L42,36L57,38.5L71,36L85,36L100,36L100,36Z" fill="url(#spark-grad-neg)"/>
+                  <path d="M0,38.5L14,33.5L28,41L42,31L57,38.5L71,28.5L85,36L100,33.5" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
                 </svg>
               </a>
               <a class="report-card-mock" href="#">
@@ -647,9 +651,10 @@
                   <span class="report-chip">新プロジェクト</span>
                   <span class="report-chip">通勤</span>
                 </div>
-                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
-                  <path d="M0,8 L14,14 L28,10 L42,20 L57,16 L71,22 L85,18 L100,21 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
-                  <path d="M0,8 L14,14 L28,10 L42,20 L57,16 L71,22 L85,18 L100,21" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                <svg class="spark" viewBox="0 0 100 72" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,36L0,21L14,36L28,26L42,36L57,36L71,36L85,36L100,36L100,36Z" fill="url(#spark-grad-pos)"/>
+                  <path d="M0,36L0,36L14,36L28,36L42,51L57,41L71,56L85,46L100,53.5L100,36Z" fill="url(#spark-grad-neg)"/>
+                  <path d="M0,21L14,36L28,26L42,51L57,41L71,56L85,46L100,53.5" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
                 </svg>
               </a>
               <a class="report-card-mock month" href="#">
@@ -664,9 +669,10 @@
                   <span class="report-chip">別れ</span>
                   <span class="report-chip">沈黙</span>
                 </div>
-                <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden>
-                  <path d="M0,12 L9,18 L18,10 L27,22 L36,14 L45,19 L55,9 L64,17 L73,21 L82,11 L91,16 L100,20 L100,28 L0,28 Z" fill="url(#spark-grad)"/>
-                  <path d="M0,12 L9,18 L18,10 L27,22 L36,14 L45,19 L55,9 L64,17 L73,21 L82,11 L91,16 L100,20" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
+                <svg class="spark" viewBox="0 0 100 72" preserveAspectRatio="none" aria-hidden>
+                  <path d="M0,36L0,31L9,36L18,26L27,36L36,36L45,36L55,23.5L64,36L73,36L82,28.5L91,36L100,36L100,36Z" fill="url(#spark-grad-pos)"/>
+                  <path d="M0,36L0,36L9,46L18,36L27,56L36,36L45,48.5L55,36L64,43.5L73,53.5L82,36L91,41L100,51L100,36Z" fill="url(#spark-grad-neg)"/>
+                  <path d="M0,31L9,46L18,26L27,56L36,36L45,48.5L55,23.5L64,43.5L73,53.5L82,28.5L91,41L100,51" fill="none" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1"/>
                 </svg>
               </a>
             </div>
