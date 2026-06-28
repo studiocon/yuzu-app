@@ -46,6 +46,11 @@ export default function SplashScreen() {
   return (
     <div className="splash" data-state={state} role="status" aria-label="YUZU">
       <div className="splash-inner">
+        {/*
+          スプラッシュのロゴは静的 SVG。即時描画が要件で、next/image のローダ/最適化は
+          SVG に効かず初回ペイントを遅らせるだけなので素の <img> を使う。
+        */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="splash-logo"
           src="/logo.svg"

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "@phosphor-icons/react";
-import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalAnimation } from "@/lib/useModalAnimation";
 
-type AnimState = "opening" | "open" | "closing";
 type Step = "list" | "created";
 
 type TokenItem = {
@@ -20,8 +19,6 @@ type Props = {
   onClose: () => void;
 };
 
-const OPEN_MS = 220;
-const CLOSE_MS = 220;
 const NAME_MAX = 40;
 
 function formatDate(ms: number): string {
@@ -29,8 +26,6 @@ function formatDate(ms: number): string {
 }
 
 export default function ApiTokenModal({ open, onClose }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [animState, setAnimState] = useState<AnimState>("opening");
   const [step, setStep] = useState<Step>("list");
   const [tokens, setTokens] = useState<TokenItem[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -41,27 +36,16 @@ export default function ApiTokenModal({ open, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useBodyScrollLock(open);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
+  const { mounted, animState } = useModalAnimation(open, {
+    onOpen: () => {
       setStep("list");
       setNewTokenName("");
       setJustIssued(null);
       setCopied(false);
       setError(null);
-      setAnimState("opening");
-      const t = setTimeout(() => setAnimState("open"), OPEN_MS);
       loadTokens();
-      return () => clearTimeout(t);
-    } else if (mounted) {
-      setAnimState("closing");
-      const t = setTimeout(() => setMounted(false), CLOSE_MS);
-      return () => clearTimeout(t);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    },
+  });
 
   if (!mounted) return null;
 

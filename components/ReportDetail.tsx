@@ -119,7 +119,7 @@ export default function ReportDetail({ periodKey }: Props) {
           <div className="skeleton-block skeleton-block--line skeleton-block--line-short" />
           <div className="skeleton-block skeleton-block--line" />
           <div className="skeleton-block skeleton-block--line" />
-          <p className="report-detail-status-sub">AIが分析中。他の画面に移動したり閉じても生成は続きます。</p>
+          <p className="report-detail-status-sub">AI が刻んでいる。画面を離れても、閉じても止まらない。</p>
         </div>
       )}
       {status === "no_posts" && (

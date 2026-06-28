@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "@phosphor-icons/react";
-import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalAnimation } from "@/lib/useModalAnimation";
 import { INQUIRY_SUBJECT_MAX, INQUIRY_BODY_MAX } from "@/lib/inquiries";
 
-type AnimState = "opening" | "open" | "closing";
 type Step = "input" | "sent";
 
 type Props = {
@@ -14,12 +13,7 @@ type Props = {
   defaultEmail?: string | null;
 };
 
-const OPEN_MS = 220;
-const CLOSE_MS = 220;
-
 export default function ContactModal({ open, onClose, defaultEmail }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [animState, setAnimState] = useState<AnimState>("opening");
   const [step, setStep] = useState<Step>("input");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -27,26 +21,15 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useBodyScrollLock(open);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
+  const { mounted, animState } = useModalAnimation(open, {
+    onOpen: () => {
       setStep("input");
       setSubject("");
       setBody("");
       setEmail(defaultEmail ?? "");
       setError(null);
-      setAnimState("opening");
-      const t = setTimeout(() => setAnimState("open"), OPEN_MS);
-      return () => clearTimeout(t);
-    } else if (mounted) {
-      setAnimState("closing");
-      const t = setTimeout(() => setMounted(false), CLOSE_MS);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    },
+  });
 
   if (!mounted) return null;
 
@@ -79,22 +62,22 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
         } catch { /* noop */ }
         // ユーザーには「次に何をすればよいか」だけを返す。エラーコード/番号は出さない。
         if (res.status === 429 || code === "rate_limited") {
-          setError("少し間を置いてからもう一度送ってください。");
+          setError("立て続けだ。間を置いてもう一度。");
         } else if (code === "too_long") {
-          setError("文字数が多すぎます。少し削ってからもう一度送ってください。");
+          setError("長すぎる。少し削ってもう一度。");
         } else if (code === "missing_fields") {
-          setError("タイトルと本文を入力してください。");
+          setError("タイトルと本文を埋めろ。");
         } else if (res.status >= 500) {
-          setError("いま送信できませんでした。時間を置いてもう一度お試しください。");
+          setError("いま送れなかった。間を置いてもう一度。");
         } else {
-          setError("送信できませんでした。入力内容を確認してもう一度お試しください。");
+          setError("送れなかった。内容を確かめてもう一度。");
         }
         setLoading(false);
         return;
       }
       setStep("sent");
     } catch {
-      setError("通信できませんでした。電波の良いところで時間を置いてもう一度お試しください。");
+      setError("届かなかった。電波のいい所でもう一度。");
     } finally {
       setLoading(false);
     }
@@ -152,7 +135,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
                 <textarea
                   id="contact-body"
                   className="login-modal-email-input contact-modal-textarea"
-                  placeholder="気づいたこと、こうだったらいいのに、を自由に。"
+                  placeholder="うまくいかない所、ほしい機能。なんでも出せ"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   maxLength={INQUIRY_BODY_MAX}
@@ -170,7 +153,7 @@ export default function ContactModal({ open, onClose, defaultEmail }: Props) {
                   id="contact-email"
                   className="login-modal-email-input"
                   type="email"
-                  placeholder="返信が必要なら入れてください"
+                  placeholder="返信がいるなら書け"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}

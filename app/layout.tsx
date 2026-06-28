@@ -59,6 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/*
+          日本語フォントは next/font に移さず Google Fonts の外部 CSS を使う。
+          CJK は unicode-range サブセットで必要なグリフだけ遅延配信されるため、
+          フォント全体を self-host する next/font より軽い（数 MB 差）。display=swap で FOIT 回避。
+        */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=LINE+Seed+JP:wght@400;700&display=swap"

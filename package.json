@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "design:lint": "npx -y @google/design.md lint DESIGN.md",
     "design:drift": "node scripts/check-design-drift.mjs",
     "design:sync": "node scripts/sync-design-preview.mjs",
     "design:check": "npm run design:drift && npm run design:lint",
-    "verify": "npm run typecheck && npm run lint && npm run design:check",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run design:check",
     "prepare": "husky"
   },
   "dependencies": {
@@ -39,6 +41,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
     "husky": "^9.1.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

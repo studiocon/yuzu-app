@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
-
-type AnimState = "opening" | "open" | "closing";
+import { useState } from "react";
+import { useModalAnimation } from "@/lib/useModalAnimation";
 
 type Props = {
   open: boolean;
@@ -11,34 +9,18 @@ type Props = {
   onConfirm: () => Promise<void>;
 };
 
-const OPEN_MS = 220;
-const CLOSE_MS = 220;
-
 export default function DeleteAccountModal({ open, onClose, onConfirm }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [animState, setAnimState] = useState<AnimState>("opening");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState("");
 
-  useBodyScrollLock(open);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
+  const { mounted, animState } = useModalAnimation(open, {
+    onOpen: () => {
       setDeleting(false);
       setError(null);
       setConfirmText("");
-      setAnimState("opening");
-      const t = setTimeout(() => setAnimState("open"), OPEN_MS);
-      return () => clearTimeout(t);
-    } else if (mounted) {
-      setAnimState("closing");
-      const t = setTimeout(() => setMounted(false), CLOSE_MS);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    },
+  });
 
   if (!mounted) return null;
 

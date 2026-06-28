@@ -103,14 +103,25 @@
   .comp .stage { min-height: 180px; display: flex; align-items: center; justify-content: center; background: var(--yuzu-white); border-radius: var(--radius-sharp); padding: 24px; }
   .comp .note { margin-top: 12px; font-size: var(--text-xs); color: var(--ink-secondary); }
 
-  /* mic button */
-  .mic-fab { width: 96px; height: 96px; border-radius: var(--radius-pill); border: none; background: var(--ink); color: #fff; display: grid; place-items: center; cursor: pointer; transition: transform .25s var(--ease-organic); }
-  .mic-fab:hover { transform: scale(1.04); }
-  .mic-fab svg { width: 32px; height: 32px; }
-  .mic-fab.recording { background: var(--yuzu-zest); position: relative; }
-  .mic-fab.recording::before, .mic-fab.recording::after { content: ""; position: absolute; inset: -12px; border-radius: var(--radius-pill); border: 2px solid var(--yuzu-zest); opacity: 0.4; animation: recording-ring 1.6s var(--ease-soft) infinite; }
-  .mic-fab.recording::after { inset: -24px; animation-delay: .4s; }
-  @keyframes recording-ring { 0% { transform: scale(0.85); opacity:.6 } 100% { transform: scale(1.15); opacity: 0 } }
+  /* 下部ドック（実装は .tab-bar + .fab-record。position:fixed なので preview は static 配置で質感だけ再現） */
+  /* Liquid Glass 共有質感（DESIGN.md §5 の許可例外） */
+  .dock-shadow { border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 10px 30px rgba(26,26,48,0.10), 0 2px 8px rgba(26,26,48,0.06), inset 0 1px 0 rgba(255,255,255,0.5); }
+  .dock-demo { display: flex; align-items: center; gap: 12px; }
+  /* tab-bar pill（220px・2 タブ・黄色アクティブインジケータ 1 枚） */
+  .dock-tabbar { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 220px; height: 64px; border-radius: var(--radius-pill); background: rgba(250,250,245,0.72); -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%); }
+  .dock-tabbar::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 13px; width: 84px; border-radius: var(--radius-pill); background: var(--yuzu-yellow); z-index: 0; }
+  .dock-tab { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink-muted); }
+  .dock-tab.active { color: var(--ink); }
+  .dock-tab svg { width: 24px; height: 24px; }
+  .dock-tab .tlabel { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1; }
+  /* 録音 FAB（64px・正円・--yuzu-yellow） */
+  .dock-fab { width: 64px; height: 64px; border-radius: var(--radius-pill); background: var(--yuzu-yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .15s var(--ease-snap); }
+  .dock-fab:hover { transform: scale(1.04); }
+  .dock-fab svg { width: 28px; height: 28px; }
+  /* オンボーディングの録音ボタン（96px・正円・--yuzu-yellow。fab-record と同じアフォーダンス家族） */
+  .onboarding-mic-demo { width: 96px; height: 96px; border-radius: var(--radius-pill); background: var(--yuzu-yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .15s var(--ease-snap); }
+  .onboarding-mic-demo:active { transform: scale(0.94); }
+  .onboarding-mic-demo svg { width: 32px; height: 32px; }
 
   /* stats */
   .stat-card { padding: 20px 0; border-top: 1px solid var(--divider); text-align: center; min-width: 200px; }
@@ -401,8 +412,8 @@
       <p class="lead">マイクボタン・ボタン・状態ピル・スタッツ・投稿カード・感情グラフ・レポート一覧／詳細。</p>
 
       <nav class="comp-index" aria-label="コンポーネント一覧">
-        <a href="#c-mic-idle"><span class="num">01</span><span class="name">MIC / IDLE</span><span class="desc">録音待機。正円・<code>--ink</code> 背景。</span></a>
-        <a href="#c-mic-recording"><span class="num">02</span><span class="name">MIC / RECORDING</span><span class="desc">録音中。<code>--yuzu-zest</code> ＋同心円。</span></a>
+        <a href="#c-dock"><span class="num">01</span><span class="name">DOCK</span><span class="desc">下部ドック。tab-bar pill（LOG/INSIGHT）＋録音 FAB。</span></a>
+        <a href="#c-onboarding-mic"><span class="num">02</span><span class="name">ONBOARDING MIC</span><span class="desc">オンボーディングの録音ボタン。96px・正円。</span></a>
         <a href="#c-button"><span class="num">03</span><span class="name">BUTTON</span><span class="desc">Primary / Secondary / Accent / Ghost / Danger。</span></a>
         <a href="#c-iconbutton"><span class="num">04</span><span class="name">ICON BUTTON</span><span class="desc">44px・round・lg のアイコン専用ボタン。</span></a>
         <a href="#c-status"><span class="num">05</span><span class="name">STATUS PILL</span><span class="desc">RECORDING / CARVING / CARVED</span></a>
@@ -415,23 +426,35 @@
       </nav>
 
       <div class="comp-grid">
-        <div class="comp" id="c-mic-idle">
-          <h4>MIC BUTTON / IDLE</h4>
+        <div class="comp" id="c-dock">
+          <h4>DOCK / TAB BAR + FAB</h4>
           <div class="stage">
-            <button class="mic-fab" aria-label="record">
+            <div class="dock-demo">
+              <nav class="dock-tabbar dock-shadow" aria-label="メインナビ">
+                <span class="dock-tab active">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11v2M8 7v10M12 4v16M16 7v10M20 11v2"/></svg>
+                  <span class="tlabel">LOG</span>
+                </span>
+                <span class="dock-tab">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg>
+                  <span class="tlabel">INSIGHT</span>
+                </span>
+              </nav>
+              <button class="dock-fab dock-shadow" aria-label="録音を開く">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <p class="note">tab-bar 220px（左端）＋ FAB 64px（右端）を中央寄せ。<code>--yuzu-yellow</code> アクティブ pill は 1 枚を <code>translateX</code> で滑らせる。Liquid Glass 質感（§5 許可例外）。</p>
+        </div>
+        <div class="comp" id="c-onboarding-mic">
+          <h4>ONBOARDING MIC</h4>
+          <div class="stage">
+            <button class="onboarding-mic-demo dock-shadow" aria-label="record">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
             </button>
           </div>
-          <p class="note">正円・<code>--ink</code>背景。長押しで録音開始。</p>
-        </div>
-        <div class="comp" id="c-mic-recording">
-          <h4>MIC BUTTON / RECORDING</h4>
-          <div class="stage">
-            <button class="mic-fab recording" aria-label="recording">
-              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
-            </button>
-          </div>
-          <p class="note"><code>--yuzu-zest</code>＋同心円リング3重。</p>
+          <p class="note">96px・正円・<code>--yuzu-yellow</code>。長押しで録音。<code>.fab-record</code> と同じアフォーダンス家族（§5 許可例外）。</p>
         </div>
 
         <div class="comp" id="c-button" style="grid-column: 1 / -1">
@@ -494,7 +517,7 @@
         <div class="comp" id="c-status">
           <h4>STATUS / STATE PILLS</h4>
           <div class="stage" style="flex-direction:column;gap:10px;align-items:flex-start">
-            <span class="status">LONG PRESS. TALK.</span>
+            <span class="status">SILENCE</span>
             <span class="status recording">RECORDING</span>
             <span class="status decoding">CARVING</span>
             <span class="status done">CARVED</span>

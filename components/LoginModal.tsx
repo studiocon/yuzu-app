@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
-import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalAnimation } from "@/lib/useModalAnimation";
 
-type AnimState = "opening" | "open" | "closing";
 type Step = "select" | "email-input" | "email-sent";
 
 type Props = {
@@ -13,35 +12,19 @@ type Props = {
   onClose: () => void;
 };
 
-const OPEN_MS = 220;
-const CLOSE_MS = 220;
-
 export default function LoginModal({ open, onClose }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [animState, setAnimState] = useState<AnimState>("opening");
   const [step, setStep] = useState<Step>("select");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useBodyScrollLock(open);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
+  const { mounted, animState } = useModalAnimation(open, {
+    onOpen: () => {
       setStep("select");
       setEmail("");
       setError(null);
-      setAnimState("opening");
-      const t = setTimeout(() => setAnimState("open"), OPEN_MS);
-      return () => clearTimeout(t);
-    } else if (mounted) {
-      setAnimState("closing");
-      const t = setTimeout(() => setMounted(false), CLOSE_MS);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    },
+  });
 
   if (!mounted) return null;
 

@@ -31,6 +31,12 @@
   --text-2xl: 32px;
   --text-3xl: 48px;
 
+  /* Radius（角丸は最小限。0 / 2px / 9999px。ボタン類の 4px は個別指定。
+     未定義だと var() が invalid になり border-radius が 0 にフォールバックする） */
+  --radius-0:     0px;
+  --radius-sharp: 2px;
+  --radius-pill:  9999px;
+
   /* Fonts (--font-display は next/font/google の Unbounded を <html> 経由で注入) */
   --font-body: 'LINE Seed JP', "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 }

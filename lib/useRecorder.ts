@@ -295,6 +295,9 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
     clearRecordingTimers();
     cancelRecorder();
     setPhaseSync("idle");
+    // clearRecordingTimers / cancelRecorder は ref と setState のみ触る安定処理。
+    // 他コールバックと同じく空依存で固定する（stale closure にならない）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setPhaseFromOutside = (p: Phase) => { phaseRef.current = p; setPhase(p); };

@@ -20,6 +20,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Test
+        run: npm run test
       - name: Build
         env:
           # ビルド時にバンドルされないが import 解決のため適当値を入れる
