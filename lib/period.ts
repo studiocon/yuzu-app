@@ -60,13 +60,17 @@ export function parsePeriodKey(
 ): { kind: PeriodKind; start: number; end: number } | null {
   const w = key.match(/^w-(\d{4})-(\d{2})-(\d{2})$/);
   if (w) {
-    const start = jstMidnightUtc(+w[1], +w[2], +w[3]);
+    const wm = +w[2];
+    const wd = +w[3];
+    if (wm < 1 || wm > 12 || wd < 1 || wd > 31) return null;
+    const start = jstMidnightUtc(+w[1], wm, wd);
     return { kind: "week", start, end: start + 7 * DAY_MS };
   }
   const m = key.match(/^m-(\d{4})-(\d{2})$/);
   if (m) {
     const y = +m[1];
     const mm = +m[2];
+    if (mm < 1 || mm > 12) return null;
     const start = jstMidnightUtc(y, mm, 1);
     const nextY = mm === 12 ? y + 1 : y;
     const nextM = mm === 12 ? 1 : mm + 1;

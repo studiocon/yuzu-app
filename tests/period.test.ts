@@ -75,6 +75,13 @@ describe("weekKey / monthKey と parsePeriodKey の往復", () => {
     expect(parsePeriodKey("garbage")).toBeNull();
     expect(parsePeriodKey("w-2026-6-1")).toBeNull(); // 2桁ゼロ埋め必須
   });
+  it("月/日が範囲外のキーは null（Date.UTC のロールオーバー防止）", () => {
+    expect(parsePeriodKey("w-2026-99-99")).toBeNull();
+    expect(parsePeriodKey("w-2026-00-15")).toBeNull();
+    expect(parsePeriodKey("w-2026-06-32")).toBeNull();
+    expect(parsePeriodKey("m-2026-13")).toBeNull();
+    expect(parsePeriodKey("m-2026-00")).toBeNull();
+  });
 });
 
 describe("isClosed", () => {
