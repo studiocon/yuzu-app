@@ -250,7 +250,11 @@
 
   /* index detail mock (#番号タップ後) */
   .index-detail-mock { background: var(--ink); color: var(--yuzu-white); padding: 40px 24px; width: 100%; text-align: left; }
-  .index-detail-mock .num { font-family: var(--font-display); font-weight: 900; font-size: clamp(64px, 18vw, 120px); letter-spacing: -0.04em; line-height: 0.9; color: var(--yuzu-yellow); margin: 0 0 28px; }
+  .index-detail-mock .band { margin: -40px -24px 24px; padding: 40px 24px 4px; background: linear-gradient(180deg, #E8A02022 0%, transparent 72%); }
+  .index-detail-mock .num { font-family: var(--font-display); font-weight: 900; font-size: clamp(64px, 18vw, 120px); letter-spacing: -0.04em; line-height: 0.9; color: var(--yuzu-yellow); margin: 0 0 18px; }
+  .index-detail-mock .voiceprint { display: flex; align-items: flex-end; gap: 3px; height: 80px; margin: 0 0 18px; }
+  .index-detail-mock .voiceprint span { flex: 1; min-width: 2px; opacity: 0.85; background: #CAAD84; }
+  .index-detail-mock .mark { color: var(--yuzu-yellow); font-weight: 700; border-bottom: 1px solid rgba(245,216,74,0.45); }
   .index-detail-mock .stats { display: flex; gap: 12px; margin: 0 0 24px; }
   .index-detail-mock .stat-card { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sharp); }
   .index-detail-mock .label { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
@@ -572,15 +576,21 @@
           <h4>INDEX DETAIL (v2)</h4>
           <div class="stage" style="padding:0;align-items:stretch">
             <div class="index-detail-mock">
-              <p class="num">#042</p>
+              <div class="band">
+                <p class="num">#042</p>
+                <div class="voiceprint">
+                  <span style="height:32%"></span><span style="height:58%"></span><span style="height:44%"></span><span style="height:76%"></span><span style="height:52%"></span><span style="height:88%"></span><span style="height:40%"></span><span style="height:64%"></span><span style="height:48%"></span><span style="height:92%"></span><span style="height:56%"></span><span style="height:36%"></span><span style="height:70%"></span><span style="height:50%"></span><span style="height:82%"></span><span style="height:46%"></span><span style="height:60%"></span><span style="height:38%"></span><span style="height:74%"></span><span style="height:54%"></span><span style="height:86%"></span><span style="height:42%"></span><span style="height:66%"></span><span style="height:50%"></span><span style="height:78%"></span><span style="height:34%"></span><span style="height:62%"></span><span style="height:48%"></span>
+                </div>
+                <p class="stamp">2026.05.29 (木) 23:11</p>
+              </div>
               <div class="stats">
                 <div class="stat-card"><span class="label">LENGTH</span><span class="value">1:24</span></div>
                 <div class="stat-card"><span class="label">DAY</span><span class="value">14</span></div>
+                <div class="stat-card"><span class="label">CHARS</span><span class="value">87</span></div>
               </div>
-              <p class="stamp">2026.05.29 (木) 23:11</p>
               <div class="body">
-                <p>今日はずっと機嫌が良かった。</p>
-                <p>理由はわからない。</p>
+                <p>今日はずっと<span class="mark">機嫌</span>が良かった。</p>
+                <p><span class="mark">理由</span>はわからない。</p>
                 <p>明日も同じならいい。</p>
               </div>
               <div class="actions">
@@ -589,7 +599,7 @@
               </div>
             </div>
           </div>
-          <p class="note">#番号タップ（v2.2 は<strong>カード全体タップ</strong>）後の詳細＝<strong>1 件をじっくり読む場</strong>。本文は「。」で段落分割・行間を空け・一回り大きく濃く（<code>--text-lg</code>）。<code>MARK</code> / <code>COPY</code> はここに集約（COPY は <strong>Notion 移行期間限定の一時機能</strong>）。シェア導線は持たない（最新 STREAK の SIGNAL カードに委ねる）。<code>--ink</code> 背景・白文字・罫線のみで階層化（box-shadow なし）。</p>
+          <p class="note">#番号タップ（v2.2 は<strong>カード全体タップ</strong>）後の詳細＝<strong>1 件をじっくり読む場</strong>。見出し帯（<code>.band</code>）は <code>#NNN</code>・<strong>感情カラー声紋ヒーロー</strong>・スタンプをまとめ、その RECORD の感情スコア由来のグラデを背後に敷く（未解析なら無色）。STATS は <code>LENGTH</code> / <code>DAY</code> / <code>CHARS</code>（<code>CHARS</code> は文字数のカウントアップ）。本文は「。」で段落分割・行間を空け・一回り大きく濃く（<code>--text-lg</code>）、開いた瞬間に上から順にリビール。<strong>その RECORD の内容語（WORDS）を本文中で自動ハイライト</strong>（<code>--yuzu-yellow</code> ＋細い下線のみ。文言は変えない）。<code>MARK</code> / <code>COPY</code> はここに集約（COPY は <strong>Notion 移行期間限定の一時機能</strong>）。<code>--ink</code> 背景・白文字・罫線＋背景グラデのみで階層化（box-shadow なし）。</p>
         </div>
 
         <div class="comp" id="c-sentiment" style="grid-column: 1 / -1">

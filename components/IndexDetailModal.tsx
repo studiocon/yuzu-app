@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { X, Copy, PushPin, PushPinSlash } from "@phosphor-icons/react";
 import type { Post } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useCountUp } from "@/lib/useCountUp";
 import { WEEKDAY_JA } from "@/lib/streak";
 import { formatDuration, dayNumberSince } from "@/lib/stats";
+import { sentimentColor } from "@/lib/sentimentColor";
+import { seededHeights, voiceprintBarCount } from "@/lib/voiceprint";
+import { recordWords, splitHighlights } from "@/lib/highlightWords";
 
 type AnimState = "opening" | "open" | "closing";
 
@@ -16,6 +20,8 @@ type Props = {
   post: Post | null;
   /** 最初の投稿時刻。DAY（登録から何日目か）の算出に使う。未取得なら DAY は出さない。 */
   firstPostAt?: number | null;
+  /** 感情スコア（-1.0〜1.0）。声紋ヒーロー / 見出し帯の着色に使う。未解析なら無色（graceful）。 */
+  score?: number;
   onToggleMark?: (post: Post, next: boolean) => void;
   onClose: () => void;
 };
@@ -42,7 +48,7 @@ const splitParagraphs = (text: string): string[] => {
   return parts.length > 0 ? parts : [text];
 };
 
-export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onClose }: Props) {
+export default function IndexDetailModal({ post, firstPostAt, score, onToggleMark, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("opening");
   // モーダルは detailPost のスナップショットを保持するので marked はローカルで持つ。
@@ -112,6 +118,14 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
     return () => window.removeEventListener("popstate", onPop);
   }, [mounted]);
 
+  // フック規則：早期 return より前で必ず呼ぶ（post=null 時は安全な既定値で空回し）。
+  const charsUp = useCountUp(post?.char_count ?? 0, { delayMs: 200 });
+  const bars = useMemo(() => {
+    const count = voiceprintBarCount(post?.durationMs ?? 0);
+    return count === null ? null : seededHeights(post?.id ?? "", count);
+  }, [post?.id, post?.durationMs]);
+  const words = useMemo(() => recordWords(post?.text ?? ""), [post?.text]);
+
   if (!mounted || !post) return null;
 
   // その1件の RECORD の「事実」だけを刻む。算出不能な項目はカードごと出さない。
@@ -119,8 +133,12 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
   const dayNumber =
     typeof firstPostAt === "number" ? dayNumberSince(post.createdAt, firstPostAt) : 0;
   const dayLabel = dayNumber > 0 ? String(dayNumber) : null;
-  const hasStats = lengthLabel !== null || dayLabel !== null;
+  const charsLabel = post.char_count > 0 ? String(charsUp) : null;
+  const hasStats = lengthLabel !== null || dayLabel !== null || charsLabel !== null;
   const paragraphs = splitParagraphs(post.text);
+
+  // 声紋ヒーロー / 見出し帯の感情色。未解析（score=undefined）なら null で graceful に無色化。
+  const moodColor = sentimentColor(score);
 
   const fireMark = () => {
     if (!onToggleMark) return;
@@ -181,7 +199,28 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
       </button>
 
       <div className="index-detail-body">
-        <p className="index-detail-num font-display">#{post.index}</p>
+        <div
+          className="index-detail-band"
+          style={moodColor ? { background: `linear-gradient(180deg, ${moodColor}22 0%, transparent 72%)` } : undefined}
+        >
+          <p className="index-detail-num font-display">#{post.index}</p>
+          {bars && (
+            <div className="index-detail-voiceprint" aria-hidden>
+              {bars.map((h, i) => (
+                <span
+                  key={i}
+                  className="index-detail-voiceprint-bar"
+                  style={{
+                    height: `${Math.round(h * 100)}%`,
+                    background: moodColor ?? "rgba(255,255,255,0.4)",
+                    ["--vp-delay" as string]: `${i * 18}ms`,
+                  } as CSSProperties}
+                />
+              ))}
+            </div>
+          )}
+          <p className="index-detail-stamp font-display">{formatStamp(post.createdAt)}</p>
+        </div>
 
         {hasStats && (
           <div className="index-detail-stats">
@@ -197,13 +236,28 @@ export default function IndexDetailModal({ post, firstPostAt, onToggleMark, onCl
                 <span className="index-detail-stat-value font-display">{dayLabel}</span>
               </div>
             )}
+            {charsLabel !== null && (
+              <div className="index-detail-stat-card">
+                <span className="index-detail-stat-label font-display">CHARS</span>
+                <span className="index-detail-stat-value font-display">{charsLabel}</span>
+              </div>
+            )}
           </div>
         )}
 
-        <p className="index-detail-stamp font-display">{formatStamp(post.createdAt)}</p>
         <div className="index-detail-text">
           {paragraphs.map((para, i) => (
-            <p key={i} className="index-detail-para">{para}</p>
+            <p
+              key={i}
+              className="index-detail-para"
+              style={{ ["--reveal-delay" as string]: `${i * 60}ms` } as CSSProperties}
+            >
+              {splitHighlights(para, words).map((seg, j) =>
+                seg.mark
+                  ? <mark key={j} className="record-mark">{seg.text}</mark>
+                  : <span key={j}>{seg.text}</span>,
+              )}
+            </p>
           ))}
         </div>
 

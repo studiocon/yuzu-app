@@ -414,7 +414,7 @@ export default function Home() {
         </>
       )}
 
-      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} onToggleMark={toggleMark} onClose={() => setDetailPost(null)} />
+      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} score={detailPost ? scores[detailPost.id] : undefined} onToggleMark={toggleMark} onClose={() => setDetailPost(null)} />
 
       <RecordModal
         open={recordOpen}

@@ -1775,13 +1775,41 @@ button.settings-row:focus-visible {
   padding-top: 24px;
   text-align: left;
 }
+/* 見出し帯：#NNN・声紋ヒーロー・スタンプをまとめ、感情スコア由来のグラデを背後に敷く。
+   gradient は inline で background に注入（未解析なら無色）。box-shadow は使わない。 */
+.index-detail-band {
+  margin: -24px -24px 24px;
+  padding: 24px 24px 4px;
+}
 .index-detail-num {
   font-weight: 900;
   font-size: clamp(64px, 18vw, 120px);
   letter-spacing: -0.04em;
   line-height: 0.9;
   color: var(--yuzu-yellow);
-  margin: 0 0 28px;
+  margin: 0 0 18px;
+}
+/* 感情カラー声紋ヒーロー：カードの .post-voiceprint を拡大した主役表現。
+   バーは感情色（未解析は白の低 alpha）で、開いた瞬間に下から立ち上がる。 */
+.index-detail-voiceprint {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 80px;
+  margin: 0 0 18px;
+}
+.index-detail-voiceprint-bar {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 0;
+  opacity: 0.85;
+  transform-origin: bottom;
+  animation: vp-grow 0.5s var(--ease-organic) both;
+  animation-delay: var(--vp-delay, 0ms);
+}
+@keyframes vp-grow {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 0.85; }
 }
 /* その1件の RECORD の事実 STATS。CompleteView の .complete-stat-* と同じダーク表現。 */
 .index-detail-stats {
@@ -1837,6 +1865,27 @@ button.settings-row:focus-visible {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  /* 開いた瞬間に段落が上から順に立ち上がる（stagger は inline の --reveal-delay）。 */
+  animation: detail-para-in 0.5s var(--ease-soft) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+@keyframes detail-para-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+/* WORDS ハイライト：その RECORD の内容語を本文中で強調。装飾は色＋細い下線のみ
+   （box-shadow / 角丸なし、mark のデフォルト黄背景は打ち消す）。 */
+.record-mark {
+  background: transparent;
+  color: var(--yuzu-yellow);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(245, 216, 74, 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .index-detail-para,
+  .index-detail-voiceprint-bar {
+    animation: none;
+  }
 }
 /* 本文下の操作行：COPY / MARK。ダーク背景に馴染む低主張ボタン。 */
 .index-detail-actions {

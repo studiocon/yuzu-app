@@ -4,6 +4,7 @@ import { useMemo, type CSSProperties } from "react";
 import type { Post } from "@/lib/types";
 import { sentimentColor } from "@/lib/sentimentColor";
 import { formatDuration } from "@/lib/stats";
+import { seededHeights, voiceprintBarCount } from "@/lib/voiceprint";
 
 type Props = {
   post: Post;
@@ -13,22 +14,6 @@ type Props = {
   revealDelayMs?: number;
   onOpenDetail?: (post: Post) => void;
 };
-
-// id から決定的に擬似乱数を作る（同じ記録は常に同じ「声紋」になる）。
-function seededHeights(seed: string, count: number): number[] {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const out: number[] = [];
-  for (let i = 0; i < count; i++) {
-    h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
-    const r = ((h >>> 0) % 1000) / 1000; // 0..1
-    out.push(0.28 + r * 0.72); // 28%〜100%
-  }
-  return out;
-}
 
 export default function RecordCard({ post, score, revealDelayMs = 0, onOpenDetail }: Props) {
   // カード全体タップで詳細モーダルを開く（COPY / MARK はモーダル内に移設）。
@@ -40,9 +25,8 @@ export default function RecordCard({ post, score, revealDelayMs = 0, onOpenDetai
   // 録音長に応じた擬似「声紋」。bar 本数 = 長さ（秒）に比例（8〜40 本）。
   // durationMs=0 の旧データは波形を出さない（graceful）。
   const bars = useMemo(() => {
-    if (!post.durationMs || post.durationMs <= 0) return null;
-    const count = Math.max(8, Math.min(40, Math.round((post.durationMs / 1000) * 1.4)));
-    return seededHeights(post.id, count);
+    const count = voiceprintBarCount(post.durationMs);
+    return count === null ? null : seededHeights(post.id, count);
   }, [post.id, post.durationMs]);
 
   return (
