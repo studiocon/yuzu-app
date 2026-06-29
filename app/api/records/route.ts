@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthedClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
 import { jstDateString } from "@/lib/period";
 import { MAX_DAILY_SESSIONS, MAX_RECORD_MS } from "@/lib/constants";
@@ -86,8 +86,7 @@ function parseIntParam(raw: string | null, fallback: number, max: number, min = 
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -158,8 +157,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

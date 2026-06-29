@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/server";
 import { jstDateString } from "@/lib/period";
 import { MAX_DAILY_SESSIONS, ANON_DAILY_STT_LIMIT } from "@/lib/constants";
 
@@ -53,9 +53,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing api key" }, { status: 500 });
   }
 
-  // ── #39: 認証 + 1日上限（サーバ強制）──
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // ── #39: 認証 + 1日上限（サーバ強制）── #100: native は Bearer、Web は cookie
+  const { supabase, user } = await getAuthedClient(req);
   const https = req.nextUrl.protocol === "https:";
 
   if (user) {
