@@ -20,8 +20,10 @@ type Props = {
   post: Post | null;
   /** 最初の投稿時刻。DAY（登録から何日目か）の算出に使う。未取得なら DAY は出さない。 */
   firstPostAt?: number | null;
-  /** 感情スコア（-1.0〜1.0）。声紋ヒーロー / 見出し帯の着色に使う。未解析なら無色（graceful）。 */
+  /** 感情スコア（-1.0〜1.0）。声紋ヒーロー / 見出し帯左端バーの着色に使う。未解析なら無色（graceful）。 */
   score?: number;
+  /** WORDS（INSIGHT の頻出語トップ20。全 RECORD 横断）。本文ハイライトをこの語に絞る。未配線時は記録単体の内容語抽出にフォールバック。 */
+  topWords?: Set<string>;
   onToggleMark?: (post: Post, next: boolean) => void;
   onClose: () => void;
 };
@@ -48,7 +50,7 @@ const splitParagraphs = (text: string): string[] => {
   return parts.length > 0 ? parts : [text];
 };
 
-export default function IndexDetailModal({ post, firstPostAt, score, onToggleMark, onClose }: Props) {
+export default function IndexDetailModal({ post, firstPostAt, score, topWords, onToggleMark, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimState>("opening");
   // モーダルは detailPost のスナップショットを保持するので marked はローカルで持つ。
@@ -124,7 +126,7 @@ export default function IndexDetailModal({ post, firstPostAt, score, onToggleMar
     const count = voiceprintBarCount(post?.durationMs ?? 0);
     return count === null ? null : seededHeights(post?.id ?? "", count);
   }, [post?.id, post?.durationMs]);
-  const words = useMemo(() => recordWords(post?.text ?? ""), [post?.text]);
+  const words = useMemo(() => recordWords(post?.text ?? "", topWords), [post?.text, topWords]);
 
   if (!mounted || !post) return null;
 
@@ -199,10 +201,10 @@ export default function IndexDetailModal({ post, firstPostAt, score, onToggleMar
       </button>
 
       <div className="index-detail-body">
-        <div
-          className="index-detail-band"
-          style={moodColor ? { background: `linear-gradient(180deg, ${moodColor}22 0%, transparent 72%)` } : undefined}
-        >
+        <div className="index-detail-band">
+          {moodColor && (
+            <span className="index-detail-band-edge" style={{ background: moodColor }} aria-hidden />
+          )}
           <p className="index-detail-num font-display">#{post.index}</p>
           {bars && (
             <div className="index-detail-voiceprint" aria-hidden>

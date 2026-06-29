@@ -28,6 +28,28 @@ describe("recordWords", () => {
     expect(words.has("一")).toBe(false);
     expect(words.has("日")).toBe(false);
   });
+
+  it("globalWords 指定時は WORDS（全コーパス頻出語）との積集合のみを返す", () => {
+    const text = "仕事のプレッシャーが本当にきつい";
+    const globalWords = new Set(["仕事", "家族"]); // 「プレッシャー」は全コーパス頻出語ではない想定
+    const words = recordWords(text, globalWords);
+    expect(words.has("仕事")).toBe(true);
+    expect(words.has("プレッシャー")).toBe(false); // globalWords に無いので拾わない
+    expect(words.has("家族")).toBe(false); // globalWords にあるが本文に出現しないので拾わない
+  });
+
+  it("globalWords が空集合ならフォールバック（記録単体の内容語抽出）に戻る", () => {
+    const words = recordWords("仕事のプレッシャーが本当にきつい", new Set());
+    expect(words.has("仕事")).toBe(true);
+    expect(words.has("プレッシャー")).toBe(true);
+  });
+
+  it("globalWords に単漢字ノイズ（「明日」が「明」「日」に割れた等）が混ざっても拾わない", () => {
+    const globalWords = new Set(["日", "成立"]);
+    const words = recordWords("それだけで一日として成立する気がする", globalWords);
+    expect(words.has("日")).toBe(false);
+    expect(words.has("成立")).toBe(true);
+  });
 });
 
 describe("splitHighlights", () => {

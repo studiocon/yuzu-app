@@ -14,6 +14,7 @@ import LoginModal from "@/components/LoginModal";
 import TabBar, { type MainTab } from "@/components/TabBar";
 import RecordFab from "@/components/RecordFab";
 import type { Post } from "@/lib/types";
+import { extractWordFrequencies } from "@/lib/wordAnalysis";
 import { buildMockPosts } from "@/lib/mockPosts";
 import { isMockMode } from "@/lib/mockReports";
 import { loadSentimentCache, saveSentimentCache } from "@/lib/userClient";
@@ -351,6 +352,12 @@ export default function Home() {
   const remainingSessions = Math.max(0, MAX_DAILY_SESSIONS - todayCount);
 
   const myPosts = useMemo<Post[]>(() => posts ?? [], [posts]);
+  // INDEX 詳細モーダルの本文ハイライト用。WORDS（INSIGHT）と同じ頻出語トップ20を、
+  // モーダルを開いた時だけ計算する（詳細を一度も開かないなら計算しない）。
+  const topWords = useMemo(() => {
+    if (!detailPost) return undefined;
+    return new Set(extractWordFrequencies(myPosts.map((p) => p.text)).map((w) => w.word));
+  }, [detailPost, myPosts]);
   const isLoaded = user !== undefined;
   const isLoggedIn = user !== null && user !== undefined;
   const isOnboarding = !isLoggedIn;
@@ -414,7 +421,7 @@ export default function Home() {
         </>
       )}
 
-      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} score={detailPost ? scores[detailPost.id] : undefined} onToggleMark={toggleMark} onClose={() => setDetailPost(null)} />
+      <IndexDetailModal post={detailPost} firstPostAt={firstPostAt} score={detailPost ? scores[detailPost.id] : undefined} topWords={topWords} onToggleMark={toggleMark} onClose={() => setDetailPost(null)} />
 
       <RecordModal
         open={recordOpen}

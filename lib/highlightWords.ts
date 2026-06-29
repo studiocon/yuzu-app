@@ -1,22 +1,36 @@
-// その RECORD の「内容語」を本文中で強調するための純ロジック。
-// AI を使わず、wordAnalysis（TinySegmenter + ストップワード除去）をクライアントで再利用する。
+// その RECORD の本文中で「WORDS（INSIGHT の頻出語トップ20）」に入っている語だけを
+// 強調するための純ロジック。AI を使わず、wordAnalysis をクライアントで再利用する。
 // SDK 非依存・オフライン/mock 動作可。
 import { extractWordFrequencies } from "./wordAnalysis";
 
 // 漢字 or カタカナを含むトークンだけをハイライト対象にする。
-// WORDS（INSIGHT）は全コーパスの頻度上位20で自然にノイズが落ちるが、1件の短文では
-// 「として」等の機能語・「一」「日」等の単漢字が頻度フィルタを抜ける。wordAnalysis の
-// 「内容語はほぼ漢字・カタカナを含む」方針（wordAnalysis.ts 冒頭コメント）に合わせて絞る。
 const CONTENT_CHAR = /[\p{Script=Han}\p{Script=Katakana}]/u;
 
-// 1 件の RECORD から内容語（シグナル語）の集合を取り出す。
-// topN は切らず、フィルタを通った内容語をすべて対象にする（短文では頻度差が出ないため）。
-export function recordWords(text: string): Set<string> {
+// wordAnalysis.ts の extractWordFrequencies 自体は単漢字を弾かない（「明日」が「明」+「日」に割れて
+// 「日」が頻出語トップ20に混ざることがある）。WORDS の語をそのまま使う場合でも、本文ハイライトとしては
+// 単漢字1文字はノイズが過ぎるので、globalWords 経由でも 2 文字未満は弾く。
+const isHighlightable = (w: string): boolean => w.length >= 2 && CONTENT_CHAR.test(w);
+
+/**
+ * 1 件の RECORD からハイライト対象の語集合を取り出す。
+ * - globalWords（WORDS/INSIGHT の頻出語トップ20。lib/wordAnalysis.ts の extractWordFrequencies と同じ算出）が
+ *   渡されたら、その中で本文に実際に出現する語だけを返す＝「WORDSのワードを自動ハイライト」。
+ *   全コーパス横断で頻出する語に絞られるので、1件の記録の内容語を総ざらいするより自然に少数になる。
+ * - globalWords が無い（呼び出し側が未配線）場合のみ、記録単体の内容語抽出にフォールバックする。
+ */
+export function recordWords(text: string, globalWords?: Set<string>): Set<string> {
   if (!text) return new Set();
+  if (globalWords && globalWords.size > 0) {
+    const hits = new Set<string>();
+    for (const w of globalWords) {
+      if (isHighlightable(w) && text.includes(w)) hits.add(w);
+    }
+    return hits;
+  }
   return new Set(
     extractWordFrequencies([text], Number.MAX_SAFE_INTEGER)
       .map((w) => w.word)
-      .filter((w) => w.length >= 2 && CONTENT_CHAR.test(w)),
+      .filter(isHighlightable),
   );
 }
 

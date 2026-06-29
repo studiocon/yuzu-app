@@ -1775,11 +1775,21 @@ button.settings-row:focus-visible {
   padding-top: 24px;
   text-align: left;
 }
-/* 見出し帯：#NNN・声紋ヒーロー・スタンプをまとめ、感情スコア由来のグラデを背後に敷く。
-   gradient は inline で background に注入（未解析なら無色）。box-shadow は使わない。 */
+/* 見出し帯：#NNN・声紋ヒーロー・スタンプをまとめる。一覧カードの .post-card-edge と同じ
+   「左端 3px バー」で感情色を示す（背景グラデは廃止＝平らな --ink のまま、box-shadow も使わない）。 */
 .index-detail-band {
-  margin: -24px -24px 24px;
-  padding: 24px 24px 4px;
+  position: relative;
+  padding-left: 18px;
+  margin: 0 0 24px;
+}
+.index-detail-band-edge {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 2px;
+  pointer-events: none;
 }
 .index-detail-num {
   font-weight: 900;
