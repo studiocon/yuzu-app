@@ -167,13 +167,20 @@ export default function ReportDetail({ periodKey }: Props) {
           )}
 
           <section className="report-detail-block">
-            <h2 className="report-detail-h font-display">SURFACE</h2>
-            <Paragraphs text={report.payload.manifest} />
+            <h2 className="report-detail-h font-display">FACT</h2>
+            <Paragraphs text={report.payload.fact} />
           </section>
 
+          {report.payload.proof.length > 0 && (
+            <section className="report-detail-block">
+              <h2 className="report-detail-h font-display">PROOF</h2>
+              <Paragraphs text={report.payload.proof} />
+            </section>
+          )}
+
           <section className="report-detail-block">
-            <h2 className="report-detail-h font-display">DEPTH</h2>
-            <Paragraphs text={report.payload.latent} />
+            <h2 className="report-detail-h font-display">SHADOW</h2>
+            <Paragraphs text={report.payload.shadow} />
           </section>
 
           <section className="report-detail-block is-advice">
