@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthedClient } from "@/lib/supabase/server";
 import { getReport, listReportKeys } from "@/lib/reports";
 import {
   parsePeriodKey,
@@ -12,9 +12,8 @@ import type { ReportMeta } from "@/lib/reportTypes";
 export const runtime = "nodejs";
 
 // GET /api/reports?scope=recent (default) | all
-export async function GET(req: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function GET(req: NextRequest) {
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized", reports: [] }, { status: 401 });
   }

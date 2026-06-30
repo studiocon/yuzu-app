@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/server";
 import { generateReport, getReport } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
 import { scoreSentiments } from "@/lib/sentimentScore";
@@ -24,7 +24,7 @@ const CACHE_HEADERS = {
 
 // GET は読み出し専用。未生成なら 404 を返して、生成は POST 側でやらせる。
 // scores クエリは取らない（URL を安定させて HTTP キャッシュを効かせるため）。
-export async function GET(_req: NextRequest, ctx: Params) {
+export async function GET(req: NextRequest, ctx: Params) {
   const { periodKey } = await ctx.params;
   const period = parsePeriodKey(periodKey);
   if (!period) {
@@ -33,8 +33,7 @@ export async function GET(_req: NextRequest, ctx: Params) {
   if (!isClosed(periodKey)) {
     return NextResponse.json({ error: "period_in_progress" }, { status: 422 });
   }
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -62,8 +61,7 @@ export async function POST(req: NextRequest, ctx: Params) {
   } catch {}
   const scores = body.scores && typeof body.scores === "object" ? body.scores : {};
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
