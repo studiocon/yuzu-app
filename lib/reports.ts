@@ -246,7 +246,11 @@ export async function generateReport(args: {
   const client = new Anthropic({ apiKey });
   const msg = await client.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    // headline + topics + fact(200-400字) + proof(100-250字) + shadow(200-400字) +
+    // advice + adviceDetail(150-300字) を JSON で返す。#126 で proof を追加した後、
+    // 1024 だと出力が JSON の途中で切れて report json parse failed になるケースがあった
+    // （MONTH 等、書く内容が多い期間で顕著）。2048 に余裕を持たせる。
+    max_tokens: 2048,
     messages: [
       {
         role: "user",
