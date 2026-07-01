@@ -58,7 +58,7 @@ export default function ReportDetail({ periodKey }: Props) {
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     // GET を1回叩き、report が取れたら適用して true を返す。202(pending)ならポーリング継続の合図で false。
-    const tryFetchReport = async (): Promise<"ok" | "pending" | "not_generated" | "in_progress" | "error"> => {
+    const tryFetchReport = async (): Promise<"ok" | "pending" | "not_generated" | "in_progress" | "failed" | "error"> => {
       const getRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`);
       if (getRes.status === 422) return "in_progress";
       if (getRes.status === 202) return "pending";
@@ -72,6 +72,9 @@ export default function ReportDetail({ periodKey }: Props) {
         return "ok";
       }
       if (getRes.status === 404) return "not_generated"; // 呼び出し側で POST を試すため区別
+      // 502: 前回の生成が失敗したジョブが残っている。恒久エラーとは限らないので
+      // not_generated と同様に POST で再挑戦させる（でないと1回失敗したら永久にエラー表示のまま）。
+      if (getRes.status === 502) return "failed";
       return "error";
     };
 
@@ -86,7 +89,7 @@ export default function ReportDetail({ periodKey }: Props) {
         if (first === "pending") {
           setStatus("loading");
         } else {
-          // 未生成（404）→ POST で起動（202 を即返すだけなので待たない）
+          // 未生成（404）、または前回失敗（502）→ POST で（再）起動（202 を即返すだけなので待たない）
           const scores = loadSentimentCache();
           const postRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`, {
             method: "POST",
@@ -122,7 +125,8 @@ export default function ReportDetail({ periodKey }: Props) {
           const result = await tryFetchReport();
           if (cancelled) return;
           if (result === "ok") { setStatus("ok"); return; }
-          if (result === "error") { if (!hasCached) setStatus("error"); return; }
+          // ここでの "failed" は今まさに起動した新しい試行の失敗なので、無限リトライせず終端エラーにする。
+          if (result === "error" || result === "failed") { if (!hasCached) setStatus("error"); return; }
           // "pending" / "not_generated"（stale ジョブ後の一時的な 404）は継続
         }
         if (!hasCached) setStatus("error");
