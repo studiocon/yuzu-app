@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/server";
 import { DAY_MS } from "@/lib/period";
 import { scoreSentiments } from "@/lib/sentimentScore";
 
@@ -26,8 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   // #40: 認証必須。オンボーディング経路では呼ばれない。
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
