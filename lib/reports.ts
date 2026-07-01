@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "./supabase/admin";
-import { parsePeriodKey, periodLabel, type PeriodKind } from "./period";
+import { parsePeriodKey, periodLabel, previousPeriodKey, type PeriodKind } from "./period";
 import { computeSentimentSeries } from "./sentimentSeries";
 import type { Post } from "./types";
 import type { Report, ReportPayload } from "./reportTypes";
@@ -23,6 +23,19 @@ interface ReportRow {
   model: string;
 }
 
+function normalizePayload(raw: any): ReportPayload {
+  return {
+    headline: typeof raw?.headline === "string" ? raw.headline : "",
+    topics: Array.isArray(raw?.topics) ? raw.topics : [],
+    fact: raw?.fact ?? raw?.manifest ?? "",
+    proof: raw?.proof ?? "",
+    shadow: raw?.shadow ?? raw?.latent ?? "",
+    advice: typeof raw?.advice === "string" ? raw.advice : "",
+    adviceDetail: typeof raw?.adviceDetail === "string" ? raw.adviceDetail : "",
+    sentimentSeries: Array.isArray(raw?.sentimentSeries) ? raw.sentimentSeries : [],
+  };
+}
+
 function rowToReport(row: ReportRow): Report {
   return {
     user_id: row.user_id,
@@ -30,7 +43,7 @@ function rowToReport(row: ReportRow): Report {
     kind: row.kind as PeriodKind,
     rangeStart: new Date(row.range_start).getTime(),
     rangeEnd: new Date(row.range_end).getTime(),
-    payload: row.payload,
+    payload: normalizePayload(row.payload),
     generatedAt: new Date(row.generated_at).getTime(),
     model: row.model,
   };
@@ -78,20 +91,28 @@ async function saveReport(report: Report): Promise<void> {
 
 // ── Anthropic レポート生成 ──
 
-const PROMPT = (windowText: string, kind: PeriodKind): string => {
+const PROMPT = (
+  windowText: string,
+  kind: PeriodKind,
+  prev?: { shadow: string; topics: string[]; advice: string },
+): string => {
   const periodWord = kind === "week" ? "1週間" : "1か月";
+  const prevBlock = prev
+    ? `【参考：前回レポート】\n前回SHADOW: ${prev.shadow}\n前回TOPICS: ${prev.topics.join(", ")}\n前回ADVICE: ${prev.advice}\n\n`
+    : "";
   return `以下は YUZU で記録された ${periodWord} 分の音声日記の書き起こしです。順に読み、その期間を一段抽象化して JSON で返してください。
 
-${windowText}
+${prevBlock}${windowText}
 
 出力スキーマ：
 {
   "headline": "20文字以内、その期間を一文で表す日本語の見出し",
   "topics": ["3〜5個、その期間でよく話していたテーマやキーワード（短く、名詞句）"],
-  "manifest": "200〜400文字。投稿に表面的に出ていた感情・状態。具体的な投稿の傾向を引きながら、2〜3段落に分けて書く。段落は空行（\\n\\n）で区切る",
-  "latent": "200〜400文字。言葉の奥にあったかもしれない、本人がまだ言葉にしていない可能性のある感情・状態。決めつけず可能性として書く。2〜3段落に分け、段落は \\n\\n で区切る",
+  "fact": "200〜400文字。投稿に表面的に出ていた感情・状態。具体的な投稿の傾向を引きながら、2〜3段落。段落は\\n\\nで区切る",
+  "proof": "100〜250文字。期間中の投稿から、本人が実際に行った・踏みとどまった・続けた行動の事実を1〜3個、評価語を使わず列挙する。該当が無ければ空文字を返す。励ます言葉・賞賛語は禁止",
+  "shadow": "200〜400文字。言葉の奥にあったかもしれない、本人がまだ言葉にしていない可能性のある感情・状態。決めつけず可能性として書く。【前回SHADOW・前回TOPICSが与えられている場合】同じテーマ・構造の反復が見られればそれを名指しで指摘すること。反復が無ければ無理に関連付けない。2〜3段落、\\n\\nで区切る",
   "advice": "1文。命令形か問いの形で短く強く。最大20文字程度",
-  "adviceDetail": "150〜300文字。advice をなぜ言っているのか、どう実践すればよいかを補足する。1〜2段落、段落は \\n\\n で区切る"
+  "adviceDetail": "150〜300文字。adviceの理由と実践方法。【前回ADVICEが与えられている場合】今回の投稿からそれが実行された形跡が読み取れた時のみ一言触れる。読み取れなければ触れない。1〜2段落"
 }
 
 サンプルが少ない場合は素直に「判断保留」と書いて構いません。装飾しないこと、励まさないこと、優しくしないこと（YUZU は命令形・断定の世界観）。
@@ -101,8 +122,9 @@ JSONのみ返してください。前置きや説明は不要です。`;
 type RawJson = {
   headline?: unknown;
   topics?: unknown;
-  manifest?: unknown;
-  latent?: unknown;
+  fact?: unknown;
+  proof?: unknown;
+  shadow?: unknown;
   advice?: unknown;
   adviceDetail?: unknown;
 };
@@ -158,6 +180,9 @@ export async function generateReport(args: {
   const cached = await getReport(args.userId, args.periodKey);
   if (cached) return cached;
 
+  const prevKey = previousPeriodKey(args.periodKey);
+  const prevReport = prevKey ? await getReport(args.userId, prevKey) : null;
+
   const windowText = inRange
     .map((p) => `[${formatJstTimestamp(p.createdAt)}] ${p.text}`)
     .join("\n\n");
@@ -166,7 +191,22 @@ export async function generateReport(args: {
   const msg = await client.messages.create({
     model: MODEL,
     max_tokens: 1024,
-    messages: [{ role: "user", content: PROMPT(windowText, period.kind) }],
+    messages: [
+      {
+        role: "user",
+        content: PROMPT(
+          windowText,
+          period.kind,
+          prevReport
+            ? {
+                shadow: prevReport.payload.shadow,
+                topics: prevReport.payload.topics,
+                advice: prevReport.payload.advice,
+              }
+            : undefined,
+        ),
+      },
+    ],
   });
   const text = msg.content.map((c) => (c.type === "text" ? c.text : "")).join("");
   const json = extractJson(text);
@@ -174,16 +214,18 @@ export async function generateReport(args: {
 
   const headline = asString(json.headline) || periodLabel(args.periodKey);
   const topics = asTopics(json.topics);
-  const manifest = asString(json.manifest, "判断保留。");
-  const latent = asString(json.latent, "判断保留。");
+  const fact = asString(json.fact, "判断保留。");
+  const proof = asString(json.proof, "");
+  const shadow = asString(json.shadow, "判断保留。");
   const advice = asString(json.advice, "話せ。");
   const adviceDetail = asString(json.adviceDetail, "");
 
   const payload: ReportPayload = {
     headline,
     topics,
-    manifest,
-    latent,
+    fact,
+    proof,
+    shadow,
     advice,
     adviceDetail,
     sentimentSeries: computeSentimentSeries(inRange, args.scores),

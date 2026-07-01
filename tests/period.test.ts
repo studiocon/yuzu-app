@@ -8,6 +8,7 @@ import {
   weekKey,
   monthKey,
   parsePeriodKey,
+  previousPeriodKey,
   isClosed,
   formatPeriodRange,
   recentClosedPeriods,
@@ -81,6 +82,23 @@ describe("weekKey / monthKey と parsePeriodKey の往復", () => {
     expect(parsePeriodKey("w-2026-06-32")).toBeNull();
     expect(parsePeriodKey("m-2026-13")).toBeNull();
     expect(parsePeriodKey("m-2026-00")).toBeNull();
+  });
+});
+
+describe("previousPeriodKey", () => {
+  it("week は7日前の週キーを返す", () => {
+    expect(previousPeriodKey("w-2026-06-28")).toBe("w-2026-06-21");
+  });
+  it("month は前月のキーを返す", () => {
+    expect(previousPeriodKey("m-2026-06")).toBe("m-2026-05");
+  });
+  it("month は年跨ぎでも前年12月を返す", () => {
+    expect(previousPeriodKey("m-2026-01")).toBe("m-2025-12");
+  });
+  it("不正なキーは null", () => {
+    expect(previousPeriodKey("garbage")).toBeNull();
+    expect(previousPeriodKey("w-2026-99-99")).toBeNull();
+    expect(previousPeriodKey("m-2026-13")).toBeNull();
   });
 });
 

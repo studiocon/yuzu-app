@@ -79,6 +79,27 @@ export function parsePeriodKey(
   return null;
 }
 
+export function previousPeriodKey(key: string): string | null {
+  const w = key.match(/^w-(\d{4})-(\d{2})-(\d{2})$/);
+  if (w) {
+    const wm = +w[2];
+    const wd = +w[3];
+    if (wm < 1 || wm > 12 || wd < 1 || wd > 31) return null;
+    const start = jstMidnightUtc(+w[1], wm, wd);
+    return weekKeyFromStart(start - 7 * DAY_MS);
+  }
+  const m = key.match(/^m-(\d{4})-(\d{2})$/);
+  if (m) {
+    const y = +m[1];
+    const mm = +m[2];
+    if (mm < 1 || mm > 12) return null;
+    const prevY = mm === 1 ? y - 1 : y;
+    const prevM = mm === 1 ? 12 : mm - 1;
+    return `m-${prevY}-${pad2(prevM)}`;
+  }
+  return null;
+}
+
 export function isClosed(key: string, now = Date.now()): boolean {
   const p = parsePeriodKey(key);
   return p ? p.end <= now : false;
