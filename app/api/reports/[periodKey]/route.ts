@@ -6,6 +6,7 @@ import { scoreSentiments } from "@/lib/sentimentScore";
 import type { Post } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 type Params = { params: Promise<{ periodKey: string }> };
 
