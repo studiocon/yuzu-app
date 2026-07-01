@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "./supabase/admin";
 import { parsePeriodKey, periodLabel, previousPeriodKey, type PeriodKind } from "./period";
 import { computeSentimentSeries } from "./sentimentSeries";
+import { scoreSentiments } from "./sentimentScore";
 import type { Post } from "./types";
 import type { Report, ReportPayload } from "./reportTypes";
 
@@ -63,6 +64,61 @@ export async function getReport(userId: string, periodKey: string): Promise<Repo
   } catch {
     return null;
   }
+}
+
+// ── report_jobs（非同期生成の進行状況） ──
+//
+// MONTH の生成が Vercel serverless の maxDuration を超えてタイムアウトすると、Claude 応答前に
+// 関数が kill され reports には何も保存されない。POST は即座に返し、生成は waitUntil で継続する
+// （app/api/reports/[periodKey]/route.ts）。クライアントはこのテーブルをポーリングして進行状況を見る。
+// 完了の判定は reports テーブルの存在そのもの。失敗時のみ status='failed' で行を残す。
+
+export type ReportJobStatus = "pending" | "failed";
+
+interface ReportJobRow {
+  status: string;
+  error: string | null;
+  started_at: string;
+}
+
+export type ReportJob = { status: ReportJobStatus; error: string | null; startedAt: number };
+
+export async function getReportJob(userId: string, periodKey: string): Promise<ReportJob | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("report_jobs")
+    .select("status, error, started_at")
+    .eq("user_id", userId)
+    .eq("period_key", periodKey)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as ReportJobRow;
+  return {
+    status: row.status === "failed" ? "failed" : "pending",
+    error: row.error,
+    startedAt: new Date(row.started_at).getTime(),
+  };
+}
+
+export async function startReportJob(userId: string, periodKey: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.from("report_jobs").upsert(
+    { user_id: userId, period_key: periodKey, status: "pending", error: null, started_at: new Date().toISOString() },
+    { onConflict: "user_id,period_key" },
+  );
+}
+
+export async function failReportJob(userId: string, periodKey: string, error: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.from("report_jobs").upsert(
+    { user_id: userId, period_key: periodKey, status: "failed", error, started_at: new Date().toISOString() },
+    { onConflict: "user_id,period_key" },
+  );
+}
+
+export async function clearReportJob(userId: string, periodKey: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.from("report_jobs").delete().eq("user_id", userId).eq("period_key", periodKey);
 }
 
 export async function listReportKeys(userId: string): Promise<string[]> {
@@ -243,4 +299,74 @@ export async function generateReport(args: {
   };
   await saveReport(report);
   return report;
+}
+
+// ── 非同期生成の本体（app/api/reports/[periodKey]/route.ts から waitUntil で起動される） ──
+//
+// レスポンスは POST 側で即座に返しているため、ここで throw しても呼び出し元には伝わらない。
+// 成功/失敗は report_jobs 経由でしかクライアントに伝わらないので、必ず catch して
+// failReportJob を呼ぶこと（投げっぱなしにすると client が永遠に "pending" のままになる）。
+interface RecordRowForReport {
+  id: string;
+  user_id: string;
+  text: string;
+  char_count: number;
+  created_at: string;
+}
+
+export async function runReportJob(args: {
+  userId: string;
+  periodKey: string;
+  clientScores: Record<string, number>;
+}): Promise<void> {
+  const { userId, periodKey, clientScores } = args;
+  try {
+    const period = parsePeriodKey(periodKey);
+    if (!period) throw new Error("invalid_period_key");
+
+    // service_role + 明示 user_id フィルタで読む（mcpAuth.ts と同じパターン。
+    // waitUntil 内はリクエストの cookie セッションを引き継げないため admin client を使う）。
+    const admin = createAdminClient();
+    const { data: rows, error: fetchError } = await admin
+      .from("records")
+      .select("id, user_id, text, char_count, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", new Date(period.start).toISOString())
+      .lt("created_at", new Date(period.end).toISOString())
+      .order("created_at", { ascending: true });
+    if (fetchError) throw new Error(fetchError.message);
+
+    const posts: Post[] = ((rows as RecordRowForReport[]) ?? []).map((r, i) => ({
+      id: r.id,
+      user_id: r.user_id,
+      text: r.text,
+      char_count: r.char_count,
+      durationMs: 0,
+      createdAt: new Date(r.created_at).getTime(),
+      index: i + 1,
+      marked: false,
+    }));
+    if (posts.length === 0) throw new Error("no_posts");
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error("llm_not_configured");
+
+    // クライアントが渡してこなかったスコアをサーバ側で補完する（EMOTION チャート用）。
+    const missingPosts = posts.filter((p) => typeof clientScores[p.id] !== "number");
+    let fullScores: Record<string, number> = clientScores;
+    if (missingPosts.length > 0) {
+      const backfilled = await scoreSentiments(
+        missingPosts.map((p) => ({ id: p.id, text: p.text })),
+        apiKey,
+      );
+      fullScores = { ...clientScores, ...backfilled };
+    }
+
+    await generateReport({ userId, periodKey, posts, scores: fullScores });
+    await clearReportJob(userId, periodKey);
+  } catch (e) {
+    console.error("runReportJob failed", periodKey, e);
+    const message = e instanceof Error ? e.message : "unknown_error";
+    await failReportJob(userId, periodKey, message);
+  }
 }

@@ -13,6 +13,11 @@ type Props = { periodKey: string };
 
 type Status = "loading" | "ok" | "no_posts" | "in_progress" | "error";
 
+// POST は生成完了を待たない（非同期化：app/api/reports/[periodKey]/route.ts 参照）。
+// 202 が返ったら GET をポーリングして完了を待つ。maxDuration(60s) + バッファぶんは粘る。
+const POLL_INTERVAL_MS = 3000;
+const POLL_MAX_ATTEMPTS = 30; // 3s * 30 = 90s
+
 export default function ReportDetail({ periodKey }: Props) {
   const [status, setStatus] = useState<Status>("loading");
   const [report, setReport] = useState<Report | null>(null);
@@ -50,53 +55,77 @@ export default function ReportDetail({ periodKey }: Props) {
       setReport(null);
     }
 
-    // 2) GET でキャッシュ確認。404 なら POST で生成。
-    (async () => {
-      try {
-        const getRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`);
-        if (cancelled) return;
-        if (getRes.status === 422) { setStatus("in_progress"); return; }
-        if (getRes.ok) {
-          const data = (await getRes.json()) as { report?: Report };
-          if (data.report) {
-            setReport(data.report);
-            setStatus("ok");
-            try {
-              sessionStorage.setItem(reportCacheKey(periodKey), JSON.stringify(data.report));
-            } catch {}
-            return;
-          }
-          if (!hasCached) setStatus("error");
-          return;
-        }
-        if (getRes.status !== 404) {
-          if (!hasCached) setStatus("error");
-          return;
-        }
-        // 未生成 → 生成
-        const scores = loadSentimentCache();
-        const postRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scores }),
-        });
-        if (cancelled) return;
-        if (postRes.status === 404) { setStatus("no_posts"); return; }
-        if (postRes.status === 422) { setStatus("in_progress"); return; }
-        if (!postRes.ok) {
-          if (!hasCached) setStatus("error");
-          return;
-        }
-        const data = (await postRes.json()) as { report?: Report };
-        if (!data.report) {
-          if (!hasCached) setStatus("error");
-          return;
-        }
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    // GET を1回叩き、report が取れたら適用して true を返す。202(pending)ならポーリング継続の合図で false。
+    const tryFetchReport = async (): Promise<"ok" | "pending" | "not_generated" | "in_progress" | "error"> => {
+      const getRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`);
+      if (getRes.status === 422) return "in_progress";
+      if (getRes.status === 202) return "pending";
+      if (getRes.ok) {
+        const data = (await getRes.json()) as { report?: Report };
+        if (!data.report) return "error";
         setReport(data.report);
-        setStatus("ok");
         try {
           sessionStorage.setItem(reportCacheKey(periodKey), JSON.stringify(data.report));
         } catch {}
+        return "ok";
+      }
+      if (getRes.status === 404) return "not_generated"; // 呼び出し側で POST を試すため区別
+      return "error";
+    };
+
+    (async () => {
+      try {
+        // 1) まず GET（すでに生成済み or 進行中のジョブがあるか確認）
+        const first = await tryFetchReport();
+        if (cancelled) return;
+        if (first === "ok") { setStatus("ok"); return; }
+        if (first === "in_progress") { setStatus("in_progress"); return; }
+        if (first === "error") { if (!hasCached) setStatus("error"); return; }
+        if (first === "pending") {
+          setStatus("loading");
+        } else {
+          // 未生成（404）→ POST で起動（202 を即返すだけなので待たない）
+          const scores = loadSentimentCache();
+          const postRes = await fetch(`/api/reports/${encodeURIComponent(periodKey)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scores }),
+          });
+          if (cancelled) return;
+          if (postRes.status === 404) { setStatus("no_posts"); return; }
+          if (postRes.status === 422) { setStatus("in_progress"); return; }
+          if (postRes.ok) {
+            const data = (await postRes.json()) as { report?: Report };
+            if (data.report) {
+              // すでにキャッシュ済みだった場合の即応答フォールバック
+              setReport(data.report);
+              setStatus("ok");
+              try {
+                sessionStorage.setItem(reportCacheKey(periodKey), JSON.stringify(data.report));
+              } catch {}
+              return;
+            }
+          } else if (!hasCached) {
+            setStatus("error");
+            return;
+          }
+          setStatus("loading");
+        }
+
+        // 2) ポーリング（生成完了 or 失敗 or 上限まで）
+        for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+          if (cancelled) return;
+          await sleep(POLL_INTERVAL_MS);
+          if (cancelled) return;
+          const result = await tryFetchReport();
+          if (cancelled) return;
+          if (result === "ok") { setStatus("ok"); return; }
+          if (result === "error") { if (!hasCached) setStatus("error"); return; }
+          // "pending" / "not_generated"（stale ジョブ後の一時的な 404）は継続
+        }
+        if (!hasCached) setStatus("error");
       } catch {
         if (cancelled) return;
         if (!hasCached) setStatus("error");

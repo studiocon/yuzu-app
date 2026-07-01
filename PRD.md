@@ -270,7 +270,7 @@ TODO: 追記
 - フォロー / いいね / リポストなし
 - **キャラクター方針**：アプリ内にキャラクターは登場させない。「THE RECORD」の世界観（信号・記録・番号）を守る。
 - **ニックネーム / ユーザーアイコン / プロフィール表示なし**。SNS 機能を持たないため、identity は通し番号 `#NNN` のみ（v2）。
-- **1日上限（フリープラン 3 回）はサーバ側で強制**（[app/api/records/route.ts](app/api/records/route.ts) の POST が `records` テーブルを JST 00:00 起点でカウントし、超過時 429 を返す）。複数端末でログインしてもカウントが同期される。localStorage は mock-mode 専用のフォールバック。
+- **1日上限（フリープラン 1 回・1 録音あたり最大 1 分）はサーバ側で強制**（[app/api/records/route.ts](app/api/records/route.ts) の POST が `records` テーブルを JST 00:00 起点でカウントし、超過時 429 を返す）。複数端末でログインしてもカウントが同期される。localStorage は mock-mode 専用のフォールバック。上限は [lib/constants.ts](lib/constants.ts) の `MAX_DAILY_SESSIONS` / `MAX_RECORD_MS`（初期リリースはボリューム抑制のため意図的に低め）。
 - **MARK（刻印）のみユーザーに許された能動操作**。編集・削除は依然不可。MARK は「お気に入り」ではなく、過去の声を本物として選び直す行為。
 - **COPY（本文クリップボードコピー）は Notion 移行期間限定の一時機能**。将来削除する恒久 UI ではない（[components/RecordCard.tsx](components/RecordCard.tsx) に `// TEMPORARY:` コメント済）。
 - **DM・音声メッセージ等の対人コミュニケーション機能を持たない**。YUZUのコアは「誰にも向けない声」であり、聞き手の存在が「整えるプレッシャー」を生む。思想と矛盾するため、意図的に除外する。

@@ -6,11 +6,12 @@ import SpeakView from "./SpeakView";
 import CompleteView from "./CompleteView";
 import type { Post, Phase } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { MAX_DAILY_SESSIONS } from "@/lib/constants";
 
 function LimitView() {
   return (
     <section className="limit-view">
-      <p className="limit-view-count font-display">3 / 3</p>
+      <p className="limit-view-count font-display">{MAX_DAILY_SESSIONS} / {MAX_DAILY_SESSIONS}</p>
       <p className="limit-view-msg">今日はここまで。<br />明日また話せ。</p>
     </section>
   );
