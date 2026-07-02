@@ -50,8 +50,9 @@ lib/                    型・ユーティリティ・サーバ呼び出し
   useBodyScrollLock.ts  モーダル open 時の body overflow 制御
 middleware.ts           Supabase セッション更新 + /reports・/settings 保護
 next.config.js          VERSION ビルド番号（git rev-list --count）を NEXT_PUBLIC_BUILD_NUMBER に注入
-supabase/migrations/    0001〜0015（…/service_role_dml/personal_access_tokens/revoke_public_function_execute）
-supabase/verify/        migration 適用後の権限検証 SQL（0005_grants_check / 0015_function_execute_check。Studio で手実行）
+supabase/config.toml    Supabase CLI 設定（2026-07-02 導入。ローカル検証・drift 検知専用、本番 apply は引き続き手動）
+supabase/migrations/    init〜anon_stt_rate_limit（CLI 互換のタイムスタンプ命名。番号順=時系列順）
+supabase/verify/        migration 適用後の権限検証 SQL（0005_grants_check / 0015_function_execute_check / anon_stt_rate_limit_check。Studio で手実行）
 tests/                  vitest ユニットテスト（純粋ロジックのみ。period/streak/inquiries/personalAccessToken）
 mcp-server/             Claude Desktop 用スタンドアロン MCP サーバー（個人用。get_records / get_reports の2ツール。Next.js アプリとは別の npm パッケージ。詳細は [mcp-server/README.md](mcp-server/README.md)）
 public/
@@ -59,7 +60,7 @@ public/
 scripts/
   check-design-drift.mjs    DESIGN.md frontmatter ↔ globals.css :root の突合
   sync-design-preview.mjs   DESIGN.md frontmatter → design-preview.html へ反映
-.github/workflows/      ci.yml（typecheck + lint + test + build）/ design-check.yml（drift + lint）
+.github/workflows/      ci.yml（typecheck + lint + test + build）/ design-check.yml（drift + lint）/ migration-drift.yml（未適用 migration 検知。secrets 未設定ならスキップ）/ supabase-keepalive.yml
 ```
 
 ## デザイン同期ワークフロー（最重要）
@@ -173,7 +174,7 @@ npm run dev            # ローカル起動（http://localhost:3000）
 ## 既知の注意
 
 - `lib/streak.ts` の `dayKey` は **ローカルタイム**、`lib/period.ts` の `jstDateString` は **JST 固定**。連続日数はユーザー体感（端末ローカル）、レポート集計は JST 固定。混同しない
-- ただしサーバ側ストリークは `supabase.rpc('get_streak')`（**現行は `supabase/migrations/0007_fix_get_streak.sql`**、JST 固定・引数なし・`auth.uid()` ベース）。クライアント `lib/streak.ts` は SILENCE 描画 + 投稿直後の即時反映用の補助
+- ただしサーバ側ストリークは `supabase.rpc('get_streak')`（**現行は `supabase/migrations/20260529095947_fix_get_streak.sql`**、JST 固定・引数なし・`auth.uid()` ベース）。クライアント `lib/streak.ts` は SILENCE 描画 + 投稿直後の即時反映用の補助
 - **ストリークは「今日 or 昨日まで続いていれば切れない」が正**（今日まだ未投稿でも維持）。`lib/streak.ts` の `computeStreak` は今日が無投稿なら昨日起点で数え直す。サーバ `get_streak` も同じ挙動。**過去に 0003 の RPC が壊れていた**（連続判定式が `d - rn(desc)` で連続日でもグループが割れる + `get_streak(uid uuid)` を引数なし呼び出しで解決できず常に 0、+ クライアントも今日未投稿で 0）。3層の silent fail が重なって「昨日投稿したのに STREAK 0」を起こしていた。0007 で式を `d + rn(desc)` に修正・引数なし化・`security definer`+`grant` を付与。**0007 は本番 Supabase に手動適用が必要**
 - `app/page.tsx` で `phase` state と `phaseRef` を二重管理しているのは、ポインタイベントハンドラ内で同期的に最新値を読む必要があるため。`setPhaseSync` を必ず通す
 - `app/page.tsx` の `user` state は **三値**（`undefined` = ロード中 / `null` = 未ログイン / `User` = ログイン済み）。`isLoaded = user !== undefined` / `isOnboarding = user === null` の判定を維持
@@ -185,5 +186,7 @@ npm run dev            # ローカル起動（http://localhost:3000）
 - **annotation は `tag_audio_events=false` で抑止する**：`[音楽]` / `(背景ノイズ)` / `（咳）` 等の非音声 annotation は記録に残したくないので、Scribe にそもそも出力させない（旧実装の正規表現 strip ハックは廃止済み）。受信テキストは空白正規化 + trim のみ。`text.length < 5` で silent reject → `useRecorder.ts` の `showHint("無音、話せ")` / `showHint("短い、話せ")`。`no_verbatim` でフィラーだけの発話が短文化して弾かれるのは望ましい挙動
 - **`/api/records` POST の失敗を silent catch しない**。`recorder.failWithError(msg)` でステータスコード／エラーコードを SpeakView に出す。`catch {}` で握り潰すと「モーダルが busy のまま」 or 「モーダル閉じて何も起きない」の原因不明バグが量産される（ユーザは何が起きたかわからず、DevTools を開ける人しか報告できなくなる）
 - **デバッグ困難バグは「複数層の silent failure」が重なって起きる**ことが多い。今回の保存されない事故は (1) `useRecorder` の stale closure、(2) 当時 `scribe_v2` が無効なモデル ID だった（※現在は v2 が現行で有効）、(3) `/api/records` POST の silent catch、の3層が重なって診断不能になっていた。新規コードでは silent fail を許さない方針
-- **`0014_personal_access_tokens.sql` は本番 Supabase に手動適用が必要**（このリポジトリの migration は自動デプロイされない）。個人用アクセストークンは平文を DB に保存しない：発行時に `lib/personalAccessToken.ts` の `generateToken()` が `yuzu_pat_` prefix 付きトークンを返し、SHA-256 ハッシュ（`token_hash`）のみ永続化、平文は発行レスポンスの一度きり（[components/ApiTokenModal.tsx](components/ApiTokenModal.tsx) の `step === "created"`）。再表示・復元は不可、失くしたら削除して再発行
-- **`0015_revoke_public_function_execute.sql` も本番 Supabase に手動適用が必要**（Supabase security advisor 0024/0028/0029 対応）。Postgres は `CREATE FUNCTION` 時に EXECUTE を **PUBLIC へ自動付与**するため、過去 migration が `grant ... to authenticated` だけ書いていても anon が `/rest/v1/rpc/<fn>` を叩けた。0015 で集計 RPC（`get_streak` / `get_total_duration_ms`）を PUBLIC から剥がし authenticated のみに、トリガー専用関数（`handle_new_user` / `rls_auto_enable`）を全ロールから剥奪（トリガー発火は所有者権限なので無影響）。さらに `inquiries` の直接 INSERT 攻撃面を閉じた：`/api/inquiries` は service_role 経由でしか書かないので、`inquiries_insert_any`（`with check (true)`）ポリシーと anon/authenticated の INSERT 権限を撤去し、API 層のレート制限（[lib/inquiries.ts](lib/inquiries.ts)）を迂回した直接 POST を不能にした。適用後は [supabase/verify/0015_function_execute_check.sql](supabase/verify/0015_function_execute_check.sql) で権限を検証する
+- **`20260626003830_personal_access_tokens.sql` は本番 Supabase に手動適用が必要**（このリポジトリの migration は自動デプロイされない）。個人用アクセストークンは平文を DB に保存しない：発行時に `lib/personalAccessToken.ts` の `generateToken()` が `yuzu_pat_` prefix 付きトークンを返し、SHA-256 ハッシュ（`token_hash`）のみ永続化、平文は発行レスポンスの一度きり（[components/ApiTokenModal.tsx](components/ApiTokenModal.tsx) の `step === "created"`）。再表示・復元は不可、失くしたら削除して再発行
+- **`20260629070634_revoke_public_function_execute.sql`（旧 0015）は本番適用済み**（`mcp__supabase__list_migrations` で確認済、2026-07-02。本番の追跡テーブル上は version `20260628220005` として記録されている＝後述の番号ズレの一例）。内容: Postgres は `CREATE FUNCTION` 時に EXECUTE を **PUBLIC へ自動付与**するため、過去 migration が `grant ... to authenticated` だけ書いていても anon が `/rest/v1/rpc/<fn>` を叩けた。集計 RPC（`get_streak` / `get_total_duration_ms`）を PUBLIC から剥がし authenticated のみに、トリガー専用関数（`handle_new_user` / `rls_auto_enable`）を全ロールから剥奪（トリガー発火は所有者権限なので無影響）。さらに `inquiries` の直接 INSERT 攻撃面を閉じた：`/api/inquiries` は service_role 経由でしか書かないので、`inquiries_insert_any`（`with check (true)`）ポリシーと anon/authenticated の INSERT 権限を撤去し、API 層のレート制限（[lib/inquiries.ts](lib/inquiries.ts)）を迂回した直接 POST を不能にした。検証は [supabase/verify/0015_function_execute_check.sql](supabase/verify/0015_function_execute_check.sql)
+- **`20260702075418_report_jobs.sql`（旧 0016）と `20260702130000_anon_stt_rate_limit.sql`（新規、匿名 STT の IP レート制限 #52）は本番未適用**（`mcp__supabase__list_migrations` で未確認、2026-07-02）。手動適用が必要
+- **Supabase CLI を `supabase init` でローカル導入した（2026-07-02）。ただし本番の migration 追跡には使えていない状態**：`supabase/migrations/` は CLI 互換のタイムスタンプ命名（`YYYYMMDDHHMMSS_name.sql`）にリネーム済みだが、本番の `supabase_migrations.schema_migrations` には**別のタイムスタンプ・別の粒度**で記録された過去分（`theme_cache` / `plan_entitlement` / `inquiries` + `inquiries_service_role_grants` / `theme_cache_error` / `grant_profiles_to_service_role` / `grant_service_role_dml` / `revoke_public_function_execute`）が入っている（過去に `mcp__supabase__apply_migration` 経由で適用された際、適用時刻ベースの version が自動採番されたため）。中身は一致することを `execute_sql` で読み取り確認済みだが、**version 文字列が食い違うので `supabase migration list` はこのままでは正しい差分を返さない**。加えて 0001〜0007 相当（init〜fix_get_streak）は追跡テーブルに一切記録が無い（CLI 導入前に SQL Editor で直接実行された分）。CLI/CI をフル活用するには `supabase migration repair --status applied <version>` で追跡テーブルをローカルのファイル名に同期させる本番書き込み作業が別途必要（**ユーザー承認必須、今回は未実施**）。[.github/workflows/migration-drift.yml](.github/workflows/migration-drift.yml) は secrets（`SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_ID`）未設定の間はスキップされる設計にしてあるが、設定後もこの repair が済むまでは誤検知（既に適用済みのものを未適用と報告）が出る前提で見ること

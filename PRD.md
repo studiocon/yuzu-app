@@ -136,7 +136,7 @@ YUZU は編集・削除を許さない。その代わりユーザーに **唯一
 **仕様**
 - 各 RECORD カード右端の常時トグルボタン（PushPin / PushPinSlash）。v1 の長押し検出は廃止。
 - 黄色枠なし。色の差分（線→塗り、`--ink-muted` → `--yuzu-zest`）のみで状態表現。タッチターゲット 44px。
-- `records.marked: boolean` で永続化（[supabase/migrations/0004_mark.sql](supabase/migrations/0004_mark.sql)）
+- `records.marked: boolean` で永続化（[supabase/migrations/20260524173200_mark.sql](supabase/migrations/20260524173200_mark.sql)）
 - INDEX `RECORDS` に `ALL` / `MARKED` フィルタ（MARKED = `marked === true` のみ）
 - 操作直後に `MARKED`（ピリオドなし・Unbounded 700・`--yuzu-zest`）を 0.9s フラッシュ
 - MARKED 空表示は `MARK されたものは無い。`

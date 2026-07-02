@@ -49,7 +49,7 @@ async function fetchFirstPostAt(
 async function fetchStreak(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<number> {
-  // 既存 RPC（supabase/migrations/0003_streak.sql・JST 固定）
+  // 既存 RPC（supabase/migrations/20260523170022_streak.sql・JST 固定）
   const { data } = await supabase.rpc("get_streak");
   return typeof data === "number" ? data : 0;
 }
@@ -57,7 +57,7 @@ async function fetchStreak(
 async function fetchTotalDurationMs(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<number> {
-  // 全件 SUM（supabase/migrations/0006_records_duration.sql）。ページングを跨ぐ集計。
+  // 全件 SUM（supabase/migrations/20260529065052_records_duration.sql）。ページングを跨ぐ集計。
   const { data } = await supabase.rpc("get_total_duration_ms");
   const n = typeof data === "number" ? data : Number(data);
   return Number.isFinite(n) ? n : 0;

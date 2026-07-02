@@ -7,6 +7,7 @@ export const MAX_DAILY_SESSIONS = 1;
 /** 1 録音あたりの最大秒数（ミリ秒）。初期リリースはボリューム抑制のため 1 分に制限。 */
 export const MAX_RECORD_MS = 1 * 60 * 1000;
 
-/** 未ログイン onboarding で許容する STT 呼び出し回数（cookie ベース・cookie 改竄前提の弱保護）。
- *  厳密化は GitHub issue #52 で対応予定。 */
+/** 未ログイン onboarding で許容する STT 呼び出し回数。cookie（改竄可）と
+ *  IP ベースの DB カウント（app/api/transcribe/route.ts・supabase/migrations/20260702130000_anon_stt_rate_limit.sql）
+ *  の両方に同じ上限を適用する（#52）。 */
 export const ANON_DAILY_STT_LIMIT = 1;

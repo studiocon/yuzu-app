@@ -1,0 +1,53 @@
+name: Migration Drift Check
+
+# supabase/migrations/ に変更があった PR で、本番にまだ反映されていない
+# マイグレーションが無いか（= 適用漏れが無いか）を検知する。
+#
+# 本番適用は依然として手動（docs/deploy.md）。このジョブは検知のみで、
+# 自動適用は行わない。
+#
+# 必要な secrets/variables が無い間はジョブごとスキップする（導入直後に
+# CI を壊さないため）。有効化するには以下をリポジトリに設定する:
+#   - secrets.SUPABASE_ACCESS_TOKEN … supabase.com/dashboard/account/tokens で発行
+#   - secrets.SUPABASE_DB_PASSWORD  … プロジェクトの DB パスワード
+#   - vars.SUPABASE_PROJECT_ID      … プロジェクト ref（例: serdimqyazitwfnswvrg）
+#
+# ⚠️ 既知の制約（2026-07-02時点）: 過去に mcp__supabase__apply_migration 経由で適用された
+# migration は、本番の追跡テーブル上でローカルのファイル名と異なる version 番号を持っている
+# （中身は一致確認済み）。`supabase migration repair` で番号を同期するまでは、このジョブは
+# 既に適用済みの古いファイルを「未適用」と誤検知する可能性がある。有効化前に
+# `supabase migration list --linked` の出力を一度手動確認すること。詳細は CLAUDE.md 参照。
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: ${{ vars.SUPABASE_PROJECT_ID != '' && secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_DB_PASSWORD != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link project (read-only)
+        run: supabase link --project-ref "${{ vars.SUPABASE_PROJECT_ID }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: List migration status
+        id: list
+        run: |
+          set -o pipefail
+          supabase migration list --linked | tee migration-list.txt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Fail if a local migration is missing on remote
+        run: |
+          # `supabase migration list` は Local | Remote の2列テーブルを出す。
+          # Local に値があって Remote が空の行 = 本番未適用のマイグレーション。
+          if awk -F'|' 'NR>2 && $2 ~ /[0-9]/ && $3 !~ /[0-9]/ { found=1 } END { exit !found }' migration-list.txt; then
+            echo "::error::本番に未適用のマイグレーションがあります。docs/deploy.md の手順で適用してください。"
+            exit 1
+          fi

@@ -1,5 +1,5 @@
 -- ========================================================================
--- 0005_records_column_grants.sql のロールバック（緊急時のみ実行）
+-- 20260524173201_records_column_grants.sql のロールバック（緊急時のみ実行）
 -- ------------------------------------------------------------------------
 -- 使用シナリオ:
 --   - 本番デプロイ後にクライアントが想定外の理由で書き込みできなくなった
@@ -22,4 +22,4 @@ grant update on public.records to authenticated;
 --    は 0004 のままなので別途撤去は不要。
 --
 -- 復旧後、原因を直したら必ず 0005 を再適用すること:
---   psql ... < supabase/migrations/0005_records_column_grants.sql
+--   psql ... < supabase/migrations/20260524173201_records_column_grants.sql

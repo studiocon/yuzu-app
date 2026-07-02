@@ -1,5 +1,5 @@
 // 問い合わせ機能のサーバ/クライアント共有定数。
-// migration（supabase/migrations/0010_inquiries.sql）の CHECK 制約と一致させる。
+// migration（supabase/migrations/20260531083245_inquiries.sql）の CHECK 制約と一致させる。
 // 値を変えるときは migration → ここ → API route の順で同期する。
 
 export const INQUIRY_SUBJECT_MAX = 200;

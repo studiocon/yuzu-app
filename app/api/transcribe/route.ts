@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { jstDateString } from "@/lib/period";
 import { MAX_DAILY_SESSIONS, ANON_DAILY_STT_LIMIT } from "@/lib/constants";
 
@@ -47,6 +48,15 @@ function buildAnonCookie(stat: AnonStat, https: boolean): string {
   return `${ANON_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${secure}`;
 }
 
+// cookie は削除・改竄できるので、IP ベースの DB カウントを防波堤として重ねる（#52）。
+// x-forwarded-for は Vercel が付与する。ローカル dev 等で欠けている場合は "unknown" に
+// バケットされる（同時アクセスが無ければ実害無し）。
+function getClientIp(req: NextRequest): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
@@ -77,10 +87,23 @@ export async function POST(req: NextRequest) {
       );
     }
   } else {
-    // 未ログイン onboarding: cookie ベースで N回/日まで（改竄可だが bar を上げる）
-    // 厳密化は #52（IP rate limit / DB ベース）で対応予定。
+    // 未ログイン onboarding: cookie（改竄可）+ IP ベースの DB カウント（#52）の二重チェック。
+    // IP 側はアトミックに増分してから判定するので、cookie 削除・直叩きでは突破できない。
+    // migration 20260702130000 未適用（RPC 不在）の場合は cookie 判定のみにフォールバックする
+    // （防波堤の追加が失敗しても、既存の cookie ガードごと落とさない）。
     const stat = parseAnonCookie(req.cookies.get(ANON_COOKIE)?.value);
-    if (stat.count >= ANON_DAILY_STT_LIMIT) {
+    let overIpLimit = false;
+    const { data: ipCount, error: ipErr } = await createAdminClient().rpc(
+      "increment_anon_stt_usage",
+      { p_ip: getClientIp(req), p_date: jstDateString(Date.now()) },
+    );
+    if (ipErr) {
+      console.error(`[transcribe] anon_stt_usage rpc failed, falling back to cookie-only: ${ipErr.message}`);
+    } else {
+      overIpLimit = (ipCount ?? 0) > ANON_DAILY_STT_LIMIT;
+    }
+
+    if (stat.count >= ANON_DAILY_STT_LIMIT || overIpLimit) {
       return NextResponse.json(
         {
           error: "login_required",

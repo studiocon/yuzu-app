@@ -80,18 +80,30 @@ http://localhost:3000/?mock=1
 > 本番への適用手順 / smoke test / ロールバック SQL は **[docs/deploy.md](docs/deploy.md)** に集約。
 > 0005 適用後の RLS / GRANT 検証は `supabase/verify/0005_grants_check.sql` を Impersonate モードで実行。
 
-SQL Editor から `supabase/migrations/` 内の SQL ファイルを **番号順** に実行する:
+**本番適用は引き続き手動**（SQL Editor で番号=タイムスタンプ順に実行）。Supabase CLI（`supabase/config.toml`）はローカル検証・ドリフト検知専用で導入した。`supabase migration list --linked` で「ローカルにあって本番の追跡テーブルに無いファイル」を確認できる（読み取りのみ、書き込みは発生しない）。CI の [migration-drift.yml](.github/workflows/migration-drift.yml) は `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_ID` が secrets/variables に設定されていれば同じチェックを PR で自動実行する（未設定の間はジョブごとスキップ）。
+
+> ⚠️ 導入時点（2026-07-02）で判明した既知の制約: 本番の `supabase_migrations.schema_migrations` には、過去に `mcp__supabase__apply_migration` 経由で適用された分が**ローカルとは別の version 番号**で記録されている（中身は一致確認済み）。`supabase migration repair` で番号を同期する本番書き込み作業を行うまで、`migration list` / CI の drift check は既に適用済みの古いファイルを「未適用」と誤検知する。詳細は CLAUDE.md の該当セクション参照。
+
+ファイル名は Supabase CLI 互換のタイムスタンプ形式（`YYYYMMDDHHMMSS_name.sql`）にリネーム済み（旧 `0001_init.sql` 等の連番形式から移行、2026-07-02）:
 
 ```
-0001_init.sql                     — profiles / records テーブル + RLS + トリガー
-0002_reports.sql                  — reports テーブル + RLS
-0003_streak.sql                   — get_streak() RPC（JST 連続日数）
-0004_mark.sql                     — records.marked カラム + UPDATE RLS
-0005_records_column_grants.sql    — INSERT/UPDATE のカラム単位 GRANT（編集禁止思想を担保）
-0006_records_duration.sql         — records.duration_ms カラム + INSERT GRANT + get_total_duration_ms() RPC（総録音分数）
-0007_fix_get_streak.sql           — get_streak() の修正
-0008_theme_cache.sql              — theme_cache テーブル（PATTERN テーマの永続キャッシュ）+ RLS SELECT + GRANT
-0009_plan.sql                     — profiles に plan 列（Free/Light/Premium）+ check + authenticated UPDATE 剥奪（自己昇格防止）
+20260523170020_init.sql                     — profiles / records テーブル + RLS + トリガー
+20260523170021_reports.sql                  — reports テーブル + RLS
+20260523170022_streak.sql                   — get_streak() RPC（JST 連続日数）
+20260524173200_mark.sql                     — records.marked カラム + UPDATE RLS
+20260524173201_records_column_grants.sql    — INSERT/UPDATE のカラム単位 GRANT（編集禁止思想を担保）
+20260529065052_records_duration.sql         — records.duration_ms カラム + INSERT GRANT + get_total_duration_ms() RPC（総録音分数）
+20260529095947_fix_get_streak.sql           — get_streak() の修正
+20260530133909_theme_cache.sql              — theme_cache テーブル（PATTERN テーマの永続キャッシュ）+ RLS SELECT + GRANT
+20260530205304_plan.sql                     — profiles に plan 列（Free/Light/Premium）+ check + authenticated UPDATE 剥奪（自己昇格防止）
+20260531083245_inquiries.sql                — inquiries テーブル（問い合わせフォーム保存）
+20260531111320_theme_cache_error.sql        — themes API の Anthropic 失敗を short-TTL negative cache
+20260602213515_grant_profiles_to_service_role.sql — service_role へ profiles SELECT を明示 GRANT
+20260602214007_grant_service_role_dml.sql   — service_role の GRANT 欠落を一括修正（records/reports/theme_cache/profiles）
+20260626003830_personal_access_tokens.sql   — 個人用アクセストークン（MCP 連携用。sha256 ハッシュのみ保存）
+20260629070634_revoke_public_function_execute.sql — PUBLIC への自動 EXECUTE 付与を剥がす（security advisor 対応）
+20260702075418_report_jobs.sql              — レポート生成非同期化の進行状況テーブル
+20260702130000_anon_stt_rate_limit.sql      — 匿名 STT の IP ベース DB レート制限（#52 の厳密化）
 ```
 
 #### マイグレーション適用後の検証

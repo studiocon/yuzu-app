@@ -50,8 +50,8 @@ npm run build           # production build
 ### 2-2. 適用手順
 
 1. Supabase Dashboard → **SQL Editor**
-2. New Query で `0004_mark.sql` の内容を貼り付け → **RUN**
-3. 同じく `0005_records_column_grants.sql` → **RUN**
+2. New Query で `20260524173200_mark.sql` の内容を貼り付け → **RUN**
+3. 同じく `20260524173201_records_column_grants.sql` → **RUN**
 4. エラーが出たら即停止して原因調査。0005 が一部成功して一部失敗していたら §5 のロールバック SQL で戻す。
 
 ### 2-3. 適用後の検証
@@ -195,5 +195,5 @@ alter table public.records drop column if exists marked;
 
 | Migration | 適用日 | 適用者 | 検証 |
 |---|---|---|---|
-| 0004_mark.sql | YYYY-MM-DD | @owner | ✅ |
-| 0005_records_column_grants.sql | YYYY-MM-DD | @owner | ✅ |
+| 20260524173200_mark.sql | YYYY-MM-DD | @owner | ✅ |
+| 20260524173201_records_column_grants.sql | YYYY-MM-DD | @owner | ✅ |
