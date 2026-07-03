@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) {
     console.error("GET /api/mcp/records:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
   }
 
   const records = (data as RecordRow[] ?? []).map((row) => ({

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
   if (insertError || !inserted) {
     console.error("POST /api/inquiries:", insertError);
     return NextResponse.json(
-      { error: insertError?.message ?? "insert_failed" },
+      { error: "insert_failed" },
       { status: 500 },
     );
   }

@@ -41,7 +41,7 @@ export async function GET() {
 
   if (error) {
     console.error("GET /api/account/tokens:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   if (error || !inserted) {
     console.error("POST /api/account/tokens:", error);
-    return NextResponse.json({ error: error?.message ?? "insert failed" }, { status: 500 });
+    return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
   return NextResponse.json(
@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest) {
 
   if (error) {
     console.error("DELETE /api/account/tokens:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

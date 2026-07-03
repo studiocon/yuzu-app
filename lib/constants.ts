@@ -11,3 +11,10 @@ export const MAX_RECORD_MS = 1 * 60 * 1000;
  *  IP ベースの DB カウント（app/api/transcribe/route.ts・supabase/migrations/20260702130000_anon_stt_rate_limit.sql）
  *  の両方に同じ上限を適用する（#52）。 */
 export const ANON_DAILY_STT_LIMIT = 1;
+
+/** 1分録音の文字起こしは通常300〜450字。直API叩きによる巨大本文の投入（DB肥大・
+ *  レポート生成低速化）を防ぐための上限。 */
+export const MAX_RECORD_TEXT = 4000;
+
+/** 1分の m4a は約1MB。余裕を持たせた上限で、巨大ファイルを ElevenLabs へ転送する前に弾く。 */
+export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;

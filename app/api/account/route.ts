@@ -18,10 +18,10 @@ export async function DELETE(request: NextRequest) {
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
-    // silent にしない（CLAUDE.md 方針）。原因をクライアントへ返す。
+    // silent にしない（CLAUDE.md 方針）。原因は console.error に残し、クライアントには固定コードのみ返す。
     console.error("DELETE /api/account:", error);
     return NextResponse.json(
-      { error: error.message, code: "delete_failed" },
+      { error: "delete_failed", code: "delete_failed" },
       { status: 500 },
     );
   }

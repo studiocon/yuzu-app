@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jstDateString } from "@/lib/period";
-import { MAX_DAILY_SESSIONS, ANON_DAILY_STT_LIMIT } from "@/lib/constants";
+import { MAX_DAILY_SESSIONS, ANON_DAILY_STT_LIMIT, MAX_AUDIO_BYTES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -122,6 +122,9 @@ export async function POST(req: NextRequest) {
   if (!(file instanceof Blob)) {
     return NextResponse.json({ error: "no audio" }, { status: 400 });
   }
+  if (file.size > MAX_AUDIO_BYTES) {
+    return NextResponse.json({ error: "audio_too_large" }, { status: 413 });
+  }
 
   const upstream = new FormData();
   const ext = pickExtension(file);
@@ -139,7 +142,8 @@ export async function POST(req: NextRequest) {
 
   if (!res.ok) {
     const body = await res.text();
-    return NextResponse.json({ error: `transcribe failed: ${body}` }, { status: 500 });
+    console.error(`[transcribe] upstream error status=${res.status}: ${body}`);
+    return NextResponse.json({ error: "transcribe_failed" }, { status: 500 });
   }
 
   const data = await res.json();

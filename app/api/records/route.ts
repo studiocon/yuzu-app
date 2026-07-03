@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, getAuthedClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
 import { jstDateString } from "@/lib/period";
-import { MAX_DAILY_SESSIONS, MAX_RECORD_MS } from "@/lib/constants";
+import { MAX_DAILY_SESSIONS, MAX_RECORD_MS, MAX_RECORD_TEXT } from "@/lib/constants";
 
 // ── ページネーション設定 ─────────────────────────────────────
 const DEFAULT_PAGE_SIZE = 100;
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("GET /api/records:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
   }
 
   const total = count ?? (data?.length ?? 0);
@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
   if (!text) {
     return NextResponse.json({ error: "text required" }, { status: 400 });
   }
+  if (text.length > MAX_RECORD_TEXT) {
+    return NextResponse.json({ error: "too_long", max: MAX_RECORD_TEXT }, { status: 400 });
+  }
 
   // 録音時間。不正値は 0、上限は MAX_RECORD_MS で clamp（クライアントを信頼しない）。
   const durationMs =
@@ -203,7 +206,7 @@ export async function POST(request: NextRequest) {
   if (insertError || !inserted) {
     console.error("POST /api/records:", insertError);
     return NextResponse.json(
-      { error: insertError?.message ?? "insert failed" },
+      { error: "insert_failed" },
       { status: 500 }
     );
   }

@@ -32,8 +32,9 @@ export async function PATCH(
     .single();
 
   if (error || !data) {
+    console.error("PATCH /api/records/[id]/mark:", error);
     return NextResponse.json(
-      { error: error?.message ?? "update failed" },
+      { error: "update_failed" },
       { status: 500 },
     );
   }
