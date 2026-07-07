@@ -147,7 +147,12 @@ export function useRecorder({ isAtDailyLimit, onTranscribed }: Options): Recorde
         setPhaseSync("idle");
         return false;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // autoGainControl を明示要求：小声の入力をブラウザ側で底上げしてからエンコードする。
+      // 未指定だとブラウザ/デバイス依存のデフォルトに委ねられ、小声が ElevenLabs 側の
+      // 音声検出（VAD）で無音判定される事故につながる（#実機報告: 「無音、話せ」が毎回出る）。
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { autoGainControl: true, noiseSuppression: true, echoCancellation: true },
+      });
       streamRef.current = stream;
       setupAnalyser(stream);
       const mime = pickRecorderMime();
