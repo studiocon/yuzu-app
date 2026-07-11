@@ -14,16 +14,23 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MODEL = "claude-sonnet-4-6";
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// テーマ抽出は分類タスクであり Haiku 4.5 で品質十分。PATTERN は Claude コストの最大項目のため、
+// Sonnet（$3/$15）から Haiku（$1/$5）へ切替してコストを抑える。
+const MODEL = "claude-haiku-4-5";
 // #82: Anthropic 失敗時の negative cache TTL（短く）。
 // 連続リロードでの再課金を抑えつつ、5 分後には自然回復するように。
 const NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000;
+// records は編集・削除不可（INDEX 永久欠番）なので post_count が同じなら入力は完全に同一。
+// 「3投稿以上たまった」らまとまった差分として再生成する閾値。
+const REGEN_POST_THRESHOLD = 3;
+// 新投稿が1〜2件だけある場合でも、7日以上経過していれば内容の陳腐化を許容せず再生成する。
+const REGEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 // PATTERN テーマキャッシュは Supabase `theme_cache` に永続化する（#79）。
 // in-memory Map は Vercel コールドスタートで消えて Claude を余計に叩くため廃止。
 // 読み取りは authenticated クライアント（RLS で自分の行のみ SELECT 可）、
-// 書き込みは service_role（admin client）。post_count 変化で自然 invalidate、TTL 24h。
+// 書き込みは service_role（admin client）。post_count が同一なら入力も同一（records は削除不可）
+// なので無条件でキャッシュを返し、増分と経過時間から再生成要否を判定する（下記 REGEN_* 定数）。
 interface RecordRow {
   text: string;
   created_at: string;
@@ -54,8 +61,8 @@ export async function GET(request: NextRequest) {
   }
 
   // キャッシュヒット判定（Supabase 永続キャッシュ。RLS で自分の行のみ読める）
-  // - 成功キャッシュ: themes を返す（24h TTL or post_count 変化で invalidate）
   // - 失敗キャッシュ（#82）: 5min は再課金しないため 502 を即返す
+  // - 成功キャッシュ: post_count の増分と経過時間から再生成要否を判定（下記 stale 判定）
   const { data: cached, error: cacheReadError } = await supabase
     .from("theme_cache")
     .select("themes, post_count, generated_at, error")
@@ -64,7 +71,7 @@ export async function GET(request: NextRequest) {
   if (cacheReadError) {
     // 読み取り失敗は致命的にしない。再生成にフォールバックする（silent fail にはしない）。
     console.error("GET /api/insights/themes: cache read", cacheReadError);
-  } else if (cached && cached.post_count === total) {
+  } else if (cached) {
     const ageMs = Date.now() - new Date(cached.generated_at).getTime();
     if (cached.error) {
       if (ageMs < NEGATIVE_CACHE_TTL_MS) {
@@ -74,8 +81,16 @@ export async function GET(request: NextRequest) {
         );
       }
       // negative TTL 経過 → 再試行へフォールスルー
-    } else if (ageMs < CACHE_TTL_MS) {
-      return NextResponse.json({ themes: cached.themes });
+    } else {
+      // records は削除不可なので通常 diff >= 0（diff < 0 は想定外の状態としてフォールスルーし再生成）。
+      const diff = total - cached.post_count;
+      // 再生成するのは「3投稿以上たまった」か「新投稿があり7日以上経過」の時だけ。
+      // diff === 0 は入力が同一なので TTL に関係なく常にキャッシュを返す（従来の24h再生成は無駄だった）。
+      const stale =
+        diff >= REGEN_POST_THRESHOLD || diff < 0 || (diff > 0 && ageMs > REGEN_MAX_AGE_MS);
+      if (!stale) {
+        return NextResponse.json({ themes: cached.themes });
+      }
     }
   }
 

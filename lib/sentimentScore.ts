@@ -3,7 +3,8 @@ import { mapWithConcurrency } from "./concurrency";
 
 // Anthropic SDK を import するためクライアントから直接呼ばないこと（CLAUDE.md 参照）。
 
-// Anthropic Tier 1: 50 RPM / 30K input TPM / 8K output TPM。
+// Anthropic Tier 1: 50 RPM / 30K input TPM / 8K output TPM（Sonnet 系の目安）。
+// Haiku 4.5 はレート制限プールが Sonnet とは別だが、並列度は据え置き。
 // 並列度 5 だと投稿数が多い時に瞬間的に 429 を踏むため 2 に抑える。
 const SENTIMENT_CONCURRENCY = 2;
 
@@ -62,8 +63,10 @@ export async function scoreSentiments(
     async (p): Promise<{ id: string; score: number } | null> => {
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
+          // 64 トークンの単純な数値判定タスクなので Haiku 4.5（$1/$5 per MTok）で品質十分。
+          // Sonnet（$3/$15）比で約1/3のコスト。
           const msg = await client.messages.create({
-            model: "claude-sonnet-4-6",
+            model: "claude-haiku-4-5",
             max_tokens: 64,
             system: SYSTEM,
             messages: [{ role: "user", content: buildUserContent(p.text ?? "") }],
