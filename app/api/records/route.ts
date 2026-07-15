@@ -4,6 +4,7 @@ import type { Post } from "@/lib/types";
 import { jstDateString } from "@/lib/period";
 import { ABSOLUTE_MAX_RECORD_MS, MAX_RECORD_TEXT } from "@/lib/constants";
 import { getEntitlements } from "@/lib/entitlements";
+import { buildMockCreatedPost, buildMockRecordsResponse, isMockRequest } from "@/lib/mockFixtures";
 
 // ── ページネーション設定 ─────────────────────────────────────
 const DEFAULT_PAGE_SIZE = 100;
@@ -98,6 +99,11 @@ export async function GET(request: NextRequest) {
   const offset = parseIntParam(url.searchParams.get("offset"), 0, Number.MAX_SAFE_INTEGER, 0);
   const isFirstPage = offset === 0;
 
+  // 管理者限定モックモード（ストア用スクショ）。DB に触れず固定フィクスチャを返す。
+  if (await isMockRequest(request, supabase, user.id)) {
+    return NextResponse.json(buildMockRecordsResponse(user.id, limit, offset));
+  }
+
   // 1ページ目だけ totalCount を exact で取る（高価なので 2 ページ目以降は estimated）。
   // count: 'exact' を毎回打つと O(N) コストなので分岐。
   const countMode = isFirstPage ? "exact" : "estimated";
@@ -177,6 +183,15 @@ export async function POST(request: NextRequest) {
   }
   if (text.length > MAX_RECORD_TEXT) {
     return NextResponse.json({ error: "too_long", max: MAX_RECORD_TEXT }, { status: 400 });
+  }
+
+  // 管理者限定モックモード。DB insert なしで固定フィクスチャの 201 を返す。
+  if (await isMockRequest(request, supabase, user.id)) {
+    const durationMs =
+      typeof body.durationMs === "number" && Number.isFinite(body.durationMs) && body.durationMs >= 0
+        ? Math.round(body.durationMs)
+        : 0;
+    return NextResponse.json(buildMockCreatedPost(user.id, text, durationMs), { status: 201 });
   }
 
   const ent = await getEntitlements(supabase, user.id, request);

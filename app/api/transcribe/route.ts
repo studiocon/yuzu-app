@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { jstDateString } from "@/lib/period";
 import { ANON_DAILY_STT_LIMIT, MAX_AUDIO_BYTES } from "@/lib/constants";
 import { getEntitlements } from "@/lib/entitlements";
+import { isMockRequest, MOCK_TRANSCRIBE_TEXT } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -69,6 +70,11 @@ export async function POST(req: NextRequest) {
   const https = req.nextUrl.protocol === "https:";
 
   if (user) {
+    // 管理者限定モックモード。ElevenLabs に触れず固定テキストを返す。
+    if (await isMockRequest(req, supabase, user.id)) {
+      return NextResponse.json({ text: MOCK_TRANSCRIBE_TEXT });
+    }
+
     // ログイン済: 既存の records カウントで daily limit を判定（/api/records POST と同基準）
     // maxDailySessions が null（admin）なら上限チェックをスキップ
     const ent = await getEntitlements(supabase, user.id, req);
