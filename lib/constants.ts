@@ -18,3 +18,7 @@ export const MAX_RECORD_TEXT = 4000;
 
 /** 1分の m4a は約1MB。余裕を持たせた上限で、巨大ファイルを ElevenLabs へ転送する前に弾く。 */
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
+/** admin（role=admin）は録音時間無制限だが、メタデータ健全性のための絶対上限（60分）。
+ *  lib/entitlements.ts の maxRecordMs=null（無制限）時にサーバがこの値で clamp する。 */
+export const ABSOLUTE_MAX_RECORD_MS = 60 * 60 * 1000;
