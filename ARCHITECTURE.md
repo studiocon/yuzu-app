@@ -1,15 +1,16 @@
 # ARCHITECTURE — YUZU
 
 技術スタック・ディレクトリ構成・ローカル開発・Supabase セットアップ・検証フロー。
-思想とコンセプトは [README.md](README.md)、製品仕様は [PRD.md](PRD.md)、デザインシステムは [DESIGN.md](DESIGN.md)、Claude Code 作業規約は [CLAUDE.md](CLAUDE.md) を参照。
+思想とコンセプトは [README.md](README.md)、製品仕様は [PRD.md](PRD.md)、Claude Code 作業規約は [CLAUDE.md](CLAUDE.md) を参照。
+
+**このリポジトリはバックエンド専用（2026-07〜、#101）。** API routes + Supabase migrations + MCP サーバーのみ。UI・デザインシステムはネイティブ iOS リポジトリ側に移った。
 
 ## 技術スタック
 
 | レイヤー | 採用 |
 |---|---|
-| フロント | Next.js 14 (App Router) + React 18 + TypeScript |
-| ネイティブ | Expo / React Native（iOS / Android、V2 以降） |
-| 録音 | MediaRecorder API |
+| API | Next.js 14 (App Router) の Route Handler のみ。ページ・コンポーネントは無い |
+| クライアント | ネイティブ iOS アプリ（別リポジトリ、TestFlight 配信中） |
 | STT | [ElevenLabs Scribe](https://elevenlabs.io/)（`scribe_v2` / `no_verbatim`） |
 | レポート・感情分析 | Anthropic Claude（`@anthropic-ai/sdk`、サーバ専用） |
 | DB / Auth | Supabase（Postgres + Auth、RLS） |
@@ -18,14 +19,10 @@
 ## ディレクトリ構成
 
 ```
-app/                  Next.js App Router + API routes（transcribe / records / reports / insights / account / mcp）
-components/           "use client" コンポーネント
-lib/                  型・JST 境界・センチメント集約・レポート生成・カスタムフック
-public/               design-preview.html ほか静的アセット
-scripts/              design:drift / design:sync スクリプト
+app/                  Next.js App Router。api/ 配下の Route Handler のみが実体（transcribe / records / reports / insights / account / me / mcp）
+lib/                  型・JST 境界・センチメント集約・レポート生成・エンタイトルメント・モックフィクスチャ
 supabase/migrations/  スキーマ・RLS・RPC（番号順に適用）
 mcp-server/           Claude Desktop 用スタンドアロン MCP サーバー（個人用アクセストークンで `/api/mcp/*` を読む。Next.js アプリとは別の npm パッケージ）
-.claude/              Claude Code の共有設定・サブエージェント
 docs/                 デプロイ / 運用手順
 ```
 
@@ -49,22 +46,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # サーバー専用。NEXT_PUBLIC を付けない
 ```
 
-ブラウザで `http://localhost:3000` を開く。マイク権限の許可が必要。デザインプレビューは `http://localhost:3000/design-preview.html`。
+`http://localhost:3000/api/health` を叩いて起動確認（UI は無い。ページは `/` の yuzu.style リダイレクトのみ）。
 
 ## Mock モード
 
-Supabase 接続なしで UI を動作させたい時:
+Supabase / ElevenLabs / Anthropic に接続せず API 疎通を確認したい時、リクエストに `X-Yuzu-Mock: 1` ヘッダを付ける。ただし `role = "admin"` のユーザーでログイン済みでないと無効（[lib/mockFixtures.ts](lib/mockFixtures.ts) の `isMockRequest`）。
 
-```
-http://localhost:3000/?mock=1
-```
-
-- `sessionStorage` + `yuzu-mock-mode` cookie に印が立ち、middleware の保護ルート（`/reports` / `/settings`）チェックをバイパス
-- 投稿は localStorage 擬似で本番 DB に書かない
-- レポート・センチメントは固定ダミーを返す
-- mock を抜けるには `sessionStorage.clear()` + cookie 削除 + リロード
-
-新規開発者は **これを最初に試す** と Supabase 未設定でも UI 全体を回せる。
+- DB にも外部 API にも触れず固定データ（`lib/mockFixtures.ts`）を返す
+- 対象は records / reports 系ルート（`isMockRequest` を呼んでいる route 一覧はソース参照）
+- admin ロールの付与は `profiles.role` を手動更新（[CLAUDE.md](CLAUDE.md) の migration 一覧を参照）
 
 ## Supabase セットアップ（初回・手動作業）
 
@@ -102,8 +92,9 @@ http://localhost:3000/?mock=1
 20260602214007_grant_service_role_dml.sql   — service_role の GRANT 欠落を一括修正（records/reports/theme_cache/profiles）
 20260626003830_personal_access_tokens.sql   — 個人用アクセストークン（MCP 連携用。sha256 ハッシュのみ保存）
 20260629070634_revoke_public_function_execute.sql — PUBLIC への自動 EXECUTE 付与を剥がす（security advisor 対応）
-20260702075418_report_jobs.sql              — レポート生成非同期化の進行状況テーブル
-20260702130000_anon_stt_rate_limit.sql      — 匿名 STT の IP ベース DB レート制限（#52 の厳密化）
+20260702075418_report_jobs.sql              — レポート生成非同期化の進行状況テーブル（本番未適用）
+20260702130000_anon_stt_rate_limit.sql      — 匿名 STT の IP ベース DB レート制限（#52 の厳密化。本番未適用）
+20260715090000_profiles_role.sql            — profiles.role（user/admin）カラム追加、admin 上限バイパスの前提（本番未適用）
 ```
 
 #### マイグレーション適用後の検証
@@ -129,30 +120,24 @@ insert into public.records (user_id, text, char_count, marked)
 
 **Apple Sign In:** Client ID（App の Bundle ID）/ Team ID / Key ID / Private Key（`.p8` の内容）
 **Google:** Client ID（Google Cloud Console）/ Client Secret
-**Email（Magic Link）:** 「Enable Email provider」オン・「Confirm email」オン・「Email OTP」有効。パスワードサインインは **使わない**（UI に出さない）。
+**Email（Magic Link）:** 「Enable Email provider」オン・「Confirm email」オン・「Email OTP」有効。OTP パスコード方式（`{{ .Token }}`、ネイティブアプリの UX）でメールテンプレを設定すること。パスワードサインインは **使わない**。
 
-### 4. Redirect URL の登録
+### 4. Redirect URL
 
-`Authentication > URL Configuration` に追加:
-
-```
-http://localhost:3000/auth/callback        # ローカル開発
-https://yuzu.style/auth/callback           # 本番
-```
+Web UI 廃止に伴い `app/auth/callback` route は撤去済み。ネイティブアプリは Supabase Auth の native/deep-link フローを使うため、Web 用 Redirect URL（`app.yuzu.style` 系）の登録は不要（既存のものは撤去してよい）。
 
 ## 検証コマンド
 
 ```bash
 npm run typecheck      # tsc --noEmit
-npm run lint           # next lint（server-only 誤 import を捕捉）
-npm run design:check   # デザイン整合性チェック（drift + Google design.md linter）
+npm run lint           # next lint
+npm run test           # vitest
 npm run verify         # 上記 3 つを一括（commit/push 前推奨）
-npm run dev            # ローカル起動
+npm run build           # next build
+npm run dev             # ローカル起動
 ```
 
-- CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）でも `typecheck` / `lint` / `build` を自動実行。
-- `npm install` で husky が pre-commit hook を自動セットアップ（DESIGN.md ステージ時に `design:sync` で preview を同期）。
-- デザイントークン（CSS 変数）は [DESIGN.md](DESIGN.md) 冒頭の YAML frontmatter に集約され、[app/globals.css](app/globals.css) の `:root` と CI で突合される。色・シェイプ・easing を変更したら **DESIGN.md / app/globals.css / public/design-preview.html の三者**を更新し `design:check` をパスさせる。
+CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）でも `typecheck` / `lint` / `test` / `build` を自動実行。
 
 ## デプロイ / 運用
 

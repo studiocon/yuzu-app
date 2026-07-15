@@ -5,153 +5,139 @@
 ## プロジェクトの輪郭
 
 YUZU は「声を加工せずに記録する」音声ジャーナル。世界観は **THE RECORD**、トーンは命令形・断定形（NIKE 寄り）。
+
+**このリポジトリはバックエンド専用（2026-07〜、#101）。** API routes + Supabase migrations + mcp-server のみを含む。クライアントはネイティブ iOS アプリ（別リポ、TestFlight 配信中）。Web UI（`components/` / `app/page.tsx` / デザインシステム一式）は廃止済み。`/` へのアクセスは `next.config.js` の `redirects()` で [yuzu.style](https://yuzu.style)（マーケティングサイト、別リポ）へ転送する。
+
 詳細は次のドキュメントを参照：
 
 - [README.md](README.md) — 思想・コンセプト・世界観（公開フロント）
 - [ARCHITECTURE.md](ARCHITECTURE.md) — 技術スタック・ディレクトリ構成・ローカル開発・Supabase セットアップ・検証フロー
-- [PRD.md](PRD.md) — プロダクト要件・機能仕様・品質基準（事業/価格/GTM はリポジトリに含めない）
-- [DESIGN.md](DESIGN.md) — 世界観・カラー・タイポ・コンポーネント仕様・VOICE & TONE
-- [public/design-preview.html](public/design-preview.html) — デザインの **source-of-truth**（後述）
+- [PRD.md](PRD.md) — プロダクト要件・機能仕様・品質基準（事業/価格/GTM はリポジトリに含めない。Web UI 前提の記述は歴史的文書として残っている）
+- [docs/deploy.md](docs/deploy.md) — 本番デプロイ・マイグレーション・ロールバック手順
+
+**DESIGN.md は廃止。** デザインシステムと UI コピー規約は現在ネイティブ iOS リポジトリ側で管理する。このリポジトリにビジュアル/コピーの source-of-truth はない。
 
 ## ディレクトリマップ
 
 ```
-app/                    Next.js App Router
-  api/                  サーバ API（transcribe, records, reports, insights/{words,heatmap,themes}, account, account/tokens, mcp/{records,reports}, inquiries）
-  auth/callback/        Supabase OAuth/Magic Link コールバック
-  page.tsx              ルート（録音 + タブ。未ログインなら OnboardingView）
-  reports/              レポート一覧 / 詳細（middleware で保護）
-  settings/             設定（プラン表示 / 通知 / アカウント / CONNECT(API トークン) / 問い合わせ / 規約 / ログアウト / アカウント削除。middleware で保護）
-  icon.svg              ファビコン（Next が自動でファビコン化。旧 icon.tsx は撤去）
-  globals.css           デザイントークンと全 CSS（:root は DESIGN.md と CI で突合）
-components/             "use client" コンポーネント
-  LoginModal.tsx        Apple / Google / Magic Link（パスワード認証なし）
-  DeleteAccountModal.tsx アカウント削除の確認ダイアログ（type-to-confirm「YUZU」）
-  ContactModal.tsx      問い合わせフォーム（件名/本文/任意メール → POST /api/inquiries）
-  ApiTokenModal.tsx     個人用アクセストークンの発行/一覧/削除（MCP 連携用。トークン本体は発行直後のみ表示）
-lib/                    型・ユーティリティ・サーバ呼び出し
+app/
+  api/                  サーバ API（1 ルート 1 行）
+    account/            アカウント削除（App Store Guideline 5.1.1(v) 対応。service_role で auth ユーザー削除、関連テーブルは on delete cascade）
+    account/tokens/      個人用アクセストークンの発行/一覧/削除（MCP 連携用。Cookie 専用の残置、Bearer 対応は別 issue）
+    analyze-sentiment/    投稿の感情スコア分析（Anthropic。1 リクエスト上限あり、直近 30 日に限定）
+    health/               Supabase keepalive 兼ヘルスチェック（GitHub Actions cron から叩く。service_role で count(*) のみ）
+    inquiries/            問い合わせフォーム保存（Cookie 専用の残置。Slack 通知は SLACK_WEBHOOK_URL 設定時のみ）
+    insights/heatmap/     時間帯 x 曜日のセンチメントヒートマップ
+    insights/themes/      繰り返しテーマ抽出（Anthropic + theme_cache 永続キャッシュ）
+    insights/words/       頻出ワード分析
+    mcp/records/          MCP サーバー向け records 読み取り（PAT Bearer 認証のみ）
+    mcp/reports/          MCP サーバー向け reports 読み取り（PAT Bearer 認証のみ）
+    me/                   自分の role / plan / limits を返す（ネイティブアプリの admin メニュー表示判定用）
+    records/              投稿の作成・一覧（Post.index はレスポンス生成時に算出。DB には保存しない）
+    records/[id]/mark/    投稿の MARK トグル（本文は編集不可、marked カラムのみ UPDATE 許可）
+    reports/               レポート一覧（scope=recent|all）
+    reports/[periodKey]/   レポート詳細（closed 期間は内容不変。private キャッシュ）
+    transcribe/            ElevenLabs Scribe（scribe_v2）で音声 → テキスト
+  layout.tsx             最小 root layout（html/body のみ。フォント・メタデータ・Analytics は撤去済み）
+lib/                    サーバユーティリティ
   types.ts              共通型（Post, Phase）。Post は user_id / char_count / index を持つ
   period.ts             JST 固定の週/月境界
-  streak.ts             連続日数 + WEEKDAY_JA（クライアント側ローカルタイム）
-  sentimentSeries.ts    JST 集約のセンチメント時系列（サーバ/クライアント共有）
-  reports.ts            Anthropic でレポート生成（**Anthropic SDK を import するためクライアントから直接呼ばない**）
+  streak.ts             連続日数（tests/streak.test.ts が import。サーバ側の実体は get_streak RPC、後述）
+  sentimentSeries.ts    JST 集約のセンチメント時系列（lib/reports.ts が import）
+  reports.ts            Anthropic でレポート生成（**Anthropic SDK を import するのはここだけ**）
+  entitlements.ts       plan/role → Entitlements（上限値）解決。getEntitlements が唯一のゲート点
   plan.ts               プランロール（Free/Light/Premium）型 + getUserPlan（サーバ）。書込は service_role のみ
-  storageKeys.ts        クライアント storage キーの一元管理（ハードコード重複防止）
+  mockFixtures.ts       モックモード用固定データ（X-Yuzu-Mock: 1 + role=admin 限定。DB/外部 API に触れない。旧 lib/mockReports.ts・lib/mockPosts.ts の内容を移植済み）
   personalAccessToken.ts 個人用アクセストークンの生成（`yuzu_pat_` prefix）/ SHA-256 ハッシュ照合
-  mcpAuth.ts            `/api/mcp/*` 用 Bearer トークン認証（admin client + 明示 user_id フィルタ）
+  mcpAuth.ts             `/api/mcp/*` 用 Bearer トークン認証（admin client + 明示 user_id フィルタ）
+  heatmap.ts / themes.ts / wordAnalysis.ts / sentimentScore.ts  各 insights API のロジック本体
+  concurrency.ts         並行実行制御ユーティリティ
+  constants.ts           上限値などの定数（MAX_DAILY_SESSIONS / MAX_RECORD_MS 等）
+  inquiries.ts           問い合わせのレート制限ロジック
+  slack.ts               Slack Webhook 通知
   supabase/
-    client.ts           ブラウザ用 createBrowserClient
-    server.ts           Route Handler / Server Component 用 createServerClient（cookie 連携）
-    admin.ts            service_role クライアント（RLS バイパス。サーバ専用）
-  userClient.ts         センチメントキャッシュ（localStorage 層。identity は #NNN のみ）
-  prompts.ts            投稿促進プロンプト（過去/現在/未来 各10＝30）
-  dailyLimit.ts         1 日 3 回制限（サーバ強制。localStorage は mock 専用）
-  mockReports.ts        mock-mode 判定 + clearMockMode + ダミーレポート
-  useBodyScrollLock.ts  モーダル open 時の body overflow 制御
-middleware.ts           Supabase セッション更新 + /reports・/settings 保護
-next.config.js          VERSION ビルド番号（git rev-list --count）を NEXT_PUBLIC_BUILD_NUMBER に注入
-supabase/config.toml    Supabase CLI 設定（2026-07-02 導入。ローカル検証・drift 検知専用、本番 apply は引き続き手動）
-supabase/migrations/    init〜anon_stt_rate_limit（CLI 互換のタイムスタンプ命名。番号順=時系列順）
-supabase/verify/        migration 適用後の権限検証 SQL（0005_grants_check / 0015_function_execute_check / anon_stt_rate_limit_check。Studio で手実行）
-tests/                  vitest ユニットテスト（純粋ロジックのみ。period/streak/inquiries/personalAccessToken）
+    server.ts           Route Handler 用 createClient（cookie 連携）+ getAuthedClient（Bearer 優先、無ければ cookie。#100 ネイティブ対応）
+    admin.ts             service_role クライアント（RLS バイパス。サーバ専用）
+middleware.ts は撤去済み（保護ルート `/reports` `/settings` は Web UI と共に廃止。認証判定は各 API route 内で行う）
+supabase/config.toml    Supabase CLI 設定（ローカル検証・drift 検知専用、本番 apply は引き続き手動）
+supabase/migrations/    init 〜（CLI 互換のタイムスタンプ命名。番号順=時系列順）
+supabase/verify/        migration 適用後の権限検証 SQL（Studio で手実行）
+tests/                  vitest ユニットテスト（純粋ロジックのみ。period/streak/highlightWords/wordAnalysis/entitlements/inquiries/personalAccessToken/mockFixtures）
 mcp-server/             Claude Desktop 用スタンドアロン MCP サーバー（個人用。get_records / get_reports の2ツール。Next.js アプリとは別の npm パッケージ。詳細は [mcp-server/README.md](mcp-server/README.md)）
-public/
-  design-preview.html   デザインの実体プレビュー（source-of-truth）
-scripts/
-  check-design-drift.mjs    DESIGN.md frontmatter ↔ globals.css :root の突合
-  sync-design-preview.mjs   DESIGN.md frontmatter → design-preview.html へ反映
-.github/workflows/      ci.yml（typecheck + lint + test + build）/ design-check.yml（drift + lint）/ migration-drift.yml（未適用 migration 検知。secrets 未設定ならスキップ）/ supabase-keepalive.yml
+.github/workflows/      ci.yml（typecheck + lint + test + build）/ migration-drift.yml（未適用 migration 検知。secrets 未設定ならスキップ）/ supabase-keepalive.yml
 ```
 
-## デザイン同期ワークフロー（最重要）
+## API 規約
 
-**source-of-truth は [public/design-preview.html](public/design-preview.html)。** 視覚要素を変えるときは preview HTML 起点で考える。
-
-1. デザイントークン（CSS 変数）の変更：
-   - [DESIGN.md](DESIGN.md) 冒頭の `cssVars:` frontmatter を編集 → `npm run design:sync` で preview に反映 → [app/globals.css](app/globals.css) の `:root` を同じ値に更新
-   - `pre-commit` フックが DESIGN.md ステージ時に `design:sync` を自動実行する
-   - 検証：`npm run design:check`（drift 検出 + Google design.md linter）
-2. UI コピー（VOICE & TONE）の変更：
-   - 実装側を変えたら DESIGN.md `§4 Voice & Tone` の表と design-preview.html の VOICE 表も同期する
-3. コンポーネント形状の変更：
-   - design-preview.html の該当 mock を更新 → DESIGN.md §6 を更新 → 実装を更新
-
-DESIGN.md と globals.css の不整合は CI（[.github/workflows/design-check.yml](.github/workflows/design-check.yml)）で落ちる。
+- **認証は [lib/supabase/server.ts](lib/supabase/server.ts) の `getAuthedClient`。** `Authorization: Bearer <access_token>` を優先し、無ければ Cookie セッションにフォールバックする（#100、ネイティブアプリは Bearer / レガシー Web セッションは Cookie）。未ログインは 401 を返す
+- **`/api/mcp/*` は PAT Bearer のみ**（Cookie セッション不可。MCP サーバーはブラウザを持たないため）。[lib/mcpAuth.ts](lib/mcpAuth.ts) の `authenticateMcpRequest` が個人用アクセストークン（`personal_access_tokens` テーブル、SHA-256 ハッシュ照合）を検証し、admin client + 明示 `user_id` フィルタで読み取る。`/api/records` や `/api/reports` と同じ組み立てロジックを意図的に重複させている箇所がある（認証境界が異なるため共有すると既存ルートの回帰リスクが上がる）
+- **`/api/account/tokens` と `/api/inquiries` は Cookie 専用の残置。** Bearer 対応は別 issue（ネイティブアプリからのアカウント削除・問い合わせは未対応）
+- **エンタイトルメントは [lib/entitlements.ts](lib/entitlements.ts) の `getEntitlements` が唯一のゲート点。** `profiles.plan` + `profiles.role` から解決。`role = "admin"` は上限バイパス（`maxDailySessions` / `maxRecordMs` が `null`）。admin のみ `X-Yuzu-Simulate-Plan: free|light|premium` ヘッダで通常ユーザーのゲート挙動を再現できる（`app/api/me/route.ts` がネイティブアプリの admin メニュー表示判定に応答する）
+- **モックモードは `X-Yuzu-Mock: 1` ヘッダ + `role=admin` の組み合わせでのみ有効。** [lib/mockFixtures.ts](lib/mockFixtures.ts) の `isMockRequest` が判定し、該当時は DB にも外部 API（ElevenLabs/Anthropic）にも触れず固定データを返す。旧 `lib/mockReports.ts` / `lib/mockPosts.ts`（Web UI 用）はここに内容を移植した上で削除済み
 
 ## コーディング規約（観察された慣行）
 
-このリポジトリで既に確立されているパターン。新規コードは合わせる：
-
-- **共通型は [lib/types.ts](lib/types.ts)。** Post / Phase などコンポーネント間で共有する型はここに集約済み
-- **JST 固定の境界は [lib/period.ts](lib/period.ts)。** ローカルタイムで日付を割らない（`new Date().getDate()` 系を直接使わない）。`jstDateString` / `jstSundayStart` / `jstMonthStart` / `parsePeriodKey` を使う
-- **共通フックは `lib/use*.ts`。** 例：[lib/useBodyScrollLock.ts](lib/useBodyScrollLock.ts)
-- **Anthropic SDK は [lib/reports.ts](lib/reports.ts) 内のみで import。** クライアントコンポーネントからは絶対 import しない（バンドル肥大化）。クライアントが共有したいロジックは [lib/sentimentSeries.ts](lib/sentimentSeries.ts) のように SDK 非依存ファイルに切り出す
-- **モーダル系コンポーネントは AnimState の状態機械 + `useBodyScrollLock`。** 既存の [RecordModal.tsx](components/RecordModal.tsx) / [IndexDetailModal.tsx](components/IndexDetailModal.tsx) / [LoginModal.tsx](components/LoginModal.tsx) のパターンを踏襲（`opening` → `open` → `closing`）
-- **エラーハンドリングは silent fail + 状態リセット。** トーンとしてユーザーに過剰に説明しない（VOICE & TONE で「やさしく」「ふんわり」が NG）
-- **`box-shadow` / `filter: drop-shadow` は禁止（例外 3 件のみ）。** 階層は罫線（`--divider` / `--surface-border`）と余白だけで作る（DESIGN.md §5）。例外は録音アフォーダンス家族の `.tab-bar` / `.fab-record` / `.onboarding-mic` のみ（Liquid Glass 質感を共有）。それ以外のコンポーネントに `box-shadow` を書いたらレビューで弾く
-- **角丸は最小限。** `border-radius` は 0 / 2px(`--radius-sharp`) / 4px(ボタン類) / 9999px(`--radius-pill`、マイクボタン)。`blob` 形状・モーフィングは使わない
-- **ナビは 2 タブ + 独立 FAB（v2.1〜）。** `LOG` / `INSIGHT` の 2 タブ pill ([components/TabBar.tsx](components/TabBar.tsx)) と、その右に並ぶ正円録音 FAB ([components/RecordFab.tsx](components/RecordFab.tsx)) を [app/page.tsx](app/page.tsx) でレンダリング。内部タブ ID は互換のため `index` / `read`、表示ラベルだけ `LOG` / `INSIGHT`。**旧 3 タブ `TALK / INDEX / REPORT` 構成・YUZU ロゴヘッダー・「BE TRUE / 本物でいろ」ヒーロー・`.mic-fab` クラスはすべて撤去済**。これらの用語/クラスを復活させない
-- **ヘッダーは `.app-header-title` でページ名を最大級（48px）に出し、画面内見出し（`.mypage-section-title` 18px）はそれより小さくする。** ページ階層を視覚的に確立するための約束。新規ビューで画面内 h2 を大きく置きたくなったら `app-header-title` を見直す方が正解
-- **下部ドックは pill + FAB の横並び 296px グループを viewport 中央寄せ。** `left: calc(50% - 148px)` (pill) / `left: calc(50% + 84px)` (FAB) で位置決め、`transform` は hover/scale/hidden 専用に分離。位置と装飾を transform で重ねると hover 毎に位置がリセットされる事故が起きるので分けている
-- **タブ pill のアクティブ表示は `.tab-bar::before` の 1 枚を `translateX` でスライドさせる（iOS 26 ライク）。** `data-active="index" | "read"` で位置を切替。**タブごとの `::before` で個別に黄色チップを置かない**（瞬間切替になる）。`cubic-bezier(0.32, 0.72, 0, 1)` で 0.42s、`prefers-reduced-motion` は `transition: none`
+- **共通型は [lib/types.ts](lib/types.ts)。** Post / Phase などルート間で共有する型はここに集約済み
+- **JST 固定の境界は [lib/period.ts](lib/period.ts)。** ローカルタイムで日付を割らない。`jstDateString` / `jstSundayStart` / `jstMonthStart` / `parsePeriodKey` を使う
+- **Anthropic SDK は [lib/reports.ts](lib/reports.ts) 内のみで import。** 他のサーバコードから共有したいロジックは [lib/sentimentSeries.ts](lib/sentimentSeries.ts) のように SDK 非依存ファイルに切り出す
+- **エラーハンドリングは silent fail 禁止。** `/api/records` POST の失敗を silent catch しない。エラーはステータスコード/エラーコードとしてレスポンスに出す。`catch {}` で握り潰すとクライアント（ネイティブアプリ）側で「何が起きたか分からない」バグが量産される
+- **デバッグ困難バグは「複数層の silent failure」が重なって起きる**ことが多い。過去のインシデント（クライアント側 stale closure + 当時無効だった STT モデル ID + `/api/records` POST の silent catch、の3層）を教訓に、新規コードでは silent fail を許さない方針
 
 ### Supabase の使い分け
 
-- **ブラウザ（"use client"）**：`createBrowserClient` 経由でセッション読み取り・OAuth・signOut。例：[app/page.tsx](app/page.tsx) の auth state listener、[components/LoginModal.tsx](components/LoginModal.tsx)
-- **Route Handler / Server Component**：`lib/supabase/server.ts` の `createServerClient` を使い `await supabase.auth.getUser()` で本人確認。未ログインは 401 を返す。例：[app/api/records/route.ts](app/api/records/route.ts)
-- **service_role（RLS バイパス）**：`lib/supabase/admin.ts`。レポート保存など RLS でカバーできないサーバ専用処理のみで使う。**絶対にクライアントへ import しない**
-- **`/api/mcp/*` は Bearer トークン認証のみ**（Cookie セッション不可。MCP サーバーはブラウザを持たないため）。`lib/mcpAuth.ts` の `authenticateMcpRequest` が個人用アクセストークン（`personal_access_tokens` テーブル、SHA-256 ハッシュ照合）を検証し、admin client + 明示 `user_id` フィルタで読み取る。`/api/records` や `/api/reports` と同じ組み立てロジックを意図的に重複させている箇所がある（認証境界が異なるため共有すると既存ルートの回帰リスクが上がる）
-- **認証手段は 3 つだけ**：Apple Sign In（Issue #36）/ Google OAuth / Magic Link（`signInWithOtp`）。**パスワード認証 UI は作らない**
-- **保護ルートは [middleware.ts](middleware.ts)** で `PROTECTED = ["/reports", "/settings"]`。未ログインアクセスは `/` にリダイレクトしてオンボーディングを見せる
-- **オンボーディングの pending post**：未ログイン状態の STT 結果は `sessionStorage["yuzu_pending_text"]` に退避し、ログイン直後（`app/page.tsx` の auth listener）で `/api/records` に POST → 即削除（多重投稿防止）
+- **Route Handler**：`lib/supabase/server.ts` の `getAuthedClient(request)` を使う。Bearer（ネイティブ）優先、Cookie（レガシー Web セッション）にフォールバック。未ログインは 401 を返す。例：[app/api/records/route.ts](app/api/records/route.ts)
+- **service_role（RLS バイパス）**：`lib/supabase/admin.ts`。レポート保存など RLS でカバーできないサーバ専用処理のみで使う。**絶対にクライアントへ import しない**（このリポジトリにクライアントは無いが、mcp-server や将来のバンドル混入を防ぐ意味で徹底する）
+- **認証手段は 3 つだけ**：Apple Sign In / Google OAuth / Magic Link（`signInWithOtp`、OTP パスコード方式）。**パスワード認証 UI は作らない**（ネイティブ側の実装。バックエンドは Supabase Auth 標準フローに依存するのみ）
+- **保護ルートの概念は Web UI 廃止と共に撤去。** `middleware.ts` は削除済み。認証チェックは各 API route 内の `getAuthedClient` 呼び出しに一本化されている
 
-## VOICE & TONE（コピーを書く時の鉄則）
+## 既知の注意
 
-DESIGN.md §4 を引く。Claude が UI 文言を提案する時のチェックリスト：
+- `lib/streak.ts` の `computeStreak` はクライアント（ネイティブアプリ）向けの補助ロジックとしてテストのみ残っている。サーバ側の実際のストリーク計算は `supabase.rpc('get_streak')`（**現行は `supabase/migrations/20260529095947_fix_get_streak.sql`**、JST 固定・引数なし・`auth.uid()` ベース）
+- **ストリークは「今日 or 昨日まで続いていれば切れない」が正**（今日まだ未投稿でも維持）。**過去に 0003 の RPC が壊れていた**（連続判定式が `d - rn(desc)` で連続日でもグループが割れる + `get_streak(uid uuid)` を引数なし呼び出しで解決できず常に 0）。0007 相当（`fix_get_streak`）で式を `d + rn(desc)` に修正・引数なし化・`security definer`+`grant` を付与
+- Supabase テーブルに新規テーブルを足したら **RLS ポリシーと別に `GRANT` も必要**。「Automatically expose new tables」OFF の場合は `grant select, insert on public.<table> to authenticated;` を手で打つ（過去にこれで `permission denied for table records` を踏んだ）
+- **service_role は postgres ロールを継承していない**（最近の Supabase 仕様）。`createAdminClient()` で書き込むテーブルにも明示的に `grant select, insert, update on public.<table> to service_role;` が必要。`has_table_privilege('service_role', 'public.<table>', 'INSERT')` で確認できる。過去に records / reports / theme_cache / profiles で GRANT 欠落を踏んだ（修正前はレポート生成と PATTERN キャッシュが silent fail していた）。新規テーブルを足す時は必ず authenticated と service_role 両方への GRANT を migration に書く
+- `Post.index` は DB に保存しない。`/api/records` GET / POST で `total_count - position` から算出してレスポンスに含める（INDEX は永久欠番なし・編集削除不可前提）
+- **STT は ElevenLabs Scribe `scribe_v2`**（現行公開モデル。`no_verbatim=true` でフィラー「えーと/あの」等を除去）。アップストリームへの FormData ファイル名は録音 blob の `type` から拡張子を導出する（Safari/macOS Chrome は mp4 を選ぶので `.webm` 固定だと ElevenLabs 側で format 判定が外れて空文字になる）。詳細は [app/api/transcribe/route.ts](app/api/transcribe/route.ts) の `pickExtension`
+- **annotation は `tag_audio_events=false` で抑止する**：`[音楽]` / `(背景ノイズ)` / `（咳）` 等の非音声 annotation は記録に残したくないので、Scribe にそもそも出力させない。受信テキストは空白正規化 + trim のみ。`text.length < 5` で silent reject（クライアント側で「無音、話せ」「短い、話せ」相当のフィードバックを出す前提）。`no_verbatim` でフィラーだけの発話が短文化して弾かれるのは望ましい挙動
+- **`/api/records` POST の失敗を silent catch しない**（上記コーディング規約と重複するが再掲するほど重要）。ステータスコード／エラーコードを必ずレスポンスに出す
+- **個人用アクセストークンは平文を DB に保存しない**：発行時に `lib/personalAccessToken.ts` の `generateToken()` が `yuzu_pat_` prefix 付きトークンを返し、SHA-256 ハッシュ（`token_hash`）のみ永続化、平文は発行レスポンスの一度きり。再表示・復元は不可、失くしたら削除して再発行
+- **`20260626003830_personal_access_tokens.sql` は本番 Supabase に手動適用が必要**（このリポジトリの migration は自動デプロイされない）
+- **`20260629070634_revoke_public_function_execute.sql`（旧 0015）は本番適用済み**（`mcp__supabase__list_migrations` で確認済、2026-07-02。本番の追跡テーブル上は version `20260628220005` として記録されている＝後述の番号ズレの一例）。内容: Postgres は `CREATE FUNCTION` 時に EXECUTE を **PUBLIC へ自動付与**するため、過去 migration が `grant ... to authenticated` だけ書いていても anon が `/rest/v1/rpc/<fn>` を叩けた。集計 RPC（`get_streak` / `get_total_duration_ms`）を PUBLIC から剥がし authenticated のみに、トリガー専用関数（`handle_new_user` / `rls_auto_enable`）を全ロールから剥奪（トリガー発火は所有者権限なので無影響）。さらに `inquiries` の直接 INSERT 攻撃面を閉じた：`/api/inquiries` は service_role 経由でしか書かないので、`inquiries_insert_any`（`with check (true)`）ポリシーと anon/authenticated の INSERT 権限を撤去し、API 層のレート制限（[lib/inquiries.ts](lib/inquiries.ts)）を迂回した直接 POST を不能にした。検証は [supabase/verify/0015_function_execute_check.sql](supabase/verify/0015_function_execute_check.sql)
+- **本番未適用の migration が 3 本ある（2026-07-15 時点）**：
+  - `20260702075418_report_jobs.sql` — レポート生成非同期化の進行状況テーブル
+  - `20260702130000_anon_stt_rate_limit.sql` — 匿名 STT の IP ベース DB レート制限（#52）
+  - `20260715090000_profiles_role.sql` — `profiles.role`（user/admin）カラム追加 + admin 上限バイパスの前提。**未適用の間は `lib/entitlements.ts` の role 判定が常に `user` にフォールバックする**（`getEntitlements` の catch 節）ので admin 機能（無制限・plan simulate）が効かない
 
-**NG ワード（使ったらやり直し）**：
-- 癒し・寄り添う・頑張ろう（muute 寄り）
-- 育つ・林・種・香り・果実（旧世界観）
-- やさしく・ふんわり・あなたらしく
-- 入力・テキスト・記録する（ツールっぽい。「話す」「声」に置換）
-- 気づき・自分を知ろう（意識高い系）
+  適用後はこのリストを更新すること
+- **Supabase CLI を `supabase init` でローカル導入した（2026-07-02）。ただし本番の migration 追跡には使えていない状態**：`supabase/migrations/` は CLI 互換のタイムスタンプ命名（`YYYYMMDDHHMMSS_name.sql`）にリネーム済みだが、本番の `supabase_migrations.schema_migrations` には**別のタイムスタンプ・別の粒度**で記録された過去分（`theme_cache` / `plan_entitlement` / `inquiries` + `inquiries_service_role_grants` / `theme_cache_error` / `grant_profiles_to_service_role` / `grant_service_role_dml` / `revoke_public_function_execute`）が入っている（過去に `mcp__supabase__apply_migration` 経由で適用された際、適用時刻ベースの version が自動採番されたため）。中身は一致することを `execute_sql` で読み取り確認済みだが、**version 文字列が食い違うので `supabase migration list` はこのままでは正しい差分を返さない**。加えて init〜fix_get_streak 相当は追跡テーブルに一切記録が無い（CLI 導入前に SQL Editor で直接実行された分）。CLI/CI をフル活用するには `supabase migration repair --status applied <version>` で追跡テーブルをローカルのファイル名に同期させる本番書き込み作業が別途必要（**ユーザー承認必須、未実施**）。[.github/workflows/migration-drift.yml](.github/workflows/migration-drift.yml) は secrets（`SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_ID`）未設定の間はスキップされる設計にしてあるが、設定後もこの repair が済むまでは誤検知（既に適用済みのものを未適用と報告）が出る前提で見ること
 
-**OK 方向**：
-- 命令形（話せ・出せ・黙るな）
-- 状態英語（RECORDING / CARVING / CARVED / SILENCE / SAVING）※状態 pill は UI なので**句点なし**。完了スタンプは旧 RECORDED. を引退し CARVED に統一。MARK/COPY のフラッシュ（MARKED / COPIED）も句点なし
-- 句点（.）は説明文のみ。詩的にしない・励まさない・優しくしない
+## 手動 Supabase ダッシュボード作業の注記
 
-**句点ルール**（UI は句点なし・説明文のみ句点あり）：
-- **句点が付くのは「状況を説明する本文」だけ**。複数文・丁寧語の説明 / トースト / エラー / 叙述本文（`今日はここまで。明日また話せ。` / `削除できなかった。もう一度。` / `記録も、番号も、戻らない。` / ContactModal エラー）に限る
-- **それ以外の UI はすべて句点なし**。見出し・ページ名・セクション見出し・モーダルタイトル/サブタイトル（`SIGN IN` / `MAIL` / `SENT` / `CONTACT` / `全部消す` / `声を刻め` / `YUZU と打て`）・ボタン・フィルタ・**英語の状態 pill**（`RECORDING` / `CARVING` / `CARVED` / `SILENCE` / `SAVING` / `LOADING` / `PREVIEW` / `{N} LEFT`）・短い命令や空状態の単文（`話せ` / `無音、話せ` / `MARK されたものは無い`）・カード見出し（`DAY {N}` / `VOICE {N}`）・操作直後フラッシュ（`MARKED` / `COPIED`）
-
-英日の使い分け：**英語＝Unbounded＝状態・挑発**、**日本語＝LINE Seed JP＝事実・本文**。
+- **Auth メールテンプレは OTP パスコード（`{{ .Token }}`）前提。** Magic Link のクリック URL ではなくパスコード入力（ネイティブアプリの UX）を送る設定になっているか、`Authentication > Email Templates` で確認すること
+- **Web 用 Redirect URL（`app.yuzu.style` 系、`/auth/callback`）は撤去してよい。** `app/auth/` ディレクトリ（OAuth/Magic Link コールバックの Route Handler）は Web UI 廃止と共に削除済みで、ネイティブアプリは Supabase Auth の native/deep-link フローを使うため Web の Redirect URL 登録は不要
 
 ## 検証コマンド
 
-実装変更後はこれらをパスさせる（pre-commit や CI が落ちない状態にしてからコミット）：
+実装変更後はこれらをパスさせる：
 
 ```bash
 npx tsc --noEmit       # 型チェック
-npm run test           # vitest（tests/ の純粋ロジック。period/streak/inquiries/PAT）
-npm run design:check   # DESIGN.md / globals.css のドリフト検出 + linter
-npm run dev            # ローカル起動（http://localhost:3000）
+npm run lint           # next lint
+npm run test           # vitest（tests/ の純粋ロジック）
+npm run verify          # typecheck + lint + test を一括
+npm run build           # next build
 ```
-
-`npm run verify` は typecheck + lint + test + design:check を一括実行する（CI の ci.yml もこの順で回す）。
-
-ブラウザでの UI 確認が必要な変更（preview HTML / globals.css / components/）は preview MCP ツール（`preview_start` 〜 `preview_screenshot`）で実機確認してから完了報告する。
 
 ## Git ワークフロー
 
 - **デフォルトブランチは `main`。** PR を経由せずに直 push する運用が許容されている
 - コミットメッセージは日本語 OK、prefix を使う：`feat(scope): / fix: / refactor: / docs: / chore:`
-- pre-commit フックが DESIGN.md ステージ時に `design:sync` を自動実行し、差分が出たら preview HTML を一緒にステージする
 - `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` を末尾に付ける
 - 主要な機能ブロックの参考コミット：
   - `feat(complete): RECORDED. カードを画像書き出し可能にする`
   - `feat(streak): 沈黙日を SILENCE. として刻印`
   - `refactor: 型・定数・ロジックの重複を排除、デザインプレビューを実装に同期`
+  - `refactor: バックエンド専用リポへ移行（Web UI 撤去、#101）`
 
 ## 環境変数
 
@@ -163,30 +149,3 @@ npm run dev            # ローカル起動（http://localhost:3000）
 - `SLACK_WEBHOOK_URL` — 問い合わせ受信通知（[app/api/inquiries/route.ts](app/api/inquiries/route.ts)）。未設定なら通知スキップ。サーバ専用
 
 `.env.local` は gitignore 済み。本番値は Vercel で設定。Supabase ダッシュボード手動設定（プロバイダ有効化・Redirect URL 登録）は [README.md](README.md) を参照。
-
-## サブエージェント
-
-プロジェクト固有のエージェントを [.claude/agents/](.claude/agents/) に用意してある。次の状況で起動を検討：
-
-- **design-sync** — design-preview.html / DESIGN.md / app/ の三者整合性を監査するとき
-- **copy-reviewer** — UI コピーが VOICE & TONE 規約に沿っているかチェックするとき
-
-## 既知の注意
-
-- `lib/streak.ts` の `dayKey` は **ローカルタイム**、`lib/period.ts` の `jstDateString` は **JST 固定**。連続日数はユーザー体感（端末ローカル）、レポート集計は JST 固定。混同しない
-- ただしサーバ側ストリークは `supabase.rpc('get_streak')`（**現行は `supabase/migrations/20260529095947_fix_get_streak.sql`**、JST 固定・引数なし・`auth.uid()` ベース）。クライアント `lib/streak.ts` は SILENCE 描画 + 投稿直後の即時反映用の補助
-- **ストリークは「今日 or 昨日まで続いていれば切れない」が正**（今日まだ未投稿でも維持）。`lib/streak.ts` の `computeStreak` は今日が無投稿なら昨日起点で数え直す。サーバ `get_streak` も同じ挙動。**過去に 0003 の RPC が壊れていた**（連続判定式が `d - rn(desc)` で連続日でもグループが割れる + `get_streak(uid uuid)` を引数なし呼び出しで解決できず常に 0、+ クライアントも今日未投稿で 0）。3層の silent fail が重なって「昨日投稿したのに STREAK 0」を起こしていた。0007 で式を `d + rn(desc)` に修正・引数なし化・`security definer`+`grant` を付与。**0007 は本番 Supabase に手動適用が必要**
-- `app/page.tsx` で `phase` state と `phaseRef` を二重管理しているのは、ポインタイベントハンドラ内で同期的に最新値を読む必要があるため。`setPhaseSync` を必ず通す
-- `app/page.tsx` の `user` state は **三値**（`undefined` = ロード中 / `null` = 未ログイン / `User` = ログイン済み）。`isLoaded = user !== undefined` / `isOnboarding = user === null` の判定を維持
-- Supabase テーブルに新規テーブルを足したら **RLS ポリシーと別に `GRANT` も必要**。「Automatically expose new tables」OFF の場合は `grant select, insert on public.<table> to authenticated;` を手で打つ（過去にこれで `permission denied for table records` を踏んだ）
-- **service_role は postgres ロールを継承していない**（最近の Supabase 仕様）。`createAdminClient()` で書き込むテーブルにも明示的に `grant select, insert, update on public.<table> to service_role;` が必要。`has_table_privilege('service_role', 'public.<table>', 'INSERT')` で確認できる。`0012` / `0013` migration で records / reports / theme_cache / profiles を修正済み（修正前はレポート生成と PATTERN キャッシュが silent fail していた）。新規テーブルを足す時は必ず authenticated と service_role 両方への GRANT を migration に書く
-- `Post.index` は DB に保存しない。`/api/records` GET / POST で `total_count - position` から算出してレスポンスに含める（INDEX は永久欠番なし・編集削除不可前提）
-- **`lib/use*.ts` のカスタムフックで親から渡された関数を `useCallback(..., [])` で握らない**。`useRecorder` で「録音→CARVING（旧 DECODING）→モーダルが閉じて保存されない」事故あり（2026-05）。`onTranscribed` が初回レンダー時の `user === undefined` を握り続けて `!user` 分岐に常に落ちていた。**親から受け取るコールバックは `useRef` に逃がして `ref.current(...)` で呼ぶ**こと（[lib/useRecorder.ts](lib/useRecorder.ts) の `onTranscribedRef` / `isAtDailyLimitRef` / `transcribeRef` パターン参照）
-- **STT は ElevenLabs Scribe `scribe_v2`**（現行公開モデル。`no_verbatim=true` でフィラー「えーと/あの」等を除去）。アップストリームへの FormData ファイル名は録音 blob の `type` から拡張子を導出する（Safari/macOS Chrome は mp4 を選ぶので `.webm` 固定だと ElevenLabs 側で format 判定が外れて空文字になる）。詳細は [app/api/transcribe/route.ts](app/api/transcribe/route.ts) の `pickExtension`
-- **annotation は `tag_audio_events=false` で抑止する**：`[音楽]` / `(背景ノイズ)` / `（咳）` 等の非音声 annotation は記録に残したくないので、Scribe にそもそも出力させない（旧実装の正規表現 strip ハックは廃止済み）。受信テキストは空白正規化 + trim のみ。`text.length < 5` で silent reject → `useRecorder.ts` の `showHint("無音、話せ")` / `showHint("短い、話せ")`。`no_verbatim` でフィラーだけの発話が短文化して弾かれるのは望ましい挙動
-- **`/api/records` POST の失敗を silent catch しない**。`recorder.failWithError(msg)` でステータスコード／エラーコードを SpeakView に出す。`catch {}` で握り潰すと「モーダルが busy のまま」 or 「モーダル閉じて何も起きない」の原因不明バグが量産される（ユーザは何が起きたかわからず、DevTools を開ける人しか報告できなくなる）
-- **デバッグ困難バグは「複数層の silent failure」が重なって起きる**ことが多い。今回の保存されない事故は (1) `useRecorder` の stale closure、(2) 当時 `scribe_v2` が無効なモデル ID だった（※現在は v2 が現行で有効）、(3) `/api/records` POST の silent catch、の3層が重なって診断不能になっていた。新規コードでは silent fail を許さない方針
-- **`20260626003830_personal_access_tokens.sql` は本番 Supabase に手動適用が必要**（このリポジトリの migration は自動デプロイされない）。個人用アクセストークンは平文を DB に保存しない：発行時に `lib/personalAccessToken.ts` の `generateToken()` が `yuzu_pat_` prefix 付きトークンを返し、SHA-256 ハッシュ（`token_hash`）のみ永続化、平文は発行レスポンスの一度きり（[components/ApiTokenModal.tsx](components/ApiTokenModal.tsx) の `step === "created"`）。再表示・復元は不可、失くしたら削除して再発行
-- **`20260629070634_revoke_public_function_execute.sql`（旧 0015）は本番適用済み**（`mcp__supabase__list_migrations` で確認済、2026-07-02。本番の追跡テーブル上は version `20260628220005` として記録されている＝後述の番号ズレの一例）。内容: Postgres は `CREATE FUNCTION` 時に EXECUTE を **PUBLIC へ自動付与**するため、過去 migration が `grant ... to authenticated` だけ書いていても anon が `/rest/v1/rpc/<fn>` を叩けた。集計 RPC（`get_streak` / `get_total_duration_ms`）を PUBLIC から剥がし authenticated のみに、トリガー専用関数（`handle_new_user` / `rls_auto_enable`）を全ロールから剥奪（トリガー発火は所有者権限なので無影響）。さらに `inquiries` の直接 INSERT 攻撃面を閉じた：`/api/inquiries` は service_role 経由でしか書かないので、`inquiries_insert_any`（`with check (true)`）ポリシーと anon/authenticated の INSERT 権限を撤去し、API 層のレート制限（[lib/inquiries.ts](lib/inquiries.ts)）を迂回した直接 POST を不能にした。検証は [supabase/verify/0015_function_execute_check.sql](supabase/verify/0015_function_execute_check.sql)
-- **`20260702075418_report_jobs.sql`（旧 0016）と `20260702130000_anon_stt_rate_limit.sql`（新規、匿名 STT の IP レート制限 #52）は本番未適用**（`mcp__supabase__list_migrations` で未確認、2026-07-02）。手動適用が必要
-- **Supabase CLI を `supabase init` でローカル導入した（2026-07-02）。ただし本番の migration 追跡には使えていない状態**：`supabase/migrations/` は CLI 互換のタイムスタンプ命名（`YYYYMMDDHHMMSS_name.sql`）にリネーム済みだが、本番の `supabase_migrations.schema_migrations` には**別のタイムスタンプ・別の粒度**で記録された過去分（`theme_cache` / `plan_entitlement` / `inquiries` + `inquiries_service_role_grants` / `theme_cache_error` / `grant_profiles_to_service_role` / `grant_service_role_dml` / `revoke_public_function_execute`）が入っている（過去に `mcp__supabase__apply_migration` 経由で適用された際、適用時刻ベースの version が自動採番されたため）。中身は一致することを `execute_sql` で読み取り確認済みだが、**version 文字列が食い違うので `supabase migration list` はこのままでは正しい差分を返さない**。加えて 0001〜0007 相当（init〜fix_get_streak）は追跡テーブルに一切記録が無い（CLI 導入前に SQL Editor で直接実行された分）。CLI/CI をフル活用するには `supabase migration repair --status applied <version>` で追跡テーブルをローカルのファイル名に同期させる本番書き込み作業が別途必要（**ユーザー承認必須、今回は未実施**）。[.github/workflows/migration-drift.yml](.github/workflows/migration-drift.yml) は secrets（`SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_ID`）未設定の間はスキップされる設計にしてあるが、設定後もこの repair が済むまでは誤検知（既に適用済みのものを未適用と報告）が出る前提で見ること

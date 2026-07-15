@@ -15,6 +15,10 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_NUMBER: buildNumber,
   },
+  async redirects() {
+    // Web UI は廃止済み（#101）。ルートはマーケティングサイトへ。
+    return [{ source: "/", destination: "https://yuzu.style", permanent: false }];
+  },
 };
 
 // Sentry: source map upload と auto-instrumentation。
