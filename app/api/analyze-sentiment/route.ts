@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { DAY_MS } from "@/lib/period";
 import { scoreSentiments } from "@/lib/sentimentScore";
+import { buildMockSentimentResults, isMockRequest } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   // #40: 認証必須。オンボーディング経路では呼ばれない。
-  const { user } = await getAuthedClient(req);
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -49,6 +50,11 @@ export async function POST(req: NextRequest) {
       { error: "too_many_posts", max: MAX_POSTS_PER_REQUEST, received: posts.length },
       { status: 400 },
     );
+  }
+
+  // 管理者限定モックモード。Anthropic に触れず決定的なスコアを返す。
+  if (await isMockRequest(req, supabase, user.id)) {
+    return NextResponse.json(buildMockSentimentResults(posts));
   }
 
   let scoreMap: Record<string, number>;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
+import { isMockRequest } from "@/lib/mockFixtures";
 
 interface PatchBody {
   marked?: unknown;
@@ -22,6 +23,11 @@ export async function PATCH(
   let body: PatchBody = {};
   try { body = await request.json(); } catch {}
   const marked = body.marked === true;
+
+  // 管理者限定モックモード。DB write なしで echo する。
+  if (await isMockRequest(request, supabase, user.id)) {
+    return NextResponse.json({ id, marked });
+  }
 
   const { data, error } = await supabase
     .from("records")

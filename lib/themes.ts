@@ -57,7 +57,7 @@ export function extractThemesJson(raw: string): Theme[] | null {
   }
 }
 
-// mock mode 用の hardcoded テーマ。mockPosts.ts の内容に対応させた "それっぽい" 例。
+// mock mode 用の hardcoded テーマ。lib/mockFixtures.ts の投稿内容に対応させた "それっぽい" 例。
 // 実 Claude を呼ばないので断定的トーンを手書きで再現する。
 export const MOCK_THEMES: Theme[] = [
   {

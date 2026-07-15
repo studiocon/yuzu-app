@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, getAuthedClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
 import { jstDateString } from "@/lib/period";
-import { MAX_DAILY_SESSIONS, MAX_RECORD_MS, MAX_RECORD_TEXT } from "@/lib/constants";
+import { ABSOLUTE_MAX_RECORD_MS, MAX_RECORD_TEXT } from "@/lib/constants";
+import { getEntitlements } from "@/lib/entitlements";
+import { buildMockCreatedPost, buildMockRecordsResponse, isMockRequest } from "@/lib/mockFixtures";
 
 // ── ページネーション設定 ─────────────────────────────────────
 const DEFAULT_PAGE_SIZE = 100;
@@ -97,6 +99,11 @@ export async function GET(request: NextRequest) {
   const offset = parseIntParam(url.searchParams.get("offset"), 0, Number.MAX_SAFE_INTEGER, 0);
   const isFirstPage = offset === 0;
 
+  // 管理者限定モックモード（ストア用スクショ）。DB に触れず固定フィクスチャを返す。
+  if (await isMockRequest(request, supabase, user.id)) {
+    return NextResponse.json(buildMockRecordsResponse(user.id, limit, offset));
+  }
+
   // 1ページ目だけ totalCount を exact で取る（高価なので 2 ページ目以降は estimated）。
   // count: 'exact' を毎回打つと O(N) コストなので分岐。
   const countMode = isFirstPage ? "exact" : "estimated";
@@ -135,11 +142,12 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 集計（1 ページ目のみ）── 並列化
-  const [todayCount, firstPostAt, streak, totalDurationMs] = await Promise.all([
+  const [todayCount, firstPostAt, streak, totalDurationMs, ent] = await Promise.all([
     countTodayRecords(supabase, user.id),
     fetchFirstPostAt(supabase, user.id),
     fetchStreak(supabase),
     fetchTotalDurationMs(supabase),
+    getEntitlements(supabase, user.id, request),
   ]);
 
   return NextResponse.json({
@@ -151,7 +159,7 @@ export async function GET(request: NextRequest) {
     firstPostAt,
     totalDurationMs,
     todayCount,
-    maxDaily: MAX_DAILY_SESSIONS,
+    maxDaily: ent.maxDailySessions,
     resetAt: jstNextMidnightMs(Date.now()),
   });
 }
@@ -177,20 +185,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "too_long", max: MAX_RECORD_TEXT }, { status: 400 });
   }
 
-  // 録音時間。不正値は 0、上限は MAX_RECORD_MS で clamp（クライアントを信頼しない）。
+  // 管理者限定モックモード。DB insert なしで固定フィクスチャの 201 を返す。
+  if (await isMockRequest(request, supabase, user.id)) {
+    const durationMs =
+      typeof body.durationMs === "number" && Number.isFinite(body.durationMs) && body.durationMs >= 0
+        ? Math.round(body.durationMs)
+        : 0;
+    return NextResponse.json(buildMockCreatedPost(user.id, text, durationMs), { status: 201 });
+  }
+
+  const ent = await getEntitlements(supabase, user.id, request);
+
+  // 録音時間。不正値は 0、上限は maxRecordMs（無制限なら ABSOLUTE_MAX_RECORD_MS）で clamp（クライアントを信頼しない）。
   const durationMs =
     typeof body.durationMs === "number" && Number.isFinite(body.durationMs) && body.durationMs >= 0
-      ? Math.min(Math.round(body.durationMs), MAX_RECORD_MS)
+      ? Math.min(Math.round(body.durationMs), ent.maxRecordMs ?? ABSOLUTE_MAX_RECORD_MS)
       : 0;
 
-  // ── 1日上限チェック（サーバ側 = 複数端末で同期する信頼源）──
+  // ── 1日上限チェック（サーバ側 = 複数端末で同期する信頼源）── maxDailySessions=null は admin の無制限バイパス
   const todayBefore = await countTodayRecords(supabase, user.id);
-  if (todayBefore >= MAX_DAILY_SESSIONS) {
+  if (ent.maxDailySessions !== null && todayBefore >= ent.maxDailySessions) {
     return NextResponse.json(
       {
         error: "daily_limit",
         todayCount: todayBefore,
-        maxDaily: MAX_DAILY_SESSIONS,
+        maxDaily: ent.maxDailySessions,
         resetAt: jstNextMidnightMs(Date.now()),
       },
       { status: 429 },
@@ -237,7 +256,7 @@ export async function POST(request: NextRequest) {
       post,
       streak,
       todayCount: todayBefore + 1,
-      maxDaily: MAX_DAILY_SESSIONS,
+      maxDaily: ent.maxDailySessions,
       resetAt: jstNextMidnightMs(Date.now()),
     },
     { status: 201 },

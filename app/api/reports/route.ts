@@ -8,6 +8,7 @@ import {
   type PeriodMeta,
 } from "@/lib/period";
 import type { ReportMeta } from "@/lib/reportTypes";
+import { buildMockReportMetas, isMockRequest } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,11 @@ export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized", reports: [] }, { status: 401 });
+  }
+
+  // 管理者限定モックモード（ストア用スクショ）。
+  if (await isMockRequest(req, supabase, user.id)) {
+    return NextResponse.json({ reports: buildMockReportMetas() });
   }
 
   const url = new URL(req.url);

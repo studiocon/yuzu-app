@@ -4,6 +4,7 @@ import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clearReportJob, getReport, getReportJob, runReportJob, startReportJob } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
+import { buildMockReport, isMockRequest } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,9 +34,17 @@ export async function GET(req: NextRequest, ctx: Params) {
   if (!isClosed(periodKey)) {
     return NextResponse.json({ error: "period_in_progress" }, { status: 422 });
   }
-  const { user } = await getAuthedClient(req);
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // 管理者限定モックモード。ネイティブのポーリングが実生成を叩かないよう即 200 で返す。
+  if (await isMockRequest(req, supabase, user.id)) {
+    const report = buildMockReport(periodKey);
+    return report
+      ? NextResponse.json({ report }, { headers: CACHE_HEADERS })
+      : NextResponse.json({ error: "not_generated" }, { status: 404 });
   }
 
   const cached = await getReport(user.id, periodKey);
@@ -80,9 +89,17 @@ export async function POST(req: NextRequest, ctx: Params) {
   }
   const scores = body.scores && typeof body.scores === "object" ? body.scores : {};
 
-  const { user } = await getAuthedClient(req);
+  const { supabase, user } = await getAuthedClient(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // 管理者限定モックモード。実生成（Claude 呼び出し）を一切起動しない。
+  if (await isMockRequest(req, supabase, user.id)) {
+    const report = buildMockReport(periodKey);
+    return report
+      ? NextResponse.json({ report })
+      : NextResponse.json({ error: "not_generated" }, { status: 404 });
   }
 
   // 二重生成抑止：キャッシュ済みならそのまま返す（待たせない）。

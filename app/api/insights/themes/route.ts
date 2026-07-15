@@ -10,6 +10,7 @@ import {
   THEMES_SYSTEM_PROMPT,
   type Theme,
 } from "@/lib/themes";
+import { isMockRequest, MOCK_THEMES } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,11 @@ export async function GET(request: NextRequest) {
   const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // 管理者限定モックモード。theme_cache / Anthropic に触れず固定テーマを返す。
+  if (await isMockRequest(request, supabase, user.id)) {
+    return NextResponse.json({ themes: MOCK_THEMES });
   }
 
   // 投稿数チェック

@@ -8,15 +8,14 @@
 
 ### 1-1. CI ステータス
 
-- [main の最新 commit で GitHub Actions が両方緑](https://github.com/studiocon/yuzu-app/actions)
-  - `CI` (typecheck + lint + build)
-  - `Design check` (drift + linter)
+- [main の最新 commit で GitHub Actions が緑](https://github.com/studiocon/yuzu-app/actions)
+  - `CI` (typecheck + lint + test + build)
 
 ### 1-2. ローカルで本番ビルド確認
 
 ```bash
 npm ci
-npm run verify          # typecheck + lint + design:check
+npm run verify          # typecheck + lint + test
 npm run build           # production build
 ```
 

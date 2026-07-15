@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jstDateString } from "@/lib/period";
-import { MAX_DAILY_SESSIONS, ANON_DAILY_STT_LIMIT, MAX_AUDIO_BYTES } from "@/lib/constants";
+import { ANON_DAILY_STT_LIMIT, MAX_AUDIO_BYTES } from "@/lib/constants";
+import { getEntitlements } from "@/lib/entitlements";
+import { isMockRequest, MOCK_TRANSCRIBE_TEXT } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -68,23 +70,32 @@ export async function POST(req: NextRequest) {
   const https = req.nextUrl.protocol === "https:";
 
   if (user) {
+    // 管理者限定モックモード。ElevenLabs に触れず固定テキストを返す。
+    if (await isMockRequest(req, supabase, user.id)) {
+      return NextResponse.json({ text: MOCK_TRANSCRIBE_TEXT });
+    }
+
     // ログイン済: 既存の records カウントで daily limit を判定（/api/records POST と同基準）
-    const since = jstMidnightIso(Date.now());
-    const { count } = await supabase
-      .from("records")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", since);
-    if ((count ?? 0) >= MAX_DAILY_SESSIONS) {
-      return NextResponse.json(
-        {
-          error: "daily_limit",
-          todayCount: count ?? 0,
-          maxDaily: MAX_DAILY_SESSIONS,
-          resetAt: jstNextMidnightMs(Date.now()),
-        },
-        { status: 429 },
-      );
+    // maxDailySessions が null（admin）なら上限チェックをスキップ
+    const ent = await getEntitlements(supabase, user.id, req);
+    if (ent.maxDailySessions !== null) {
+      const since = jstMidnightIso(Date.now());
+      const { count } = await supabase
+        .from("records")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", since);
+      if ((count ?? 0) >= ent.maxDailySessions) {
+        return NextResponse.json(
+          {
+            error: "daily_limit",
+            todayCount: count ?? 0,
+            maxDaily: ent.maxDailySessions,
+            resetAt: jstNextMidnightMs(Date.now()),
+          },
+          { status: 429 },
+        );
+      }
     }
   } else {
     // 未ログイン onboarding: cookie（改竄可）+ IP ベースの DB カウント（#52）の二重チェック。
