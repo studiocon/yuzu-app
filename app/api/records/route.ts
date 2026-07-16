@@ -20,16 +20,20 @@ function jstNextMidnightMs(ts: number): number {
   return new Date(jstMidnightIso(ts)).getTime() + 24 * 60 * 60 * 1000;
 }
 
+// #139: fail-closed。count クエリが失敗したら 0 を返さず throw する。
+// （旧実装は `count ?? 0` で握り、count 失敗時に上限ゲートが「今日は空」扱いになり
+//  無制限投稿を許す fail-open だった。呼び出し側で 500 に倒す。）
 async function countTodayRecords(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ): Promise<number> {
   const since = jstMidnightIso(Date.now());
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from("records")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .gte("created_at", since);
+  if (error) throw error;
   return count ?? 0;
 }
 
@@ -142,13 +146,21 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 集計（1 ページ目のみ）── 並列化
-  const [todayCount, firstPostAt, streak, totalDurationMs, ent] = await Promise.all([
-    countTodayRecords(supabase, user.id),
-    fetchFirstPostAt(supabase, user.id),
-    fetchStreak(supabase),
-    fetchTotalDurationMs(supabase),
-    getEntitlements(supabase, user.id, request),
-  ]);
+  // countTodayRecords は fail-closed（#139）で throw しうる。集計失敗は 500 に倒す。
+  let todayCount: number, firstPostAt: number | null, streak: number, totalDurationMs: number;
+  let ent: Awaited<ReturnType<typeof getEntitlements>>;
+  try {
+    [todayCount, firstPostAt, streak, totalDurationMs, ent] = await Promise.all([
+      countTodayRecords(supabase, user.id),
+      fetchFirstPostAt(supabase, user.id),
+      fetchStreak(supabase),
+      fetchTotalDurationMs(supabase),
+      getEntitlements(supabase, user.id, request),
+    ]);
+  } catch (aggErr) {
+    console.error("GET /api/records aggregate:", aggErr);
+    return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
+  }
 
   return NextResponse.json({
     posts,
@@ -202,32 +214,49 @@ export async function POST(request: NextRequest) {
       ? Math.min(Math.round(body.durationMs), ent.maxRecordMs ?? ABSOLUTE_MAX_RECORD_MS)
       : 0;
 
-  // ── 1日上限チェック（サーバ側 = 複数端末で同期する信頼源）── maxDailySessions=null は admin の無制限バイパス
-  const todayBefore = await countTodayRecords(supabase, user.id);
-  if (ent.maxDailySessions !== null && todayBefore >= ent.maxDailySessions) {
-    return NextResponse.json(
-      {
-        error: "daily_limit",
-        todayCount: todayBefore,
-        maxDaily: ent.maxDailySessions,
-        resetAt: jstNextMidnightMs(Date.now()),
-      },
-      { status: 429 },
-    );
-  }
+  // ── 1日上限チェック + insert（#139: DB 側で原子化） ──
+  // create_record RPC が advisory lock で check+insert を直列化する。二重 POST でも
+  // 上限を超えた行は insert されない。RPC が本番未適用（42883）なら旧来の
+  // check-then-insert にフォールバックする（原子性は無いが挙動は従来どおり）。
+  let row: RecordRow;
+  let todayCount: number | undefined;
+  try {
+    const { data, error } = await supabase.rpc("create_record", {
+      p_text: text,
+      p_char_count: text.length,
+      p_duration_ms: durationMs,
+      p_max_daily: ent.maxDailySessions, // null = admin 無制限バイパス
+    });
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("records")
-    .insert({ user_id: user.id, text, char_count: text.length, duration_ms: durationMs })
-    .select("id, user_id, text, char_count, duration_ms, created_at, marked")
-    .single();
-
-  if (insertError || !inserted) {
-    console.error("POST /api/records:", insertError);
-    return NextResponse.json(
-      { error: "insert_failed" },
-      { status: 500 }
-    );
+    if (error && error.code === "42883") {
+      // RPC 未適用の本番向けフォールバック。
+      const legacy = await createRecordLegacy(supabase, user.id, text, durationMs, ent.maxDailySessions);
+      if (legacy.kind === "limit") {
+        return dailyLimitResponse(legacy.todayCount, ent.maxDailySessions);
+      }
+      if (legacy.kind === "error") {
+        return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+      }
+      row = legacy.row;
+    } else if (error) {
+      console.error("POST /api/records rpc:", error);
+      return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+    } else {
+      const result = (data ?? {}) as { status?: string; today_count?: number; record?: RecordRow };
+      if (result.status === "daily_limit") {
+        return dailyLimitResponse(result.today_count ?? ent.maxDailySessions ?? 0, ent.maxDailySessions);
+      }
+      if (result.status !== "ok" || !result.record) {
+        console.error("POST /api/records rpc: unexpected result", result);
+        return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+      }
+      row = result.record;
+      todayCount = result.today_count;
+    }
+  } catch (err) {
+    // countTodayRecords の fail-closed throw もここで拾う。
+    console.error("POST /api/records:", err);
+    return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
   // index = total post count after insert。streak は STATS 同期用にサーバ集計を返す。
@@ -239,7 +268,6 @@ export async function POST(request: NextRequest) {
     fetchStreak(supabase),
   ]);
 
-  const row = inserted as RecordRow;
   const post: Post = {
     id: row.id,
     user_id: row.user_id,
@@ -255,10 +283,66 @@ export async function POST(request: NextRequest) {
     {
       post,
       streak,
-      todayCount: todayBefore + 1,
+      // RPC 経由なら today_count を使う。フォールバック時は表示用に best-effort 集計。
+      todayCount: todayCount ?? (await countTodayForDisplay(supabase, user.id, ent.maxDailySessions)),
       maxDaily: ent.maxDailySessions,
       resetAt: jstNextMidnightMs(Date.now()),
     },
     { status: 201 },
   );
+}
+
+function dailyLimitResponse(todayCount: number, maxDaily: number | null) {
+  return NextResponse.json(
+    {
+      error: "daily_limit",
+      todayCount,
+      maxDaily,
+      resetAt: jstNextMidnightMs(Date.now()),
+    },
+    { status: 429 },
+  );
+}
+
+type LegacyInsert =
+  | { kind: "ok"; row: RecordRow }
+  | { kind: "limit"; todayCount: number }
+  | { kind: "error" };
+
+// RPC 未適用の本番向け。従来の check-then-insert（原子性なし）。
+// countTodayRecords は fail-closed で throw しうる → 呼び出し側 catch で 500。
+async function createRecordLegacy(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  text: string,
+  durationMs: number,
+  maxDaily: number | null,
+): Promise<LegacyInsert> {
+  if (maxDaily !== null) {
+    const todayBefore = await countTodayRecords(supabase, userId);
+    if (todayBefore >= maxDaily) return { kind: "limit", todayCount: todayBefore };
+  }
+  const { data: inserted, error } = await supabase
+    .from("records")
+    .insert({ user_id: userId, text, char_count: text.length, duration_ms: durationMs })
+    .select("id, user_id, text, char_count, duration_ms, created_at, marked")
+    .single();
+  if (error || !inserted) {
+    console.error("POST /api/records legacy insert:", error);
+    return { kind: "error" };
+  }
+  return { kind: "ok", row: inserted as RecordRow };
+}
+
+// 応答の残数表示専用。gate ではないのでエラーは握って maxDaily で代替（不明時 0）。
+async function countTodayForDisplay(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  maxDaily: number | null,
+): Promise<number> {
+  try {
+    return await countTodayRecords(supabase, userId);
+  } catch {
+    return maxDaily ?? 0;
+  }
 }
