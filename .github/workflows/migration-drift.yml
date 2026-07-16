@@ -21,7 +21,13 @@ name: Migration Drift Check
 #
 # 追跡テーブルの version ズレ（旧 mcp__supabase__apply_migration 由来）は 2026-07-16 に
 # `supabase migration repair` で解消済み（Issue #131/#132）。`supabase migration list` は
-# 正しい差分を返す。secrets/vars の設定自体は #132 で別途対応予定。
+# 正しい差分を返す。secrets/vars も #132 で設定済み。
+#
+# 実装注意その2（2026-07-16 に発覚・修正）: `supabase migration list` の出力に先頭 `|` が
+# 無いため、awk -F'|' で見ると $1=Local / $2=Remote / $3=Time になる。旧実装は $2/$3 を
+# 見ており実質 Remote 列同士を比較する no-op で、本番未適用の migration があっても
+# 絶対に fail しない false negative だった（ダミーの未適用 migration を含む test PR #158 で
+# 実地検証して発覚）。$1/$2 を見るよう修正。
 
 on:
   pull_request:
@@ -67,9 +73,10 @@ jobs:
       - name: Fail if a local migration is missing on remote
         if: steps.gate.outputs.enabled == 'true'
         run: |
-          # `supabase migration list` は Local | Remote の2列テーブルを出す。
-          # Local に値があって Remote が空の行 = 本番未適用のマイグレーション。
-          if awk -F'|' 'NR>2 && $2 ~ /[0-9]/ && $3 !~ /[0-9]/ { found=1 } END { exit !found }' migration-list.txt; then
+          # `supabase migration list` は先頭 `|` の無い Local | Remote | Time テーブルを出すため
+          # awk -F'|' では $1=Local / $2=Remote / $3=Time になる。
+          # Local(=$1) に値があって Remote(=$2) が空の行 = 本番未適用のマイグレーション。
+          if awk -F'|' 'NR>2 && $1 ~ /[0-9]/ && $2 !~ /[0-9]/ { found=1 } END { exit !found }' migration-list.txt; then
             echo "::error::本番に未適用のマイグレーションがあります。supabase db push --linked で適用してください。"
             exit 1
           fi
