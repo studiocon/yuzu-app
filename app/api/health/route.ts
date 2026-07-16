@@ -26,15 +26,11 @@ export async function GET() {
     // 単純な select で 1 行だけ取る（profiles が空でも data=[] で error=null になる）
     const { data, error } = await supabase.from("profiles").select("id").limit(1);
     if (error) {
+      // #146: 無認証エンドポイントなので DB エラーの中身（PostgREST の詳細）は応答に出さない。
+      // 診断はサーバログに残す。応答は ok/stage/durationMs の最小限のみ。
+      console.error("GET /api/health query error:", error);
       return NextResponse.json(
-        {
-          ok: false,
-          stage: "query",
-          // error オブジェクトを丸ごと文字列化して全フィールド見せる
-          errorRaw: JSON.parse(JSON.stringify(error)),
-          errorStr: String(error),
-          durationMs: Date.now() - t0,
-        },
+        { ok: false, stage: "query", durationMs: Date.now() - t0 },
         { status: 503 },
       );
     }
@@ -45,14 +41,10 @@ export async function GET() {
       rows: Array.isArray(data) ? data.length : 0,
     });
   } catch (e) {
+    // #146: スタックトレースを無認証で返さない。診断はサーバログに残す。
+    console.error("GET /api/health exception:", e);
     return NextResponse.json(
-      {
-        ok: false,
-        stage: "exception",
-        error: String(e),
-        stack: e instanceof Error ? e.stack?.split("\n").slice(0, 5) : null,
-        durationMs: Date.now() - t0,
-      },
+      { ok: false, stage: "exception", durationMs: Date.now() - t0 },
       { status: 503 },
     );
   }

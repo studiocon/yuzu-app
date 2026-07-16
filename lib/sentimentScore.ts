@@ -32,10 +32,17 @@ const buildUserContent = (text: string) =>
 const clamp = (n: number) => Math.max(-1, Math.min(1, n));
 
 export const parseScore = (raw: string): number => {
+  // 1) JSON 形式の {"score": N}
   const m = raw.match(/\{[^}]*"score"\s*:\s*(-?\d+(?:\.\d+)?)[^}]*\}/);
   if (m) return clamp(Number(m[1]));
-  const d = raw.match(/-?\d+(?:\.\d+)?/);
-  if (d) return clamp(Number(d[0]));
+  // 2) 波括弧が無くても "score": N のキー付きなら採用
+  const k = raw.match(/"score"\s*:\s*(-?\d+(?:\.\d+)?)/);
+  if (k) return clamp(Number(k[1]));
+  // 3) 応答全体が数値だけのケース（例 "0.5" / "-0.3"）。#146: 旧実装は /-?\d+/ で
+  //    本文中の無関係な数字（「10段階中5」等）を拾って clamp し「それっぽい誤スコア」を
+  //    返していた。マッチ位置を全体に限定して誤マッチを排除する。
+  const whole = raw.trim().match(/^-?\d+(?:\.\d+)?$/);
+  if (whole) return clamp(Number(whole[0]));
   // 抽出失敗を 0 として返すと正値ピークに見える紛れになるので throw。
   // 呼び出し側で当該 post をスキップする。
   throw new Error("parseScore: no numeric score in response");
