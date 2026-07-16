@@ -55,15 +55,25 @@ export function monthKey(ts: number): string {
   return `m-${y}-${pad2(m)}`;
 }
 
+// #143: 週キーを正規化する。`w-YYYY-MM-DD` は実在日かつ JST 日曜 0:00 に整列している
+// ときだけ有効。これを検証しないと、同じ実週を w-2026-07-13 / w-2026-07-14 / … と別キーで
+// 無制限にレポート生成でき（それぞれ独立した Anthropic 呼び出し）、コストが増幅する。
+// 実在日チェックは Date.UTC のロールオーバー（例 6/32 → 7/2、月 13）を往復比較で検出する。
+function parseWeekStart(y: number, m: number, d: number): number | null {
+  const start = jstMidnightUtc(y, m, d);
+  const p = jstParts(start);
+  if (p.y !== y || p.m !== m || p.d !== d) return null; // 不正日（ロールオーバー）
+  if (p.dow !== 0) return null; // 日曜整列していない非正規キー
+  return start;
+}
+
 export function parsePeriodKey(
   key: string,
 ): { kind: PeriodKind; start: number; end: number } | null {
   const w = key.match(/^w-(\d{4})-(\d{2})-(\d{2})$/);
   if (w) {
-    const wm = +w[2];
-    const wd = +w[3];
-    if (wm < 1 || wm > 12 || wd < 1 || wd > 31) return null;
-    const start = jstMidnightUtc(+w[1], wm, wd);
+    const start = parseWeekStart(+w[1], +w[2], +w[3]);
+    if (start === null) return null;
     return { kind: "week", start, end: start + 7 * DAY_MS };
   }
   const m = key.match(/^m-(\d{4})-(\d{2})$/);
@@ -82,10 +92,8 @@ export function parsePeriodKey(
 export function previousPeriodKey(key: string): string | null {
   const w = key.match(/^w-(\d{4})-(\d{2})-(\d{2})$/);
   if (w) {
-    const wm = +w[2];
-    const wd = +w[3];
-    if (wm < 1 || wm > 12 || wd < 1 || wd > 31) return null;
-    const start = jstMidnightUtc(+w[1], wm, wd);
+    const start = parseWeekStart(+w[1], +w[2], +w[3]);
+    if (start === null) return null;
     return weekKeyFromStart(start - 7 * DAY_MS);
   }
   const m = key.match(/^m-(\d{4})-(\d{2})$/);
