@@ -130,11 +130,14 @@ export async function clearReportJob(userId: string, periodKey: string): Promise
 
 export async function listReportKeys(userId: string): Promise<string[]> {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("reports")
     .select("period_key")
     .eq("user_id", userId)
     .order("range_end", { ascending: false });
+  // getReport（#147）と同じ方針：読み取りエラーを「保存済みレポート無し」と混同しない。
+  // ここを握り潰すと scope=all で既存の保存済みレポートが一覧から silent に消える（#140）。
+  if (error) throw new Error(`listReportKeys failed: ${error.message}`);
   return (data ?? []).map((r: { period_key: string }) => r.period_key);
 }
 
