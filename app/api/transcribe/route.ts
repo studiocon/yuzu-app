@@ -51,12 +51,47 @@ function buildAnonCookie(stat: AnonStat, https: boolean): string {
 }
 
 // cookie は削除・改竄できるので、IP ベースの DB カウントを防波堤として重ねる（#52）。
-// x-forwarded-for は Vercel が付与する。ローカル dev 等で欠けている場合は "unknown" に
-// バケットされる（同時アクセスが無ければ実害無し）。
+// #142: x-forwarded-for はクライアントが送った値が混ざりうる（先頭を偽装して IP バケットを
+// 割り、防波堤を回避できる）ため先頭値をそのまま信用しない。Vercel が自エッジで付与する
+// x-vercel-forwarded-for / x-real-ip（クライアントからは偽装不可）を優先し、無ければ
+// dev 用に x-forwarded-for 先頭へフォールバックする。欠落時は "unknown" バケット。
 function getClientIp(req: NextRequest): string {
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0].trim();
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
+  return "unknown";
+}
+
+// #142: IP クォータは「読むだけ」で判定し、消費（増分）は STT 成功後に寄せる。
+// これにより上流（ElevenLabs）の一過性失敗でクォータを消費してロックアウトしない。
+// テーブル/RPC 未適用（migration 20260702130000）や読み取り失敗時は 0 を返し、
+// cookie ガードのみにフォールバックする（防波堤の追加が落ちても既存ガードは維持）。
+async function readAnonIpCount(ip: string, date: string): Promise<number> {
+  const { data, error } = await createAdminClient()
+    .from("anon_stt_usage")
+    .select("request_count")
+    .eq("ip", ip)
+    .eq("date", date)
+    .maybeSingle();
+  if (error) {
+    console.error(`[transcribe] anon_stt_usage read failed, cookie-only: ${error.message}`);
+    return 0;
+  }
+  return (data?.request_count as number | undefined) ?? 0;
+}
+
+// STT 成功時のみ呼ぶ。アトミックに +1（失敗はログのみ、cookie ガードは別途効く）。
+async function incrementAnonIp(ip: string, date: string): Promise<void> {
+  const { error } = await createAdminClient().rpc("increment_anon_stt_usage", {
+    p_ip: ip,
+    p_date: date,
+  });
+  if (error) {
+    console.error(`[transcribe] anon_stt_usage increment failed: ${error.message}`);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -99,22 +134,13 @@ export async function POST(req: NextRequest) {
     }
   } else {
     // 未ログイン onboarding: cookie（改竄可）+ IP ベースの DB カウント（#52）の二重チェック。
-    // IP 側はアトミックに増分してから判定するので、cookie 削除・直叩きでは突破できない。
-    // migration 20260702130000 未適用（RPC 不在）の場合は cookie 判定のみにフォールバックする
-    // （防波堤の追加が失敗しても、既存の cookie ガードごと落とさない）。
+    // #142: ここでは現在値を「読むだけ」で判定し、クォータ消費（増分）は STT 成功後に寄せる。
+    // これで上流の一過性失敗ではクォータが減らず、リトライがロックアウトされない。
+    // テーブル/RPC 未適用や読み取り失敗時は cookie 判定のみにフォールバック。
     const stat = parseAnonCookie(req.cookies.get(ANON_COOKIE)?.value);
-    let overIpLimit = false;
-    const { data: ipCount, error: ipErr } = await createAdminClient().rpc(
-      "increment_anon_stt_usage",
-      { p_ip: getClientIp(req), p_date: jstDateString(Date.now()) },
-    );
-    if (ipErr) {
-      console.error(`[transcribe] anon_stt_usage rpc failed, falling back to cookie-only: ${ipErr.message}`);
-    } else {
-      overIpLimit = (ipCount ?? 0) > ANON_DAILY_STT_LIMIT;
-    }
+    const ipCount = await readAnonIpCount(getClientIp(req), jstDateString(Date.now()));
 
-    if (stat.count >= ANON_DAILY_STT_LIMIT || overIpLimit) {
+    if (stat.count >= ANON_DAILY_STT_LIMIT || ipCount >= ANON_DAILY_STT_LIMIT) {
       return NextResponse.json(
         {
           error: "login_required",
@@ -171,8 +197,10 @@ export async function POST(req: NextRequest) {
 
   const response = NextResponse.json({ text: cleanText });
 
-  // 未ログイン成功時はカウントをインクリメントして cookie に書き戻す
+  // 未ログイン成功時のみクォータを消費する（#142: 上流失敗では消費しない）。
+  // IP カウンタ（アトミック +1）と cookie の両方を成功後にまとめて進める。
   if (!user) {
+    await incrementAnonIp(getClientIp(req), jstDateString(Date.now()));
     const stat = parseAnonCookie(req.cookies.get(ANON_COOKIE)?.value);
     const next: AnonStat = { date: stat.date, count: stat.count + 1 };
     response.headers.append("Set-Cookie", buildAnonCookie(next, https));
