@@ -104,13 +104,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(buildMockRecordsResponse(user.id, limit, offset));
   }
 
-  // 1ページ目だけ totalCount を exact で取る（高価なので 2 ページ目以降は estimated）。
-  // count: 'exact' を毎回打つと O(N) コストなので分岐。
-  const countMode = isFirstPage ? "exact" : "estimated";
-
+  // #144: 全ページで exact を使う。旧実装は 2 ページ目以降を estimated にしていたが、
+  // 統計ドリフトで total がページ間でズレると index = total - offset - i が不連続になり
+  // 欠番/重複を生む（INDEX は永久欠番なし・編集削除不可の invariant を破る）。
+  // index は created_at 昇順ランク（= total - 絶対位置）で、追記のみ・末尾追加のため
+  // 各リクエストの exact total に対して安定に算出できる。append-only の少量データなので
+  // exact count のコストは実用上問題にならない。
   const { data, count, error } = await supabase
     .from("records")
-    .select("id, user_id, text, char_count, duration_ms, created_at, marked", { count: countMode, head: false })
+    .select("id, user_id, text, char_count, duration_ms, created_at, marked", { count: "exact", head: false })
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -230,16 +232,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // index = total post count after insert。streak は STATS 同期用にサーバ集計を返す。
+  const row = inserted as RecordRow;
+
+  // #144: index は created_at 昇順の連番（= created_at が自分以下の件数）。
+  // 旧実装は全件 count(*) を index にしていたため、同時挿入（2 端末/再送）で複数行が
+  // 同じ count を読み、同じ index を返し得た。created_at ランクなら各行が固有の連番を得て、
+  // 追記は末尾（最新）なので既存行の index も不変で安定する（GET の total - 絶対位置 と一致）。
   const [{ count }, streak] = await Promise.all([
     supabase
       .from("records")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id),
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .lte("created_at", row.created_at),
     fetchStreak(supabase),
   ]);
 
-  const row = inserted as RecordRow;
   const post: Post = {
     id: row.id,
     user_id: row.user_id,
