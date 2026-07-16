@@ -12,13 +12,24 @@ const MAX_POSTS_PER_REQUEST = 50;
 // 課金導入時 (#65) は plan を見て `if (plan === "free")` で包む。
 const SENTIMENT_WINDOW_MS = 30 * DAY_MS;
 
-type IncomingPost = { id: string; text: string; createdAt: number };
+// #141: クライアントは id のみ渡す。本文は信用せずサーバ側 records から引く。
+type IncomingPost = { id: string; createdAt?: number };
+
+// records.id は uuid 型。非 UUID を .in() に渡すと Postgres が型エラーを投げるため、
+// 形状が合う id だけを DB に渡す（捏造・不正 id はここで空振りさせる）。
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const formatDate = (ts: number): string => {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
+
+interface SentimentRow {
+  id: string;
+  text: string;
+  created_at: string;
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -39,28 +50,54 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "リクエストの形式が不正です" }, { status: 400 });
   }
   const rawPosts = Array.isArray(body.posts) ? body.posts : [];
-  // #81: 30 日より古い post はサーバ側でドロップ。クライアントは未スコアのまま扱う。
-  const cutoff = Date.now() - SENTIMENT_WINDOW_MS;
-  const posts = rawPosts.filter((p) => typeof p.createdAt === "number" && p.createdAt >= cutoff);
-  if (posts.length === 0) {
+
+  // 管理者限定モックモード。Anthropic にも DB にも触れず決定的なスコアを返す。
+  // mock の id（mock-01 …）は UUID ではないので、id 検証より前に分岐する。
+  if (await isMockRequest(req, supabase, user.id)) {
+    return NextResponse.json(buildMockSentimentResults(rawPosts));
+  }
+
+  // #141: id 文字列のみ抽出して重複排除。text は受け取らない（捏造防止）。
+  const requestedIds = Array.from(
+    new Set(rawPosts.map((p) => (typeof p?.id === "string" ? p.id : "")).filter((id) => UUID_RE.test(id))),
+  );
+  if (requestedIds.length === 0) {
     return NextResponse.json({ results: [] });
   }
-  if (posts.length > MAX_POSTS_PER_REQUEST) {
+  if (requestedIds.length > MAX_POSTS_PER_REQUEST) {
     return NextResponse.json(
-      { error: "too_many_posts", max: MAX_POSTS_PER_REQUEST, received: posts.length },
+      { error: "too_many_posts", max: MAX_POSTS_PER_REQUEST, received: requestedIds.length },
       { status: 400 },
     );
   }
 
-  // 管理者限定モックモード。Anthropic に触れず決定的なスコアを返す。
-  if (await isMockRequest(req, supabase, user.id)) {
-    return NextResponse.json(buildMockSentimentResults(posts));
+  // #141: 所有権チェック + 本文取得を DB に一本化する。
+  // - user_id フィルタで他人の record は引けない（捏造 id は空振り）
+  // - 本文はサーバの records（insert 時に MAX_RECORD_TEXT で bounded）を使う
+  // - 30 日窓もサーバの created_at で判定し、クライアント createdAt を信用しない
+  const cutoffIso = new Date(Date.now() - SENTIMENT_WINDOW_MS).toISOString();
+  const { data, error } = await supabase
+    .from("records")
+    .select("id, text, created_at")
+    .eq("user_id", user.id)
+    .in("id", requestedIds)
+    .gte("created_at", cutoffIso);
+
+  if (error) {
+    // silent fail 禁止（CLAUDE.md）。DB エラーを空スコアと混同しない。
+    console.error("analyze-sentiment fetch failed", error);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+
+  const rows = (data as SentimentRow[] | null) ?? [];
+  if (rows.length === 0) {
+    return NextResponse.json({ results: [] });
   }
 
   let scoreMap: Record<string, number>;
   try {
     scoreMap = await scoreSentiments(
-      posts.map((p) => ({ id: p.id, text: p.text })),
+      rows.map((r) => ({ id: r.id, text: r.text })),
       apiKey,
     );
   } catch (err) {
@@ -74,8 +111,12 @@ export async function POST(req: NextRequest) {
 
   // 解析できなかった post は results に含めない。クライアントは未キャッシュとして
   // 次回マウント時に再リクエストする。silent fail で 0 を焼き付けない（v1 のバグ修正）。
-  const results = posts
-    .map((p) => ({ postId: p.id, date: formatDate(p.createdAt), score: scoreMap[p.id] }))
+  const results = rows
+    .map((r) => ({
+      postId: r.id,
+      date: formatDate(new Date(r.created_at).getTime()),
+      score: scoreMap[r.id],
+    }))
     .filter((r): r is { postId: string; date: string; score: number } => typeof r.score === "number");
 
   return NextResponse.json({ results });
