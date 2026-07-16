@@ -58,7 +58,11 @@ export async function getReport(userId: string, periodKey: string): Promise<Repo
     .eq("user_id", userId)
     .eq("period_key", periodKey)
     .maybeSingle();
-  if (error || !data) return null;
+  // 読み取りエラーを「未生成」と混同しない。ここを null で握り潰すと、二重生成抑止
+  // （generateReport）が「まだ生成されていない」と誤認して再生成し、Claude 呼び出しの
+  // 無駄打ち + 既存の正しいレポートの上書きにつながる（#138）。
+  if (error) throw new Error(`getReport failed: ${error.message}`);
+  if (!data) return null;
   try {
     return rowToReport(data as ReportRow);
   } catch {
@@ -102,23 +106,26 @@ export async function getReportJob(userId: string, periodKey: string): Promise<R
 
 export async function startReportJob(userId: string, periodKey: string): Promise<void> {
   const supabase = createAdminClient();
-  await supabase.from("report_jobs").upsert(
+  const { error } = await supabase.from("report_jobs").upsert(
     { user_id: userId, period_key: periodKey, status: "pending", error: null, started_at: new Date().toISOString() },
     { onConflict: "user_id,period_key" },
   );
+  if (error) throw new Error(`startReportJob failed: ${error.message}`);
 }
 
 export async function failReportJob(userId: string, periodKey: string, error: string): Promise<void> {
   const supabase = createAdminClient();
-  await supabase.from("report_jobs").upsert(
+  const { error: dbError } = await supabase.from("report_jobs").upsert(
     { user_id: userId, period_key: periodKey, status: "failed", error, started_at: new Date().toISOString() },
     { onConflict: "user_id,period_key" },
   );
+  if (dbError) throw new Error(`failReportJob failed: ${dbError.message}`);
 }
 
 export async function clearReportJob(userId: string, periodKey: string): Promise<void> {
   const supabase = createAdminClient();
-  await supabase.from("report_jobs").delete().eq("user_id", userId).eq("period_key", periodKey);
+  const { error } = await supabase.from("report_jobs").delete().eq("user_id", userId).eq("period_key", periodKey);
+  if (error) throw new Error(`clearReportJob failed: ${error.message}`);
 }
 
 export async function listReportKeys(userId: string): Promise<string[]> {
@@ -133,7 +140,7 @@ export async function listReportKeys(userId: string): Promise<string[]> {
 
 async function saveReport(report: Report): Promise<void> {
   const supabase = createAdminClient();
-  await supabase.from("reports").upsert({
+  const { error } = await supabase.from("reports").upsert({
     user_id: report.user_id,
     period_key: report.periodKey,
     kind: report.kind,
@@ -143,6 +150,11 @@ async function saveReport(report: Report): Promise<void> {
     generated_at: new Date(report.generatedAt).toISOString(),
     model: report.model,
   }, { onConflict: "user_id,period_key" });
+  // ここを握り潰すと、保存が失敗しても generateReport は正常な Report を返してしまい、
+  // 呼び出し元（runReportJob）が「保存成功」とみなして report_jobs をクリアする。
+  // 結果、reports にも report_jobs にも行が無い状態になり、クライアントの GET は 404 →
+  // 再 POST → 再生成、を無限に繰り返す（#138 の本体）。
+  if (error) throw new Error(`saveReport failed: ${error.message}`);
 }
 
 // ── Anthropic レポート生成 ──
@@ -232,12 +244,22 @@ export async function generateReport(args: {
 
   if (inRange.length === 0) throw new Error("no posts in range");
 
-  // 二重生成抑止
+  // 二重生成抑止。getReport は読み取りエラー時に throw するので、ここで例外を
+  // 揉み消して「未生成」扱いにしない（そのまま上位に伝播させる。#138）。
   const cached = await getReport(args.userId, args.periodKey);
   if (cached) return cached;
 
+  // 前回レポートはプロンプト強化用の補助情報（無くても生成自体は成立する）。
+  // 二重生成抑止と違い正しさには影響しないので、取得失敗時はログを残して続行する。
   const prevKey = previousPeriodKey(args.periodKey);
-  const prevReport = prevKey ? await getReport(args.userId, prevKey) : null;
+  let prevReport: Report | null = null;
+  if (prevKey) {
+    try {
+      prevReport = await getReport(args.userId, prevKey);
+    } catch (e) {
+      console.error("prevReport fetch failed, continuing without context", prevKey, e);
+    }
+  }
 
   const windowText = inRange
     .map((p) => `[${formatJstTimestamp(p.createdAt)}] ${p.text}`)
@@ -310,6 +332,13 @@ export async function generateReport(args: {
 // レスポンスは POST 側で即座に返しているため、ここで throw しても呼び出し元には伝わらない。
 // 成功/失敗は report_jobs 経由でしかクライアントに伝わらないので、必ず catch して
 // failReportJob を呼ぶこと（投げっぱなしにすると client が永遠に "pending" のままになる）。
+//
+// 順序が重要（#138）：clearReportJob（成功クリーンアップ）は generateReport（内部の
+// saveReport 含む）が例外を投げずに完了した後、つまり保存が確認できた場合にのみ呼ぶ。
+// 保存に失敗した場合は必ず failReportJob で "failed" として残す。ここを誤って
+// clearReportJob してしまうと reports にも report_jobs にも行が無い状態になり、
+// クライアントの GET が 404 → 再 POST → 再生成、を無限に繰り返し Claude 呼び出しを
+// 無駄打ちし続ける。
 interface RecordRowForReport {
   id: string;
   user_id: string;
@@ -366,11 +395,31 @@ export async function runReportJob(args: {
       fullScores = { ...clientScores, ...backfilled };
     }
 
+    // generateReport 内の saveReport が失敗すれば例外が投げられここまで伝播する。
+    // つまりこの try が例外なく終わった時点で保存済みが確認できている。
     await generateReport({ userId, periodKey, posts, scores: fullScores });
-    await clearReportJob(userId, periodKey);
   } catch (e) {
     console.error("runReportJob failed", periodKey, e);
     const message = e instanceof Error ? e.message : "unknown_error";
-    await failReportJob(userId, periodKey, message);
+    try {
+      await failReportJob(userId, periodKey, message);
+    } catch (failErr) {
+      // failed 記録の書き込み自体が失敗した場合、ジョブ行は pending のまま残り得るが、
+      // ここで clearReportJob は絶対に呼ばない。削除すると reports にも report_jobs にも
+      // 行が無い状態になり、クライアントの GET が 404 → 再 POST → 再生成、を無限に繰り返す
+      // （#138 の本体）。JOB_STALE_MS を超えれば GET 側が not_generated 扱いにフォールバック
+      // するので、再試行は POST 経由の新しいジョブとして自然に起動される。
+      console.error("failReportJob also failed", periodKey, failErr);
+    }
+    return;
+  }
+
+  // ここに来るのは保存確認済みの場合のみ。成功時クリーンアップとしてジョブ行を消す。
+  try {
+    await clearReportJob(userId, periodKey);
+  } catch (e) {
+    // レポート自体は保存済みなのでユーザー影響は無い（GET は reports テーブルを先に見る）。
+    // ジョブ行が残っても JOB_STALE_MS 超過で not_generated 相当にフォールバックするだけ。
+    console.error("clearReportJob failed after successful save", periodKey, e);
   }
 }
