@@ -20,9 +20,18 @@ export async function PATCH(
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  let body: PatchBody = {};
-  try { body = await request.json(); } catch {}
-  const marked = body.marked === true;
+  // #146: 不正 JSON を silent に握って marked:false（unmark）にしない（CLAUDE.md の
+  // no-silent-fail 規約）。パース失敗・marked が boolean でない場合は 400 で弾く。
+  let body: PatchBody;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  if (typeof body.marked !== "boolean") {
+    return NextResponse.json({ error: "marked_required" }, { status: 400 });
+  }
+  const marked = body.marked;
 
   // 管理者限定モックモード。DB write なしで echo する。
   if (await isMockRequest(request, supabase, user.id)) {
