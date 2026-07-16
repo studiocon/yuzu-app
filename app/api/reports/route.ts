@@ -29,10 +29,14 @@ export async function GET(req: NextRequest) {
 
   try {
     // ユーザーの投稿を全件取得（期間フィルタ用）
-    const { data: rows } = await supabase
+    // 読み取りエラーを「投稿ゼロ」と混同しない。ここを握り潰すと postTimes が
+    // 全期間で 0 件になり、filter(m => m.generated || m.postCount > 0) が
+    // 未生成期間を全て弾いて `{ reports: [] }` を 200 で返してしまう（#140）。
+    const { data: rows, error: recordsError } = await supabase
       .from("records")
       .select("id, created_at")
       .eq("user_id", user.id);
+    if (recordsError) throw new Error(`records fetch failed: ${recordsError.message}`);
 
     const postTimes = (rows ?? []).map((r: { created_at: string }) =>
       new Date(r.created_at).getTime()
