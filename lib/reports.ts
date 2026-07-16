@@ -77,6 +77,10 @@ export async function getReport(userId: string, periodKey: string): Promise<Repo
 // （app/api/reports/[periodKey]/route.ts）。クライアントはこのテーブルをポーリングして進行状況を見る。
 // 完了の判定は reports テーブルの存在そのもの。失敗時のみ status='failed' で行を残す。
 
+// ジョブが「進行中」とみなせる猶予（route の GET stale 判定と揃える）。
+// maxDuration(60s) + 前後のオーバーヘッドぶんのバッファ。
+export const REPORT_JOB_STALE_MS = 90 * 1000;
+
 export type ReportJobStatus = "pending" | "failed";
 
 interface ReportJobRow {
@@ -104,13 +108,28 @@ export async function getReportJob(userId: string, periodKey: string): Promise<R
   };
 }
 
-export async function startReportJob(userId: string, periodKey: string): Promise<void> {
+// #143: 起動権の取得を原子化する。true = このリクエストが生成を起動してよい、
+// false = 既に fresh な pending ジョブがある（相乗り。呼び出し側は 202 pending を返す）。
+// start_report_job RPC が本番未適用（42883）なら従来の非原子 upsert にフォールバックし、
+// 常に true を返す（＝従来どおり毎回起動。原子性は無いが回帰しない）。
+export async function startReportJob(userId: string, periodKey: string): Promise<boolean> {
   const supabase = createAdminClient();
-  const { error } = await supabase.from("report_jobs").upsert(
-    { user_id: userId, period_key: periodKey, status: "pending", error: null, started_at: new Date().toISOString() },
-    { onConflict: "user_id,period_key" },
-  );
+  const { data, error } = await supabase.rpc("start_report_job", {
+    p_user_id: userId,
+    p_period_key: periodKey,
+    p_stale_ms: REPORT_JOB_STALE_MS,
+  });
+
+  if (error && error.code === "42883") {
+    const { error: upErr } = await supabase.from("report_jobs").upsert(
+      { user_id: userId, period_key: periodKey, status: "pending", error: null, started_at: new Date().toISOString() },
+      { onConflict: "user_id,period_key" },
+    );
+    if (upErr) throw new Error(`startReportJob failed: ${upErr.message}`);
+    return true;
+  }
   if (error) throw new Error(`startReportJob failed: ${error.message}`);
+  return data === true;
 }
 
 export async function failReportJob(userId: string, periodKey: string, error: string): Promise<void> {
