@@ -3,20 +3,25 @@ name: Migration Drift Check
 # supabase/migrations/ に変更があった PR で、本番にまだ反映されていない
 # マイグレーションが無いか（= 適用漏れが無いか）を検知する。
 #
-# 本番適用は依然として手動（docs/deploy.md）。このジョブは検知のみで、
+# 本番適用は依然として手動（supabase db push --linked）。このジョブは検知のみで、
 # 自動適用は行わない。
 #
-# 必要な secrets/variables が無い間はジョブごとスキップする（導入直後に
-# CI を壊さないため）。有効化するには以下をリポジトリに設定する:
+# 必要な secrets/variables が無い間はスキップする（導入直後に CI を壊さないため）。
+# 有効化するには以下をリポジトリに設定する:
 #   - secrets.SUPABASE_ACCESS_TOKEN … supabase.com/dashboard/account/tokens で発行
 #   - secrets.SUPABASE_DB_PASSWORD  … プロジェクトの DB パスワード
 #   - vars.SUPABASE_PROJECT_ID      … プロジェクト ref（例: serdimqyazitwfnswvrg）
 #
-# ⚠️ 既知の制約（2026-07-02時点）: 過去に mcp__supabase__apply_migration 経由で適用された
-# migration は、本番の追跡テーブル上でローカルのファイル名と異なる version 番号を持っている
-# （中身は一致確認済み）。`supabase migration repair` で番号を同期するまでは、このジョブは
-# 既に適用済みの古いファイルを「未適用」と誤検知する可能性がある。有効化前に
-# `supabase migration list --linked` の出力を一度手動確認すること。詳細は CLAUDE.md 参照。
+# 実装注意（2026-07-16 に発覚・修正）: `jobs.<job_id>.if` は secrets コンテキストを
+# 参照できない（GitHub Actions の仕様上の制約）。旧実装は job レベルの if で
+# `secrets.SUPABASE_ACCESS_TOKEN != ''` 等を直接評価しており、ワークフロー定義が
+# 常にスキーマ検証に落ちて全 push で 0 秒 failure になっていた（作成時の 2026-07-02 から
+# 本 issue 発見までの全実行が failure）。job の if は vars のみで判定し、secrets の有無は
+# 最初の step で判定して以降の step を `if:` でスキップする形に直した。
+#
+# 追跡テーブルの version ズレ（旧 mcp__supabase__apply_migration 由来）は 2026-07-16 に
+# `supabase migration repair` で解消済み（Issue #131/#132）。`supabase migration list` は
+# 正しい差分を返す。secrets/vars の設定自体は #132 で別途対応予定。
 
 on:
   pull_request:
@@ -26,28 +31,45 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    if: ${{ vars.SUPABASE_PROJECT_ID != '' && secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_DB_PASSWORD != '' }}
+    if: ${{ vars.SUPABASE_PROJECT_ID != '' }}
     steps:
+      - name: Gate on secrets
+        id: gate
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SUPABASE_ACCESS_TOKEN / SUPABASE_DB_PASSWORD が未設定のためスキップします"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.gate.outputs.enabled == 'true'
       - uses: supabase/setup-cli@v1
+        if: steps.gate.outputs.enabled == 'true'
         with:
           version: latest
       - name: Link project (read-only)
+        if: steps.gate.outputs.enabled == 'true'
         run: supabase link --project-ref "${{ vars.SUPABASE_PROJECT_ID }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - name: List migration status
         id: list
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           set -o pipefail
           supabase migration list --linked | tee migration-list.txt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - name: Fail if a local migration is missing on remote
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           # `supabase migration list` は Local | Remote の2列テーブルを出す。
           # Local に値があって Remote が空の行 = 本番未適用のマイグレーション。
           if awk -F'|' 'NR>2 && $2 ~ /[0-9]/ && $3 !~ /[0-9]/ { found=1 } END { exit !found }' migration-list.txt; then
-            echo "::error::本番に未適用のマイグレーションがあります。docs/deploy.md の手順で適用してください。"
+            echo "::error::本番に未適用のマイグレーションがあります。supabase db push --linked で適用してください。"
             exit 1
           fi
