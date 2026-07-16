@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { clearReportJob, getReport, getReportJob, runReportJob, startReportJob } from "@/lib/reports";
+import { failReportJob, getReport, getReportJob, runReportJob, startReportJob } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
 import { buildMockReport, isMockRequest } from "@/lib/mockFixtures";
+import type { Report } from "@/lib/reportTypes";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -47,7 +48,15 @@ export async function GET(req: NextRequest, ctx: Params) {
       : NextResponse.json({ error: "not_generated" }, { status: 404 });
   }
 
-  const cached = await getReport(user.id, periodKey);
+  // getReport は読み取りエラー時に throw する（#138、「未生成」と誤認させない）。
+  // ここは reports API の入口なので明示的に catch し、silent fail にせず 500 で返す。
+  let cached: Report | null;
+  try {
+    cached = await getReport(user.id, periodKey);
+  } catch (e) {
+    console.error("GET /api/reports/[periodKey] getReport failed", periodKey, e);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
   if (cached) {
     return NextResponse.json({ report: cached }, { headers: CACHE_HEADERS });
   }
@@ -103,7 +112,15 @@ export async function POST(req: NextRequest, ctx: Params) {
   }
 
   // 二重生成抑止：キャッシュ済みならそのまま返す（待たせない）。
-  const cached = await getReport(user.id, periodKey);
+  // getReport は読み取りエラー時に throw するので、ここで揉み消して「未生成」扱いに
+  // しない（そのまま regenerate に進むと余分な Claude 呼び出し + 上書き保存が起きる）。
+  let cached: Report | null;
+  try {
+    cached = await getReport(user.id, periodKey);
+  } catch (e) {
+    console.error("POST /api/reports/[periodKey] getReport failed", periodKey, e);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
   if (cached) {
     return NextResponse.json({ report: cached });
   }
@@ -130,14 +147,29 @@ export async function POST(req: NextRequest, ctx: Params) {
     return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   }
 
-  await startReportJob(user.id, periodKey);
+  // startReportJob の書き込み失敗を握り潰さない：ここが失敗したまま waitUntil で
+  // 生成だけ走らせると、進行状況を追跡できるジョブ行が無いまま Claude 呼び出しが始まり、
+  // クライアントは 404（not_generated）のまま再 POST を繰り返しかねない。起動自体を中断する。
+  try {
+    await startReportJob(user.id, periodKey);
+  } catch (e) {
+    console.error("startReportJob failed", periodKey, e);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
   // レスポンスは即座に返す。実際の Claude 呼び出し + 保存はレスポンス後もこの関数インスタンスの
   // 寿命が尽きるまで（maxDuration 上限まで）継続する。失敗時は runReportJob 内で必ず
   // failReportJob を呼ぶので、クライアントは次の GET/POST で失敗を検知できる。
   waitUntil(
     runReportJob({ userId: user.id, periodKey, clientScores: scores }).catch(async (e) => {
+      // runReportJob は内部で catch して必ず failReportJob を呼ぶ設計だが、万一ここまで
+      // 例外が抜けてきた場合の最終防波堤。clearReportJob（削除）は絶対に使わない：
+      // ジョブ行を消すと reports にも report_jobs にも行が無い状態になり、クライアントの
+      // GET が 404 → 再 POST → 再生成、を無限に繰り返す（#138）。
       console.error("runReportJob unexpected throw", periodKey, e);
-      await clearReportJob(user.id, periodKey).catch(() => {});
+      const message = e instanceof Error ? e.message : "unknown_error";
+      await failReportJob(user.id, periodKey, message).catch((failErr) => {
+        console.error("failReportJob also failed after unexpected throw", periodKey, failErr);
+      });
     }),
   );
 
