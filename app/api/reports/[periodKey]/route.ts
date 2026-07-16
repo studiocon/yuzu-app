@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { failReportJob, getReport, getReportJob, runReportJob, startReportJob } from "@/lib/reports";
+import { failReportJob, getReport, getReportJob, REPORT_JOB_STALE_MS, runReportJob, startReportJob } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
 import { buildMockReport, isMockRequest } from "@/lib/mockFixtures";
 import type { Report } from "@/lib/reportTypes";
@@ -19,7 +19,8 @@ const CACHE_HEADERS = {
 
 // ジョブが「進行中」とみなせる猶予。maxDuration(60s) + 前後のオーバーヘッドぶんのバッファ。
 // これを超えて pending のままなら、関数が kill されて放棄されたとみなし POST での再試行を許す。
-const JOB_STALE_MS = 90 * 1000;
+// start_report_job RPC の stale 判定（lib/reports.ts）と同じ値を使う。
+const JOB_STALE_MS = REPORT_JOB_STALE_MS;
 
 // GET は読み出し専用。生成は POST に任せる。
 // - reports にキャッシュ済み → 200 { report }
@@ -147,14 +148,20 @@ export async function POST(req: NextRequest, ctx: Params) {
     return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   }
 
-  // startReportJob の書き込み失敗を握り潰さない：ここが失敗したまま waitUntil で
-  // 生成だけ走らせると、進行状況を追跡できるジョブ行が無いまま Claude 呼び出しが始まり、
-  // クライアントは 404（not_generated）のまま再 POST を繰り返しかねない。起動自体を中断する。
+  // #143: 起動権の取得を原子化する。startReportJob は条件付き upsert で「起動してよいか」を
+  // 返す。二重 POST では勝者だけが true を受け取り、敗者は false → 202 pending（相乗り）に
+  // なるので Claude 呼び出しが 2 回走らない。書き込み失敗は握り潰さず 500 で中断する
+  // （ジョブ行が無いまま生成だけ走ると 404→再 POST を繰り返しかねないため）。
+  let started: boolean;
   try {
-    await startReportJob(user.id, periodKey);
+    started = await startReportJob(user.id, periodKey);
   } catch (e) {
     console.error("startReportJob failed", periodKey, e);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+  if (!started) {
+    // 別リクエストが既に生成中。相乗りしてポーリングに任せる。
+    return NextResponse.json({ status: "pending" }, { status: 202 });
   }
   // レスポンスは即座に返す。実際の Claude 呼び出し + 保存はレスポンス後もこの関数インスタンスの
   // 寿命が尽きるまで（maxDuration 上限まで）継続する。失敗時は runReportJob 内で必ず

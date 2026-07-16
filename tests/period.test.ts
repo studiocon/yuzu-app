@@ -83,6 +83,13 @@ describe("weekKey / monthKey と parsePeriodKey の往復", () => {
     expect(parsePeriodKey("m-2026-13")).toBeNull();
     expect(parsePeriodKey("m-2026-00")).toBeNull();
   });
+  it("#143: 日曜に整列していない週キーは null（非正規キーでの多重生成を防止）", () => {
+    // 2026-06-28 は日曜（canonical）。前後は月曜/土曜で非正規。
+    expect(parsePeriodKey("w-2026-06-28")).not.toBeNull();
+    expect(parsePeriodKey("w-2026-06-29")).toBeNull(); // 月曜
+    expect(parsePeriodKey("w-2026-06-27")).toBeNull(); // 土曜
+    expect(previousPeriodKey("w-2026-06-29")).toBeNull();
+  });
 });
 
 describe("previousPeriodKey", () => {
