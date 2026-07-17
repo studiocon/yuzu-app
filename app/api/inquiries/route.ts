@@ -9,7 +9,8 @@ import {
   INQUIRY_RATE_WINDOW_MS,
   INQUIRY_RATE_MAX,
   isLooselyValidEmail,
-  pickInquiryRateLimitKey,
+  pickInquiryRateLimitKeys,
+  type InquiryRateLimitKey,
 } from "@/lib/inquiries";
 
 export const runtime = "nodejs";
@@ -41,27 +42,38 @@ function buildSlackText(p: {
   );
 }
 
-// 直近 INQUIRY_RATE_WINDOW_MS 内の件数を user_id → email → IP の優先順で数える（#129）。
-// user_id も email も無い匿名 POST は元々ここで 0 件判定（未対応）になっており、
-// 5件/時のレート制限を素通りできた。ip 列（20260717_inquiries_ip_rate_limit.sql で追加）
-// を使い、両方欠く場合だけ IP でカウントする。IP 取得は lib/ip.ts の getClientIp
-// （#142 XFF 偽装対策済み）を必ず経由し、独自に x-forwarded-for を生パースしない。
+// 直近 INQUIRY_RATE_WINDOW_MS 内の件数を数える（#129）。
+// ログイン済みは user_id キーのみ。匿名は email と IP の**両方**でカウントし最大値で
+// 判定する（pickInquiryRateLimitKeys 参照）。旧実装（単一キーの優先順選択）は匿名 POST が
+// email を毎回ローテートするだけで常にカウント0の email バケットに逃げられ、IP に到達
+// しなかった。ip 列は 20260717120000_inquiries_ip_rate_limit.sql で追加。IP 取得は
+// lib/ip.ts の getClientIp（#142 XFF 偽装対策済み）を必ず経由し、独自に
+// x-forwarded-for を生パースしない。
+async function countForKey(
+  admin: ReturnType<typeof createAdminClient>,
+  key: InquiryRateLimitKey,
+  sinceIso: string,
+): Promise<number> {
+  let q = admin
+    .from("inquiries")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sinceIso);
+  if (key.type === "user") q = q.eq("user_id", key.value);
+  else if (key.type === "email") q = q.eq("email", key.value);
+  else q = q.eq("ip", key.value);
+  const { count } = await q;
+  return count ?? 0;
+}
+
 async function countRecent(
   admin: ReturnType<typeof createAdminClient>,
   key: { userId?: string | null; email?: string | null; ip?: string | null },
 ): Promise<number> {
-  const rateLimitKey = pickInquiryRateLimitKey(key.userId, key.email, key.ip);
-  if (rateLimitKey.type === "none") return 0;
+  const keys = pickInquiryRateLimitKeys(key.userId, key.email, key.ip);
+  if (keys.length === 0) return 0;
   const since = new Date(Date.now() - INQUIRY_RATE_WINDOW_MS).toISOString();
-  let q = admin
-    .from("inquiries")
-    .select("id", { count: "exact", head: true })
-    .gte("created_at", since);
-  if (rateLimitKey.type === "user") q = q.eq("user_id", rateLimitKey.value);
-  else if (rateLimitKey.type === "email") q = q.eq("email", rateLimitKey.value);
-  else q = q.eq("ip", rateLimitKey.value);
-  const { count } = await q;
-  return count ?? 0;
+  const counts = await Promise.all(keys.map((k) => countForKey(admin, k, since)));
+  return Math.max(...counts);
 }
 
 export async function POST(request: NextRequest) {
@@ -92,7 +104,8 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // ── レート制限 ── #129: user_id / email が両方無い匿名 POST は IP でフォールバック
+  // ── レート制限 ── #129: 匿名 POST は email と IP の両方でカウントし max で判定
+  //（email ローテートでも同一 IP からは 5件/時を超えられない）
   const recent = await countRecent(admin, { userId: user?.id, email, ip });
   if (recent >= INQUIRY_RATE_MAX) {
     return NextResponse.json(

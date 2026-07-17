@@ -14,26 +14,31 @@ export function isLooselyValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-// #129: レート制限に使うキーを user_id → email → IP の優先順で選ぶ。
-// user_id / email がどちらも無い匿名 POST は IP にフォールバックする（それまでは
-// countRecent が 0 件判定になり、5件/時の上限を素通りできた）。
-// IP が "unknown"（Vercel/XFF ヘッダ欠落時のプレースホルダ、lib/ip.ts 参照）の場合は
-// 全匿名ユーザーが同一バケットを共有してしまうため、レート制限キーとして使わない
-// （= type: "none" を返し、上限チェックをスキップする。cookie 等の別防波堤は無いが、
-// 少なくとも誤って全匿名トラフィックを一律ブロックする事故は避ける）。
+// #129: レート制限に使うキー群を選ぶ。呼び出し側は返された**全キー**でカウントし、
+// 最大値で上限判定する（max 判定）。
+//
+// - ログイン済み（userId あり）→ user_id キーのみ（従来通り。email/IP は見ない）
+// - 匿名（userId 無し）→ email と IP の**両方**を返す。email は自己申告値でコスト0で
+//   ローテートできるため、email キー単独では「毎回違う email を入れる」だけで
+//   カウント0の新バケットに逃げられる（issue #129 が明記する主要ケース）。IP でも
+//   並行してカウントすることで、email をどう変えても同一 IP からの 5件/時 を超えられない
+// - IP が "unknown"（Vercel/XFF ヘッダ欠落時のプレースホルダ、lib/ip.ts 参照）の場合は
+//   IP キーとして使わない。全匿名ユーザーが同一バケットを共有してしまい、正規ユーザーを
+//   誤って一律ブロックする事故を避けるため
+// - email も有効な IP も無ければ空配列（= 上限チェックなし。従来挙動の維持）
 export type InquiryRateLimitKey =
   | { type: "user"; value: string }
   | { type: "email"; value: string }
-  | { type: "ip"; value: string }
-  | { type: "none" };
+  | { type: "ip"; value: string };
 
-export function pickInquiryRateLimitKey(
+export function pickInquiryRateLimitKeys(
   userId: string | null | undefined,
   email: string | null | undefined,
   ip: string | null | undefined,
-): InquiryRateLimitKey {
-  if (userId) return { type: "user", value: userId };
-  if (email) return { type: "email", value: email };
-  if (ip && ip !== "unknown") return { type: "ip", value: ip };
-  return { type: "none" };
+): InquiryRateLimitKey[] {
+  if (userId) return [{ type: "user", value: userId }];
+  const keys: InquiryRateLimitKey[] = [];
+  if (email) keys.push({ type: "email", value: email });
+  if (ip && ip !== "unknown") keys.push({ type: "ip", value: ip });
+  return keys;
 }
