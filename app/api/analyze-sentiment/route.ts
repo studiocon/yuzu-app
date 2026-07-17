@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DAY_MS } from "@/lib/period";
-import { scoreSentiments } from "@/lib/sentimentScore";
+import { scoreSentiments, splitCachedPosts, SENTIMENT_MODEL } from "@/lib/sentimentScore";
 import { buildMockSentimentResults, isMockRequest } from "@/lib/mockFixtures";
 
 export const runtime = "nodejs";
@@ -29,6 +30,11 @@ interface SentimentRow {
   id: string;
   text: string;
   created_at: string;
+}
+
+interface CachedSentimentRow {
+  record_id: string;
+  score: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -94,19 +100,58 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  let scoreMap: Record<string, number>;
-  try {
-    scoreMap = await scoreSentiments(
-      rows.map((r) => ({ id: r.id, text: r.text })),
-      apiKey,
-    );
-  } catch (err) {
-    const status = (err as { status?: number })?.status;
-    if (status === 429) {
-      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  // #128: write-through キャッシュ。所有権チェック済みの rows に対してのみ
+  // record_sentiments を引く（RLS でも auth.uid() = user_id が二重に効く）。
+  const ids = rows.map((r) => r.id);
+  const { data: cachedData, error: cacheError } = await supabase
+    .from("record_sentiments")
+    .select("record_id, score")
+    .in("record_id", ids);
+
+  // キャッシュ読み取り失敗は fail-open（silent fail ではなくログを出した上で
+  // 全件を再解析する）。キャッシュが引けないだけでスコア機能自体は落とさない。
+  if (cacheError) {
+    console.error("analyze-sentiment cache read failed", cacheError);
+  }
+  const cachedScoreMap = new Map<string, number>(
+    ((cachedData as CachedSentimentRow[] | null) ?? []).map((r) => [r.record_id, r.score]),
+  );
+
+  const { uncached } = splitCachedPosts(rows, new Set(cachedScoreMap.keys()));
+
+  let freshScoreMap: Record<string, number> = {};
+  if (uncached.length > 0) {
+    try {
+      freshScoreMap = await scoreSentiments(
+        uncached.map((r) => ({ id: r.id, text: r.text })),
+        apiKey,
+      );
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 429) {
+        return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+      }
+      console.error("scoreSentiments failed", err);
+      return NextResponse.json({ error: "sentiment_failed" }, { status: 502 });
     }
-    console.error("scoreSentiments failed", err);
-    return NextResponse.json({ error: "sentiment_failed" }, { status: 502 });
+
+    // 新規スコアを service_role で upsert する。失敗しても応答自体は返す
+    // （キャッシュが書けなくても解析結果はクライアントに返す。次回また Claude を叩くだけ）。
+    // console.error は必ず出す（CLAUDE.md: silent fail 禁止）。
+    const toUpsert = Object.entries(freshScoreMap).map(([recordId, score]) => ({
+      record_id: recordId,
+      user_id: user.id,
+      score,
+      model: SENTIMENT_MODEL,
+    }));
+    if (toUpsert.length > 0) {
+      const { error: upsertError } = await createAdminClient()
+        .from("record_sentiments")
+        .upsert(toUpsert, { onConflict: "record_id" });
+      if (upsertError) {
+        console.error("analyze-sentiment cache upsert failed", upsertError);
+      }
+    }
   }
 
   // 解析できなかった post は results に含めない。クライアントは未キャッシュとして
@@ -115,7 +160,7 @@ export async function POST(req: NextRequest) {
     .map((r) => ({
       postId: r.id,
       date: formatDate(new Date(r.created_at).getTime()),
-      score: scoreMap[r.id],
+      score: cachedScoreMap.get(r.id) ?? freshScoreMap[r.id],
     }))
     .filter((r): r is { postId: string; date: string; score: number } => typeof r.score === "number");
 
