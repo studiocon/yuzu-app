@@ -48,7 +48,27 @@ export const parseScore = (raw: string): number => {
   throw new Error("parseScore: no numeric score in response");
 };
 
+// #128: record_sentiments キャッシュに書く model 値。API 呼び出し側と揃える
+// （lib/sentimentScore.ts 内でしか model 名を書かないための一元化）。
+export const SENTIMENT_MODEL = "claude-haiku-4-5";
+
 export type ScorablePost = { id: string; text: string };
+
+// #128: write-through キャッシュ用に、既にスコア済み（キャッシュ済み）の post を
+// 再解析対象から除く純ロジック。DB 依存を持たないので vitest で直接テストできる。
+export function splitCachedPosts<T extends { id: string }>(
+  posts: T[],
+  cachedIds: ReadonlySet<string> | readonly string[],
+): { cached: T[]; uncached: T[] } {
+  const cachedSet = cachedIds instanceof Set ? cachedIds : new Set(cachedIds);
+  const cached: T[] = [];
+  const uncached: T[] = [];
+  for (const p of posts) {
+    if (cachedSet.has(p.id)) cached.push(p);
+    else uncached.push(p);
+  }
+  return { cached, uncached };
+}
 
 /**
  * 投稿群を Claude でスコア化して `{postId: score}` を返す。
@@ -73,7 +93,7 @@ export async function scoreSentiments(
           // 64 トークンの単純な数値判定タスクなので Haiku 4.5（$1/$5 per MTok）で品質十分。
           // Sonnet（$3/$15）比で約1/3のコスト。
           const msg = await client.messages.create({
-            model: "claude-haiku-4-5",
+            model: SENTIMENT_MODEL,
             max_tokens: 64,
             system: SYSTEM,
             messages: [{ role: "user", content: buildUserContent(p.text ?? "") }],
