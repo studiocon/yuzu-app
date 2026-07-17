@@ -5,6 +5,7 @@ import { jstDateString } from "@/lib/period";
 import { ANON_DAILY_STT_LIMIT, MAX_AUDIO_BYTES } from "@/lib/constants";
 import { getEntitlements } from "@/lib/entitlements";
 import { isMockRequest, MOCK_TRANSCRIBE_TEXT } from "@/lib/mockFixtures";
+import { getClientIp } from "@/lib/ip";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -51,19 +52,7 @@ function buildAnonCookie(stat: AnonStat, https: boolean): string {
 }
 
 // cookie は削除・改竄できるので、IP ベースの DB カウントを防波堤として重ねる（#52）。
-// #142: x-forwarded-for はクライアントが送った値が混ざりうる（先頭を偽装して IP バケットを
-// 割り、防波堤を回避できる）ため先頭値をそのまま信用しない。Vercel が自エッジで付与する
-// x-vercel-forwarded-for / x-real-ip（クライアントからは偽装不可）を優先し、無ければ
-// dev 用に x-forwarded-for 先頭へフォールバックする。欠落時は "unknown" バケット。
-function getClientIp(req: NextRequest): string {
-  const vercel = req.headers.get("x-vercel-forwarded-for");
-  if (vercel) return vercel.split(",")[0].trim();
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return "unknown";
-}
+// IP 取得は lib/ip.ts の getClientIp（#142 XFF 偽装対策済み）を使う。
 
 // #142: IP クォータは「読むだけ」で判定し、消費（増分）は STT 成功後に寄せる。
 // これにより上流（ElevenLabs）の一過性失敗でクォータを消費してロックアウトしない。

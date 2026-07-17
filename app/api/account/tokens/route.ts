@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/server";
 import { generateToken } from "@/lib/personalAccessToken";
 
 export const runtime = "nodejs";
@@ -27,9 +27,8 @@ function toClientShape(row: TokenRow) {
 }
 
 // GET: 自分のトークン一覧（平文は二度と返さない）
-export async function GET() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function GET(request: NextRequest) {
+  const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -51,8 +50,7 @@ export async function GET() {
 
 // POST: 新規発行。平文トークンはレスポンスでのみ一度だけ返す。
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -93,8 +91,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/account/tokens?id=<uuid>: 失効（行削除）
 export async function DELETE(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedClient(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
