@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { getAuthedClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { failReportJob, getReport, getReportJob, REPORT_JOB_STALE_MS, runReportJob, startReportJob } from "@/lib/reports";
+import { failReportJob, getOldestReportPeriodKey, getReport, getReportJob, REPORT_JOB_STALE_MS, runReportJob, startReportJob } from "@/lib/reports";
 import { isClosed, parsePeriodKey } from "@/lib/period";
 import { buildMockReport, isMockRequest } from "@/lib/mockFixtures";
+import { getEntitlements } from "@/lib/entitlements";
+import { isReportPeriodAccessible } from "@/lib/reportAccess";
 import type { Report } from "@/lib/reportTypes";
 
 export const runtime = "nodejs";
@@ -47,6 +49,22 @@ export async function GET(req: NextRequest, ctx: Params) {
     return report
       ? NextResponse.json({ report }, { headers: CACHE_HEADERS })
       : NextResponse.json({ error: "not_generated" }, { status: 404 });
+  }
+
+  // Free teaser ゲート。生成済みキャッシュより先に判定する（cache read-around 防止。
+  // billing 有効化後に降格したユーザーが、既に生成済みの非対象期間の内容を読めてしまうのを防ぐ）。
+  const ent = await getEntitlements(supabase, user.id, req);
+  if (!ent.canUseAllReports) {
+    let oldestPeriodKey: string | null;
+    try {
+      oldestPeriodKey = await getOldestReportPeriodKey(user.id);
+    } catch (e) {
+      console.error("GET /api/reports/[periodKey] getOldestReportPeriodKey failed", periodKey, e);
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+    if (!isReportPeriodAccessible({ canUseAllReports: ent.canUseAllReports, periodKey, oldestPeriodKey })) {
+      return NextResponse.json({ error: "plan_required" }, { status: 403 });
+    }
   }
 
   // getReport は読み取りエラー時に throw する（#138、「未生成」と誤認させない）。
@@ -110,6 +128,25 @@ export async function POST(req: NextRequest, ctx: Params) {
     return report
       ? NextResponse.json({ report })
       : NextResponse.json({ error: "not_generated" }, { status: 404 });
+  }
+
+  // Free teaser ゲート。二重生成抑止のキャッシュ確認より先に判定する（gated な期間は
+  // 生成起動そのものを許さない。bootstrap: 1件も無ければどの periodKey でも通す＝
+  // それが最初の1件として永続的に無料開放される）。
+  {
+    const ent = await getEntitlements(supabase, user.id, req);
+    if (!ent.canUseAllReports) {
+      let oldestPeriodKey: string | null;
+      try {
+        oldestPeriodKey = await getOldestReportPeriodKey(user.id);
+      } catch (e) {
+        console.error("POST /api/reports/[periodKey] getOldestReportPeriodKey failed", periodKey, e);
+        return NextResponse.json({ error: "internal_error" }, { status: 500 });
+      }
+      if (!isReportPeriodAccessible({ canUseAllReports: ent.canUseAllReports, periodKey, oldestPeriodKey })) {
+        return NextResponse.json({ error: "plan_required" }, { status: 403 });
+      }
+    }
   }
 
   // 二重生成抑止：キャッシュ済みならそのまま返す（待たせない）。

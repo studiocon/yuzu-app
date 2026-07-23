@@ -147,6 +147,22 @@ export async function clearReportJob(userId: string, periodKey: string): Promise
   if (error) throw new Error(`clearReportJob failed: ${error.message}`);
 }
 
+// Free teaser ゲート（lib/reportAccess.ts）用：ユーザーが最初に生成したレポートの period_key。
+// 1件も無ければ null（= teaser 対象がまだ確定していない、bootstrap 扱い）。
+// getReport/listReportKeys と同じ方針：読み取りエラーを「レポート無し」と混同せず throw する。
+export async function getOldestReportPeriodKey(userId: string): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("period_key")
+    .eq("user_id", userId)
+    .order("generated_at", { ascending: true })
+    .limit(1)
+    .maybeSingle<{ period_key: string }>();
+  if (error) throw new Error(`getOldestReportPeriodKey failed: ${error.message}`);
+  return data?.period_key ?? null;
+}
+
 export async function listReportKeys(userId: string): Promise<string[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase

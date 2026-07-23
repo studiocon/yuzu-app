@@ -35,4 +35,7 @@ export type ReportMeta = {
   payload?: ReportPayload;
   generatedAt?: number;
   model?: string;
+  // Free teaser ゲート（billingEnabled() && plan==="free" の時のみ有効）で対象外になった期間は
+  // true。true の場合 headline/topics/payload はレスポンスからは省かれる（見出しリークを防ぐ）。
+  locked?: boolean;
 };

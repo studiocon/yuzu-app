@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
-import { getReport, listReportKeys } from "@/lib/reports";
+import { getOldestReportPeriodKey, getReport, listReportKeys } from "@/lib/reports";
+import { getEntitlements } from "@/lib/entitlements";
+import { isReportPeriodAccessible } from "@/lib/reportAccess";
 import {
   parsePeriodKey,
   periodLabel,
@@ -42,7 +44,13 @@ export async function GET(req: NextRequest) {
       new Date(r.created_at).getTime()
     );
 
-    const [savedKeys] = await Promise.all([listReportKeys(user.id)]);
+    const [savedKeys, ent] = await Promise.all([
+      listReportKeys(user.id),
+      getEntitlements(supabase, user.id, req),
+    ]);
+    // Free teaser ゲート用。oldestPeriodKey は canUseAllReports なユーザーには不要なので
+    // 余計な問い合わせをしない（billing 無効時は常にここを通らない）。
+    const oldestPeriodKey = ent.canUseAllReports ? null : await getOldestReportPeriodKey(user.id);
 
     let candidates: PeriodMeta[];
     if (scope === "recent") {
@@ -85,7 +93,30 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    const filtered = metas.filter((m) => m.generated || m.postCount > 0);
+    const filtered = metas
+      .filter((m) => m.generated || m.postCount > 0)
+      .map((m): ReportMeta => {
+        const locked = !isReportPeriodAccessible({
+          canUseAllReports: ent.canUseAllReports,
+          periodKey: m.periodKey,
+          oldestPeriodKey,
+        });
+        if (!locked) return { ...m, locked };
+        // ロック中は内容（見出し・トピック・本文）を剥がしメタデータのみ返す。
+        // 一覧レスポンスから teaser 対象外の内容が読めてしまわないようにする。
+        return {
+          periodKey: m.periodKey,
+          kind: m.kind,
+          rangeStart: m.rangeStart,
+          rangeEnd: m.rangeEnd,
+          label: m.label,
+          generated: m.generated,
+          postCount: m.postCount,
+          generatedAt: m.generatedAt,
+          model: m.model,
+          locked: true,
+        };
+      });
     return NextResponse.json({ reports: filtered });
   } catch (e) {
     console.error("listReports failed", e);

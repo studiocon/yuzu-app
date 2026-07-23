@@ -11,6 +11,7 @@ import {
   type Theme,
 } from "@/lib/themes";
 import { isMockRequest, MOCK_THEMES } from "@/lib/mockFixtures";
+import { getEntitlements } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +54,12 @@ export async function GET(request: NextRequest) {
   // 管理者限定モックモード。theme_cache / Anthropic に触れず固定テーマを返す。
   if (await isMockRequest(request, supabase, user.id)) {
     return NextResponse.json({ themes: MOCK_THEMES });
+  }
+
+  // PATTERN（PLUS 限定機能）のプランゲート。theme_cache を読む前に弾く（cache read-around 防止）。
+  const ent = await getEntitlements(supabase, user.id, request);
+  if (!ent.canUseThemes) {
+    return NextResponse.json({ error: "plan_required" }, { status: 403 });
   }
 
   // 投稿数チェック

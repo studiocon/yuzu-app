@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
-import { DEFAULT_PLAN, PLANS, type Plan } from "./plan";
-import { MAX_DAILY_SESSIONS, MAX_RECORD_MS } from "./constants";
+import { DEFAULT_PLAN, PLANS, isPaidPlan, type Plan } from "./plan";
+import { MAX_DAILY_SESSIONS, MAX_RECORD_MS, PLUS_MAX_DAILY_SESSIONS, PLUS_MAX_RECORD_MS } from "./constants";
 
 // admin ロール（開発モード = 上限バイパス）。書き込みは service_role のみ。
 export type Role = "user" | "admin";
@@ -12,7 +12,15 @@ export type Entitlements = {
   isAdmin: boolean;
   maxDailySessions: number | null; // null = 無制限
   maxRecordMs: number | null;      // null = 無制限（サーバは ABSOLUTE_MAX_RECORD_MS で clamp）
+  canUseThemes: boolean;           // PATTERN（insights/themes）。false は「billing 有効 & free & 非 admin」の時のみ
+  canUseAllReports: boolean;       // 全期間のレポート閲覧・生成。false は同上（teaser: 最初の1件だけ許可）
 };
+
+// #65 Phase B（billing 本launch）まで既定 off。Vercel 環境変数 BILLING_ENABLED="1" で有効化する。
+// off の間は canUseThemes/canUseAllReports は plan に関わらず常に true（現状維持、無害）。
+export function billingEnabled(): boolean {
+  return process.env.BILLING_ENABLED === "1";
+}
 
 const SIMULATE_HEADER = "x-yuzu-simulate-plan";
 
@@ -25,14 +33,24 @@ export function resolveEntitlements(plan: Plan, role: Role): Entitlements {
       isAdmin: true,
       maxDailySessions: null,
       maxRecordMs: null,
+      canUseThemes: true,
+      canUseAllReports: true,
     };
   }
+  // 回数・分数の上限は billingEnabled に関わらず plan に応じて即時反映する
+  // （現在 light/premium ユーザーは存在しないため挙動は変わらない。service_role で plan を
+  // 立てたテストアカウントから PLUS 上限を検証できる）。
+  const paid = isPaidPlan(plan);
+  // PATTERN・全期間レポートのゲートは billing launch までは常に無効（既存ユーザーへの回帰防止）。
+  const gated = billingEnabled() && plan === "free";
   return {
     plan,
     role: "user",
     isAdmin: false,
-    maxDailySessions: MAX_DAILY_SESSIONS,
-    maxRecordMs: MAX_RECORD_MS,
+    maxDailySessions: paid ? PLUS_MAX_DAILY_SESSIONS : MAX_DAILY_SESSIONS,
+    maxRecordMs: paid ? PLUS_MAX_RECORD_MS : MAX_RECORD_MS,
+    canUseThemes: !gated,
+    canUseAllReports: !gated,
   };
 }
 

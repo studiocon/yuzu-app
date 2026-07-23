@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient } from "@/lib/supabase/server";
-import { getEntitlements } from "@/lib/entitlements";
+import { billingEnabled, getEntitlements } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
     limits: {
       maxDailySessions: ent.maxDailySessions,
       maxRecordMs: ent.maxRecordMs,
+    },
+    // billing launch（#65 Phase B）前はネイティブ側の課金 UI を隠すためのフラグ。
+    // billing=false の間は insightsPreview=true（PATTERN/全期間レポートを teaser 無しで見せてよい）。
+    features: {
+      billing: billingEnabled(),
+      insightsPreview: !billingEnabled(),
     },
   });
 }
